@@ -1,100 +1,238 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Funkübung – Übersicht</title>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem; background:#f7f7fb; }
-    h1 { text-align: center; margin-bottom: 1.5rem; }
-    table { border-collapse: collapse; width: 100%; max-width: 900px; margin:auto; background:#fff; }
-    th, td { border: 1px solid #ddd; padding: .75rem; text-align: left; }
-    th { background:#eee; }
-    tr:hover { background:#f0f0f0; }
-    .img { max-height:60px; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EA-Funkübung Neuhof – Index</title>
+<style>
+  :root{--bg:#f6f7fb;--card:#fff;--txt:#111;--muted:#5b6270;--line:#e5e7ef;--link:#0a66c2}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:var(--bg);color:var(--txt);margin:0;padding:32px}
+  h1,h2{margin:0 0 10px 0}
+  h1{font-size:28px}
+  h2{font-size:20px;margin-top:28px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 8px rgba(0,0,0,.05);margin-bottom:18px}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{border-top:1px solid var(--line);padding:10px 12px;vertical-align:top}
+  th{background:#fafbff;text-align:left}
+  tr:first-child th,tr:first-child td{border-top:0}
+  .muted{color:var(--muted)}
+  a{color:var(--link);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .thumb{height:44px;max-width:88px;border:1px solid var(--line);border-radius:6px;object-fit:cover;background:#fff}
+  details{margin-top:6px}
+  .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+  .center{text-align:center}
+</style>
 </head>
 <body>
-  <h1>🚒 Funkübung – Übersicht</h1>
+
+<div class="card">
+  <h1>🚒 EA-Funkübung – Feuerwehr Neuhof</h1>
+  <div class="muted">Index mit Routen, Buchstaben­verteilung und Aufgaben/Lagebildern</div>
+</div>
+
+<!-- 1) Routen je Fahrzeug -->
+<div class="card">
+  <h2>1) Reihenfolge der Straßen (pro Fahrzeug)</h2>
   <table>
-    <tr>
-      <th>Station / Adresse</th>
-      <th>Aufgabe</th>
-      <th>Buchstabe</th>
-      <th>Lagebild</th>
-    </tr>
-    <tr>
-      <td><a href="schafhohle-1-hattenhof.html">Schafhohle 1 (Hattenhof)</a></td>
-      <td>Buchstabierübung „Hydrant“</td>
-      <td>F</td>
-      <td>–</td>
-    </tr>
-    <tr>
-      <td><a href="rasenheeg-6-hattenhof.html">Rasenheeg 6 (Hattenhof)</a></td>
-      <td>Buchstabierübung „Leiter“</td>
-      <td>U</td>
-      <td>–</td>
-    </tr>
-    <tr>
-      <td><a href="gewerbestrasse-9-dorfborn-gtue.html">Gewerbestraße 9 (Dorfborn, GTÜ)</a></td>
-      <td>BMA – Lagemeldung</td>
-      <td>E</td>
-      <td><a href="https://daniel911211.github.io/Bilder/BMA.png">Bild</a></td>
-    </tr>
-    <tr>
-      <td><a href="im-haferfeld-7-neuhof.html">Im Haferfeld 7 (Neuhof)</a></td>
-      <td>Kellerbrand – Lagemeldung</td>
-      <td>U</td>
-      <td><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png">Bild</a></td>
-    </tr>
-    <tr>
-      <td><a href="roetherweg-3-neuhof.html">Rötherweg 3 (Neuhof)</a></td>
-      <td>Wohnhausbrand – Lagemeldung</td>
-      <td>R</td>
-      <td><a href="https://daniel911211.github.io/Bilder/brenntwohnhaus.png">Bild</a></td>
-    </tr>
-    <tr>
-      <td><a href="elbestrasse-14-neuhof.html">Elbestraße 14 (Neuhof)</a></td>
-      <td>Hydrant melden</td>
-      <td>W</td>
-      <td>–</td>
-    </tr>
-    <tr>
-      <td><a href="hirschpfad-1-tiefengruben.html">Hirschpfad 1 (Tiefengruben)</a></td>
-      <td>Wasserentnahmestelle melden</td>
-      <td>E</td>
-      <td>–</td>
-    </tr>
-    <tr>
-      <td><a href="auf-der-dornhecke-fliederweg-tiefengruben.html">Auf der Dornhecke / Fliederweg (Tiefengruben)</a></td>
-      <td>UTM-Koordinaten durchgeben</td>
-      <td>H</td>
-      <td>–</td>
-    </tr>
-    <tr>
-      <td><a href="bauernhof-erlenhof-3-neuhof.html">Bauernhof Erlenhof 3 (Neuhof)</a></td>
-      <td>Wasserversorgung (Teich/Schieber)</td>
-      <td>R</td>
-      <td><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png">Bild</a></td>
-    </tr>
-    <tr>
-      <td><a href="eichenaecker-19-rommerz.html">Eichenäcker 19 (Rommerz)</a></td>
-      <td>Verkehrsunfall – Lagemeldung</td>
-      <td>F</td>
-      <td>–</td>
-    </tr>
-    <tr>
-      <td><a href="brueder-grimm-strasse-12-rommerz.html">Brüder-Grimm-Straße 12 (Rommerz)</a></td>
-      <td>Einheit eingetroffen</td>
-      <td>E</td>
-      <td>–</td>
-    </tr>
-    <tr>
-      <td><a href="am-stueck-22-rommerz.html">Am Stück 22 (Rommerz)</a></td>
-      <td>Zahl/UTM wiederholen</td>
-      <td>R</td>
-      <td>–</td>
-    </tr>
+    <thead>
+      <tr>
+        <th>Fahrzeug</th>
+        <th>Start</th>
+        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th>
+        <th>Ziel</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Rotationsprinzip: jedes FHZ startet versetzt an der nächsten Station -->
+      <tr>
+        <td><strong>FHZ 1</strong></td>
+        <td>Am Baumgarten 2</td>
+        <td>Erlenhof 3</td>
+        <td>Brüder-Grimm-Str. 12</td>
+        <td>Am Stück 22</td>
+        <td>Im Haferfeld 7</td>
+        <td>Gewerbestr. 9 (GTÜ)</td>
+        <td>Rasenheeg 6</td>
+        <td>FD-543 Bahnbrücke</td>
+        <td>Frankfurter Str. 38A</td>
+        <td>Am Baumgarten 2</td>
+      </tr>
+      <tr>
+        <td><strong>FHZ 2</strong></td>
+        <td>Am Baumgarten 2</td>
+        <td>Brüder-Grimm-Str. 12</td>
+        <td>Am Stück 22</td>
+        <td>Im Haferfeld 7</td>
+        <td>Gewerbestr. 9 (GTÜ)</td>
+        <td>Rasenheeg 6</td>
+        <td>FD-543 Bahnbrücke</td>
+        <td>Frankfurter Str. 38A</td>
+        <td>Erlenhof 3</td>
+        <td>Am Baumgarten 2</td>
+      </tr>
+      <tr>
+        <td><strong>FHZ 3</strong></td>
+        <td>Am Baumgarten 2</td>
+        <td>Am Stück 22</td>
+        <td>Im Haferfeld 7</td>
+        <td>Gewerbestr. 9 (GTÜ)</td>
+        <td>Rasenheeg 6</td>
+        <td>FD-543 Bahnbrücke</td>
+        <td>Frankfurter Str. 38A</td>
+        <td>Erlenhof 3</td>
+        <td>Brüder-Grimm-Str. 12</td>
+        <td>Am Baumgarten 2</td>
+      </tr>
+      <tr>
+        <td><strong>FHZ 4</strong></td>
+        <td>Am Baumgarten 2</td>
+        <td>Im Haferfeld 7</td>
+        <td>Gewerbestr. 9 (GTÜ)</td>
+        <td>Rasenheeg 6</td>
+        <td>FD-543 Bahnbrücke</td>
+        <td>Frankfurter Str. 38A</td>
+        <td>Erlenhof 3</td>
+        <td>Brüder-Grimm-Str. 12</td>
+        <td>Am Stück 22</td>
+        <td>Am Baumgarten 2</td>
+      </tr>
+      <tr>
+        <td><strong>FHZ 5</strong></td>
+        <td>Am Baumgarten 2</td>
+        <td>Gewerbestr. 9 (GTÜ)</td>
+        <td>Rasenheeg 6</td>
+        <td>FD-543 Bahnbrücke</td>
+        <td>Frankfurter Str. 38A</td>
+        <td>Erlenhof 3</td>
+        <td>Brüder-Grimm-Str. 12</td>
+        <td>Am Stück 22</td>
+        <td>Im Haferfeld 7</td>
+        <td>Am Baumgarten 2</td>
+      </tr>
+      <tr>
+        <td><strong>FHZ 6</strong></td>
+        <td>Am Baumgarten 2</td>
+        <td>Rasenheeg 6</td>
+        <td>FD-543 Bahnbrücke</td>
+        <td>Frankfurter Str. 38A</td>
+        <td>Erlenhof 3</td>
+        <td>Brüder-Grimm-Str. 12</td>
+        <td>Am Stück 22</td>
+        <td>Im Haferfeld 7</td>
+        <td>Gewerbestr. 9 (GTÜ)</td>
+        <td>Am Baumgarten 2</td>
+      </tr>
+    </tbody>
   </table>
+</div>
+
+<!-- 2) Buchstaben (inkl. Leerzeichen) je Station & Fahrzeug -->
+<div class="card">
+  <h2>2) Buchstaben­verteilung (inkl. Leerzeichen)</h2>
+  <div class="muted mono">Lösungssatz: ORDENTLICHER&nbsp;FUNK&nbsp;SCHAFFT&nbsp;KLARE&nbsp;LAGEN&nbsp;IN&nbsp;NEUHOF</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Station</th>
+        <th>FHZ&nbsp;1<br><span class="muted">ORDENTLI</span></th>
+        <th>FHZ&nbsp;2<br><span class="muted">CHER␣FUN</span></th>
+        <th>FHZ&nbsp;3<br><span class="muted">K␣SCHAFF</span></th>
+        <th>FHZ&nbsp;4<br><span class="muted">T␣KLARE␣</span></th>
+        <th>FHZ&nbsp;5<br><span class="muted">LAGEN␣IN</span></th>
+        <th>FHZ&nbsp;6<br><span class="muted">␣NEUHOF␣</span></th>
+      </tr>
+    </thead>
+    <tbody class="center mono">
+      <tr><td><strong>1. Erlenhof 3</strong></td><td>O</td><td>C</td><td>K</td><td>T</td><td>L</td><td>␣</td></tr>
+      <tr><td><strong>2. Brüder-Grimm-Str. 12</strong></td><td>R</td><td>H</td><td>␣</td><td>␣</td><td>A</td><td>N</td></tr>
+      <tr><td><strong>3. Am Stück 22</strong></td><td>D</td><td>E</td><td>S</td><td>K</td><td>G</td><td>E</td></tr>
+      <tr><td><strong>4. Im Haferfeld 7</strong></td><td>E</td><td>R</td><td>C</td><td>L</td><td>E</td><td>U</td></tr>
+      <tr><td><strong>5. Gewerbestr. 9 (GTÜ)</strong></td><td>N</td><td>␣</td><td>H</td><td>A</td><td>N</td><td>H</td></tr>
+      <tr><td><strong>6. Rasenheeg 6</strong></td><td>T</td><td>F</td><td>A</td><td>R</td><td>␣</td><td>O</td></tr>
+      <tr><td><strong>7. FD-543 Bahnbrücke</strong></td><td>L</td><td>U</td><td>F</td><td>E</td><td>I</td><td>F</td></tr>
+      <tr><td><strong>8. Frankfurter Str. 38A</strong></td><td>I</td><td>N</td><td>F</td><td>␣</td><td>N</td><td>␣</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 3) Aufgaben je Station mit Lagebild (Thumbnail + Link) -->
+<div class="card">
+  <h2>3) Aufgaben & Lagebilder</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Station / Adresse</th>
+        <th>Aufgabe / Funkauftrag</th>
+        <th style="width:140px">Lagebild</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Erlenhof 3 (Neuhof)</strong></td>
+        <td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
+        <td>
+          <a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" target="_blank" rel="noopener">
+            <img class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" alt="Scheune Erlenhof">
+          </a>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Brüder-Grimm-Str. 12 (Rommerz)</strong></td>
+        <td>Buchstabieren: Zentrale nennt ein Wort, Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
+        <td class="muted">—</td>
+      </tr>
+      <tr>
+        <td><strong>Am Stück 22 (Rommerz)</strong></td>
+        <td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
+        <td class="muted">—</td>
+      </tr>
+      <tr>
+        <td><strong>Im Haferfeld 7 (Neuhof)</strong></td>
+        <td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
+        <td>
+          <a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" target="_blank" rel="noopener">
+            <img class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png" alt="Kellerbrand">
+          </a>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Gewerbestr. 9 (Dorfborn, GTÜ)</strong></td>
+        <td>BMA ausgelöst: Lagemeldung & Maßnahmen, ggf. Kräfte nachfordern.</td>
+        <td>
+          <!-- Standard-Thumb + aufklappbare Varianten pro FHZ -->
+          <a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_5.jpg" target="_blank" rel="noopener">
+            <img class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_5.jpg" alt="BMA-Anzeige">
+          </a>
+          <details>
+            <summary class="muted">Varianten je FHZ</summary>
+            <div><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_5.jpg" target="_blank">FHZ 1 – Meldergruppe&nbsp;5</a></div>
+            <div><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_7.jpg" target="_blank">FHZ 2 – Meldergruppe&nbsp;7</a></div>
+            <div><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_10.jpg" target="_blank">FHZ 3 – Meldergruppe&nbsp;10</a></div>
+            <div><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_18.jpg" target="_blank">FHZ 4 – Meldergruppe&nbsp;18</a></div>
+            <div><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_57.png" target="_blank">FHZ 5 – Meldergruppe&nbsp;57</a></div>
+            <div><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_60.jpg" target="_blank">FHZ 6 – Meldergruppe&nbsp;60</a></div>
+          </details>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Rasenheeg 6 (Hattenhof)</strong></td>
+        <td>Straße unpassierbar: alternative Anfahrt und nächster Hydrant nennen.</td>
+        <td class="muted">—</td>
+      </tr>
+      <tr>
+        <td><strong>FD-543 Bahnbrücke (Ri. Hattenhof)</strong></td>
+        <td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
+        <td class="muted">—</td>
+      </tr>
+      <tr>
+        <td><strong>Frankfurter Str. 38A (Neuhof)</strong></td>
+        <td><strong>⚠ Platzhalter: Hier kommt noch eine Zusatz-Aufgabe hin.</strong></td>
+        <td class="muted">—</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 </body>
 </html>
