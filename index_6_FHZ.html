@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-
-<html lang="de"><head><meta charset="utf-8"/>
-<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>EA-Funkübung – Übersicht pro Fahrzeug</title>
 <style>
 :root{--bg:#f7f8fb;--card:#fff;--line:#e5e7ef;--txt:#111;--muted:#5b6270;--link:#0a66c2}
@@ -22,460 +23,532 @@ a{color:var(--link);text-decoration:none} a:hover{text-decoration:underline}
 .vehicle-title{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .badge{font-size:12px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:#fff}
 </style>
-</head><body>
+</head>
+<body>
 <div class="card">
-<h1>🚒 EA-Funkübung – Übersichtstafeln pro Fahrzeug<span style="float:right;font-size:16px;"><a href="Übersichtskarte.html" style="text-decoration:none;">🔙 Zur Übersichtskarte</a></span></h1>
-<div class="muted">Je Fahrzeug eine Tabelle mit Station/Adresse, Aufgabe, Lagebild, Buchstabe und Positionscode (<span class="mono">W?/P?</span> – z. B. <span class="mono">W1/P3</span>).</div>
-<div class="muted">Lösungssatz: <strong><span class="mono">ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF</span></strong></div>
+  <h1>🚒 EA-Funkübung – Übersichtstafeln pro Fahrzeug
+    <span style="float:right;font-size:16px;">
+      <a href="Übersichtskarte.html" style="text-decoration:none;">🔙 Zur Übersichtskarte</a>
+    </span>
+  </h1>
+  <div class="muted">Je Fahrzeug eine Tabelle mit <strong>Station</strong>, <strong>Adresse</strong>, Aufgabe, Lagebild, Buchstabe und Positionscode (<span class="mono">W?/P?</span> – z. B. <span class="mono">W1/P3</span>).</div>
+  <div class="muted">Lösungssatz: <strong><span class="mono">ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF</span></strong></div>
 </div>
+
+<!-- ========== FHZ 1 (HLF) ========== -->
 <div class="card">
-<div class="vehicle-title">
-<h2>FHZ 1 (HLF)</h2>
-<span class="badge">Wort: <span class="mono">ORDENTLI</span></span>
+  <div class="vehicle-title">
+    <h2>FHZ 1 (HLF)</h2>
+    <span class="badge">Wort: <span class="mono">ORDENTLI</span></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:18%">Station</th>
+        <th style="width:24%">Adresse</th>
+        <th>Aufgabe</th>
+        <th class="center" style="width:120px">Lagebild</th>
+        <th class="center" style="width:90px">Buchstabe</th>
+        <th class="center" style="width:120px">Positionscode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Erlenhof</strong></td>
+        <td>Erlenhof 3 (Neuhof)</td>
+        <td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
+        <td class="mono center">O</td>
+        <td class="mono center">W1P1</td>
+      </tr>
+      <tr>
+        <td><strong>Brüder-Grimm-Str.</strong></td>
+        <td>Brüder-Grimm-Str. 12 (Rommerz)</td>
+        <td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
+        <td class="center">—</td>
+        <td class="mono center">R</td>
+        <td class="mono center">W1P2</td>
+      </tr>
+      <tr>
+        <td><strong>Am Stück</strong></td>
+        <td>Am Stück 22 (Rommerz)</td>
+        <td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
+        <td class="center">—</td>
+        <td class="mono center">D</td>
+        <td class="mono center">W1P3</td>
+      </tr>
+      <tr>
+        <td><strong>Im Haferfeld</strong></td>
+        <td>Im Haferfeld 7 (Neuhof)</td>
+        <td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
+        <td class="mono center">E</td>
+        <td class="mono center">W1P4</td>
+      </tr>
+      <tr>
+        <td><strong>Gewerbestraße</strong></td>
+        <td>Gewerbestraße 9 (Dorfborn, GTÜ)</td>
+        <td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_5.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_5.jpg"/></a></td>
+        <td class="mono center">N</td>
+        <td class="mono center">W1P5</td>
+      </tr>
+      <tr>
+        <td><strong>Rasenheeg</strong></td>
+        <td>Rasenheeg 6 (Hattenhof)</td>
+        <td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
+        <td class="center">—</td>
+        <td class="mono center">T</td>
+        <td class="mono center">W1P6</td>
+      </tr>
+      <tr>
+        <td><strong>Rettungspunkt FD-543</strong></td>
+        <td>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</td>
+        <td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
+        <td class="center">—</td>
+        <td class="mono center">L</td>
+        <td class="mono center">W1P7</td>
+      </tr>
+      <tr>
+        <td><strong>Frankfurter Str.</strong></td>
+        <td>Frankfurter Str. 38A (Neuhof)</td>
+        <td>FHZ meldet Standort und bekommt das Abfragewort <strong>"ANTON"</strong> gefunkt.</td>
+        <td class="center">—</td>
+        <td class="mono center">I</td>
+        <td class="mono center">W1P8</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
-<table>
-<thead>
-<tr>
-<th style="width:32%">Station / Adresse</th>
-<th>Aufgabe</th>
-<th class="center" style="width:120px">Lagebild</th>
-<th class="center" style="width:90px">Buchstabe</th>
-<th class="center" style="width:120px">Positionscode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Erlenhof 3 (Neuhof)</strong></td>
-<td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
-<td class="mono center">O</td>
-<td class="mono center">W1P1</td>
-</tr>
-<tr>
-<td><strong>Brüder-Grimm-Str. 12 (Rommerz)</strong></td>
-<td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
-<td class="center">—</td>
-<td class="mono center">R</td>
-<td class="mono center">W1P2</td>
-</tr>
-<tr>
-<td><strong>Am Stück 22 (Rommerz)</strong></td>
-<td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
-<td class="center">—</td>
-<td class="mono center">D</td>
-<td class="mono center">W1P3</td>
-</tr>
-<tr>
-<td><strong>Im Haferfeld 7 (Neuhof)</strong></td>
-<td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
-<td class="mono center">E</td>
-<td class="mono center">W1P4</td>
-</tr>
-<tr>
-<td><strong>Gewerbestraße 9 (Dorfborn, GTÜ)</strong></td>
-<td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_5.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_5.jpg"/></a></td>
-<td class="mono center">N</td>
-<td class="mono center">W1P5</td>
-</tr>
-<tr>
-<td><strong>Rasenheeg 6 (Hattenhof)</strong></td>
-<td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
-<td class="center">—</td>
-<td class="mono center">T</td>
-<td class="mono center">W1P6</td>
-</tr>
-<tr>
-<td><strong>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</strong></td>
-<td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
-<td class="center">—</td>
-<td class="mono center">L</td>
-<td class="mono center">W1P7</td>
-</tr>
-<tr>
-<td><strong>Frankfurter Str. 38A (Neuhof)</strong></td>
-<td>FHZ meldet Standort und bekommt das Abfragewort <strong>"ANTON"</strong> gefunkt.</td>
-<td class="center">—</td>
-<td class="mono center">I</td>
-<td class="mono center">W1P8</td>
-</tr>
-</tbody>
-</table>
-</div>
+
+<!-- ========== FHZ 2 (LF) ========== -->
 <div class="card">
-<div class="vehicle-title">
-<h2>FHZ 2 (LF)</h2>
-<span class="badge">Wort: <span class="mono">CHER␣FUN</span></span>
+  <div class="vehicle-title">
+    <h2>FHZ 2 (LF)</h2>
+    <span class="badge">Wort: <span class="mono">CHER␣FUN</span></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:18%">Station</th>
+        <th style="width:24%">Adresse</th>
+        <th>Aufgabe</th>
+        <th class="center" style="width:120px">Lagebild</th>
+        <th class="center" style="width:90px">Buchstabe</th>
+        <th class="center" style="width:120px">Positionscode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Brüder-Grimm-Str.</strong></td>
+        <td>Brüder-Grimm-Str. 12 (Rommerz)</td>
+        <td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
+        <td class="center">—</td>
+        <td class="mono center">C</td>
+        <td class="mono center">W2P1</td>
+      </tr>
+      <tr>
+        <td><strong>Am Stück</strong></td>
+        <td>Am Stück 22 (Rommerz)</td>
+        <td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
+        <td class="center">—</td>
+        <td class="mono center">H</td>
+        <td class="mono center">W2P2</td>
+      </tr>
+      <tr>
+        <td><strong>Im Haferfeld</strong></td>
+        <td>Im Haferfeld 7 (Neuhof)</td>
+        <td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
+        <td class="mono center">E</td>
+        <td class="mono center">W2P3</td>
+      </tr>
+      <tr>
+        <td><strong>Gewerbestraße</strong></td>
+        <td>Gewerbestraße 9 (Dorfborn, GTÜ)</td>
+        <td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_7.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_7.jpg"/></a></td>
+        <td class="mono center">R</td>
+        <td class="mono center">W2P4</td>
+      </tr>
+      <tr>
+        <td><strong>Rasenheeg</strong></td>
+        <td>Rasenheeg 6 (Hattenhof)</td>
+        <td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
+        <td class="center">—</td>
+        <td class="mono center">␣ (Leerzeichen)</td>
+        <td class="mono center">W2P5</td>
+      </tr>
+      <tr>
+        <td><strong>Rettungspunkt FD-543</strong></td>
+        <td>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</td>
+        <td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
+        <td class="center">—</td>
+        <td class="mono center">F</td>
+        <td class="mono center">W2P6</td>
+      </tr>
+      <tr>
+        <td><strong>Frankfurter Str.</strong></td>
+        <td>Frankfurter Str. 38A (Neuhof)</td>
+        <td>FHZ meldet Standort und bekommt das Abfragewort <strong>"BERTA"</strong> gefunkt.</td>
+        <td class="center">—</td>
+        <td class="mono center">U</td>
+        <td class="mono center">W2P7</td>
+      </tr>
+      <tr>
+        <td><strong>Erlenhof</strong></td>
+        <td>Erlenhof 3 (Neuhof)</td>
+        <td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
+        <td class="mono center">N</td>
+        <td class="mono center">W2P8</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
-<table>
-<thead>
-<tr>
-<th style="width:32%">Station / Adresse</th>
-<th>Aufgabe</th>
-<th class="center" style="width:120px">Lagebild</th>
-<th class="center" style="width:90px">Buchstabe</th>
-<th class="center" style="width:120px">Positionscode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Brüder-Grimm-Str. 12 (Rommerz)</strong></td>
-<td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
-<td class="center">—</td>
-<td class="mono center">C</td>
-<td class="mono center">W2P1</td>
-</tr>
-<tr>
-<td><strong>Am Stück 22 (Rommerz)</strong></td>
-<td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
-<td class="center">—</td>
-<td class="mono center">H</td>
-<td class="mono center">W2P2</td>
-</tr>
-<tr>
-<td><strong>Im Haferfeld 7 (Neuhof)</strong></td>
-<td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
-<td class="mono center">E</td>
-<td class="mono center">W2P3</td>
-</tr>
-<tr>
-<td><strong>Gewerbestraße 9 (Dorfborn, GTÜ)</strong></td>
-<td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_7.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_7.jpg"/></a></td>
-<td class="mono center">R</td>
-<td class="mono center">W2P4</td>
-</tr>
-<tr>
-<td><strong>Rasenheeg 6 (Hattenhof)</strong></td>
-<td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
-<td class="center">—</td>
-<td class="mono center">␣ (Leerzeichen)</td>
-<td class="mono center">W2P5</td>
-</tr>
-<tr>
-<td><strong>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</strong></td>
-<td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
-<td class="center">—</td>
-<td class="mono center">F</td>
-<td class="mono center">W2P6</td>
-</tr>
-<tr>
-<td><strong>Frankfurter Str. 38A (Neuhof)</strong></td>
-<td>FHZ meldet Standort und bekommt das Abfragewort <strong>"BERTA"</strong> gefunkt.</td>
-<td class="center">—</td>
-<td class="mono center">U</td>
-<td class="mono center">W2P7</td>
-</tr>
-<tr>
-<td><strong>Erlenhof 3 (Neuhof)</strong></td>
-<td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
-<td class="mono center">N</td>
-<td class="mono center">W2P8</td>
-</tr>
-</tbody>
-</table>
-</div>
+
+<!-- ========== FHZ 3 (GW-L) ========== -->
 <div class="card">
-<div class="vehicle-title">
-<h2>FHZ 3 (GW-L</h2>
-<span class="badge">Wort: <span class="mono">K␣SCHAFF</span></span>
+  <div class="vehicle-title">
+    <h2>FHZ 3 (GW-L)</h2>
+    <span class="badge">Wort: <span class="mono">K␣SCHAFF</span></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:18%">Station</th>
+        <th style="width:24%">Adresse</th>
+        <th>Aufgabe</th>
+        <th class="center" style="width:120px">Lagebild</th>
+        <th class="center" style="width:90px">Buchstabe</th>
+        <th class="center" style="width:120px">Positionscode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Am Stück</strong></td>
+        <td>Am Stück 22 (Rommerz)</td>
+        <td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
+        <td class="center">—</td>
+        <td class="mono center">K</td>
+        <td class="mono center">W3P1</td>
+      </tr>
+      <tr>
+        <td><strong>Im Haferfeld</strong></td>
+        <td>Im Haferfeld 7 (Neuhof)</td>
+        <td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
+        <td class="mono center">␣ (Leerzeichen)</td>
+        <td class="mono center">W3P2</td>
+      </tr>
+      <tr>
+        <td><strong>Gewerbestraße</strong></td>
+        <td>Gewerbestraße 9 (Dorfborn, GTÜ)</td>
+        <td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_10.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_10.jpg"/></a></td>
+        <td class="mono center">S</td>
+        <td class="mono center">W3P3</td>
+      </tr>
+      <tr>
+        <td><strong>Rasenheeg</strong></td>
+        <td>Rasenheeg 6 (Hattenhof)</td>
+        <td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
+        <td class="center">—</td>
+        <td class="mono center">C</td>
+        <td class="mono center">W3P4</td>
+      </tr>
+      <tr>
+        <td><strong>Rettungspunkt FD-543</strong></td>
+        <td>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</td>
+        <td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
+        <td class="center">—</td>
+        <td class="mono center">H</td>
+        <td class="mono center">W3P5</td>
+      </tr>
+      <tr>
+        <td><strong>Frankfurter Str.</strong></td>
+        <td>Frankfurter Str. 38A (Neuhof)</td>
+        <td>FHZ meldet Standort und bekommt das Abfragewort <strong>"CÄSAR"</strong> gefunkt.</td>
+        <td class="center">—</td>
+        <td class="mono center">A</td>
+        <td class="mono center">W3P6</td>
+      </tr>
+      <tr>
+        <td><strong>Erlenhof</strong></td>
+        <td>Erlenhof 3 (Neuhof)</td>
+        <td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
+        <td class="mono center">F</td>
+        <td class="mono center">W3P7</td>
+      </tr>
+      <tr>
+        <td><strong>Brüder-Grimm-Str.</strong></td>
+        <td>Brüder-Grimm-Str. 12 (Rommerz)</td>
+        <td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
+        <td class="center">—</td>
+        <td class="mono center">F</td>
+        <td class="mono center">W3P8</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
-<table>
-<thead>
-<tr>
-<th style="width:32%">Station / Adresse</th>
-<th>Aufgabe</th>
-<th class="center" style="width:120px">Lagebild</th>
-<th class="center" style="width:90px">Buchstabe</th>
-<th class="center" style="width:120px">Positionscode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Am Stück 22 (Rommerz)</strong></td>
-<td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
-<td class="center">—</td>
-<td class="mono center">K</td>
-<td class="mono center">W3P1</td>
-</tr>
-<tr>
-<td><strong>Im Haferfeld 7 (Neuhof)</strong></td>
-<td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
-<td class="mono center">␣ (Leerzeichen)</td>
-<td class="mono center">W3P2</td>
-</tr>
-<tr>
-<td><strong>Gewerbestraße 9 (Dorfborn, GTÜ)</strong></td>
-<td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_10.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_10.jpg"/></a></td>
-<td class="mono center">S</td>
-<td class="mono center">W3P3</td>
-</tr>
-<tr>
-<td><strong>Rasenheeg 6 (Hattenhof)</strong></td>
-<td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
-<td class="center">—</td>
-<td class="mono center">C</td>
-<td class="mono center">W3P4</td>
-</tr>
-<tr>
-<td><strong>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</strong></td>
-<td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
-<td class="center">—</td>
-<td class="mono center">H</td>
-<td class="mono center">W3P5</td>
-</tr>
-<tr>
-<td><strong>Frankfurter Str. 38A (Neuhof)</strong></td>
-<td>FHZ meldet Standort und bekommt das Abfragewort <strong>"CÄSAR"</strong> gefunkt.</td>
-<td class="center">—</td>
-<td class="mono center">A</td>
-<td class="mono center">W3P6</td>
-</tr>
-<tr>
-<td><strong>Erlenhof 3 (Neuhof)</strong></td>
-<td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
-<td class="mono center">F</td>
-<td class="mono center">W3P7</td>
-</tr>
-<tr>
-<td><strong>Brüder-Grimm-Str. 12 (Rommerz)</strong></td>
-<td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
-<td class="center">—</td>
-<td class="mono center">F</td>
-<td class="mono center">W3P8</td>
-</tr>
-</tbody>
-</table>
-</div>
+
+<!-- ========== FHZ 4 (MTW) ========== -->
 <div class="card">
-<div class="vehicle-title">
-<h2>FHZ 4 (MTW)</h2>
-<span class="badge">Wort: <span class="mono">T␣KLARE␣</span></span>
+  <div class="vehicle-title">
+    <h2>FHZ 4 (MTW)</h2>
+    <span class="badge">Wort: <span class="mono">T␣KLARE␣</span></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:18%">Station</th>
+        <th style="width:24%">Adresse</th>
+        <th>Aufgabe</th>
+        <th class="center" style="width:120px">Lagebild</th>
+        <th class="center" style="width:90px">Buchstabe</th>
+        <th class="center" style="width:120px">Positionscode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Im Haferfeld</strong></td>
+        <td>Im Haferfeld 7 (Neuhof)</td>
+        <td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
+        <td class="mono center">T</td>
+        <td class="mono center">W4P1</td>
+      </tr>
+      <tr>
+        <td><strong>Gewerbestraße</strong></td>
+        <td>Gewerbestraße 9 (Dorfborn, GTÜ)</td>
+        <td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_18.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_18.jpg"/></a></td>
+        <td class="mono center">␣ (Leerzeichen)</td>
+        <td class="mono center">W4P2</td>
+      </tr>
+      <tr>
+        <td><strong>Rasenheeg</strong></td>
+        <td>Rasenheeg 6 (Hattenhof)</td>
+        <td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
+        <td class="center">—</td>
+        <td class="mono center">K</td>
+        <td class="mono center">W4P3</td>
+      </tr>
+      <tr>
+        <td><strong>Rettungspunkt FD-543</strong></td>
+        <td>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</td>
+        <td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
+        <td class="center">—</td>
+        <td class="mono center">L</td>
+        <td class="mono center">W4P4</td>
+      </tr>
+      <tr>
+        <td><strong>Frankfurter Str.</strong></td>
+        <td>Frankfurter Str. 38A (Neuhof)</td>
+        <td>FHZ meldet Standort und bekommt das Abfragewort <strong>"DORA"</strong> gefunkt.</td>
+        <td class="center">—</td>
+        <td class="mono center">A</td>
+        <td class="mono center">W4P5</td>
+      </tr>
+      <tr>
+        <td><strong>Erlenhof</strong></td>
+        <td>Erlenhof 3 (Neuhof)</td>
+        <td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
+        <td class="mono center">R</td>
+        <td class="mono center">W4P6</td>
+      </tr>
+      <tr>
+        <td><strong>Brüder-Grimm-Str.</strong></td>
+        <td>Brüder-Grimm-Str. 12 (Rommerz)</td>
+        <td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
+        <td class="center">—</td>
+        <td class="mono center">E</td>
+        <td class="mono center">W4P7</td>
+      </tr>
+      <tr>
+        <td><strong>Am Stück</strong></td>
+        <td>Am Stück 22 (Rommerz)</td>
+        <td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
+        <td class="center">—</td>
+        <td class="mono center">␣ (Leerzeichen)</td>
+        <td class="mono center">W4P8</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
-<table>
-<thead>
-<tr>
-<th style="width:32%">Station / Adresse</th>
-<th>Aufgabe</th>
-<th class="center" style="width:120px">Lagebild</th>
-<th class="center" style="width:90px">Buchstabe</th>
-<th class="center" style="width:120px">Positionscode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Im Haferfeld 7 (Neuhof)</strong></td>
-<td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
-<td class="mono center">T</td>
-<td class="mono center">W4P1</td>
-</tr>
-<tr>
-<td><strong>Gewerbestraße 9 (Dorfborn, GTÜ)</strong></td>
-<td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_18.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_18.jpg"/></a></td>
-<td class="mono center">␣ (Leerzeichen)</td>
-<td class="mono center">W4P2</td>
-</tr>
-<tr>
-<td><strong>Rasenheeg 6 (Hattenhof)</strong></td>
-<td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
-<td class="center">—</td>
-<td class="mono center">K</td>
-<td class="mono center">W4P3</td>
-</tr>
-<tr>
-<td><strong>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</strong></td>
-<td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
-<td class="center">—</td>
-<td class="mono center">L</td>
-<td class="mono center">W4P4</td>
-</tr>
-<tr>
-<td><strong>Frankfurter Str. 38A (Neuhof)</strong></td>
-<td>FHZ meldet Standort und bekommt das Abfragewort <strong>"DORA"</strong> gefunkt.</td>
-<td class="center">—</td>
-<td class="mono center">A</td>
-<td class="mono center">W4P5</td>
-</tr>
-<tr>
-<td><strong>Erlenhof 3 (Neuhof)</strong></td>
-<td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
-<td class="mono center">R</td>
-<td class="mono center">W4P6</td>
-</tr>
-<tr>
-<td><strong>Brüder-Grimm-Str. 12 (Rommerz)</strong></td>
-<td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
-<td class="center">—</td>
-<td class="mono center">E</td>
-<td class="mono center">W4P7</td>
-</tr>
-<tr>
-<td><strong>Am Stück 22 (Rommerz)</strong></td>
-<td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
-<td class="center">—</td>
-<td class="mono center">␣ (Leerzeichen)</td>
-<td class="mono center">W4P8</td>
-</tr>
-</tbody>
-</table>
-</div>
+
+<!-- ========== FHZ 5 (TSF) ========== -->
 <div class="card">
-<div class="vehicle-title">
-<h2>FHZ 5 (TSF)</h2>
-<span class="badge">Wort: <span class="mono">LAGEN␣IN</span></span>
+  <div class="vehicle-title">
+    <h2>FHZ 5 (TSF)</h2>
+    <span class="badge">Wort: <span class="mono">LAGEN␣IN</span></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:18%">Station</th>
+        <th style="width:24%">Adresse</th>
+        <th>Aufgabe</th>
+        <th class="center" style="width:120px">Lagebild</th>
+        <th class="center" style="width:90px">Buchstabe</th>
+        <th class="center" style="width:120px">Positionscode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Gewerbestraße</strong></td>
+        <td>Gewerbestraße 9 (Dorfborn, GTÜ)</td>
+        <td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_57.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_57.png"/></a></td>
+        <td class="mono center">L</td>
+        <td class="mono center">W5P1</td>
+      </tr>
+      <tr>
+        <td><strong>Rasenheeg</strong></td>
+        <td>Rasenheeg 6 (Hattenhof)</td>
+        <td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
+        <td class="center">—</td>
+        <td class="mono center">A</td>
+        <td class="mono center">W5P2</td>
+      </tr>
+      <tr>
+        <td><strong>Rettungspunkt FD-543</strong></td>
+        <td>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</td>
+        <td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
+        <td class="center">—</td>
+        <td class="mono center">G</td>
+        <td class="mono center">W5P3</td>
+      </tr>
+      <tr>
+        <td><strong>Frankfurter Str.</strong></td>
+        <td>Frankfurter Str. 38A (Neuhof)</td>
+        <td>FHZ meldet Standort und bekommt das Abfragewort <strong>"EMIL"</strong> gefunkt.</td>
+        <td class="center">—</td>
+        <td class="mono center">E</td>
+        <td class="mono center">W5P4</td>
+      </tr>
+      <tr>
+        <td><strong>Erlenhof</strong></td>
+        <td>Erlenhof 3 (Neuhof)</td>
+        <td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
+        <td class="mono center">N</td>
+        <td class="mono center">W5P5</td>
+      </tr>
+      <tr>
+        <td><strong>Brüder-Grimm-Str.</strong></td>
+        <td>Brüder-Grimm-Str. 12 (Rommerz)</td>
+        <td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
+        <td class="center">—</td>
+        <td class="mono center">␣ (Leerzeichen)</td>
+        <td class="mono center">W5P6</td>
+      </tr>
+      <tr>
+        <td><strong>Am Stück</strong></td>
+        <td>Am Stück 22 (Rommerz)</td>
+        <td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
+        <td class="center">—</td>
+        <td class="mono center">I</td>
+        <td class="mono center">W5P7</td>
+      </tr>
+      <tr>
+        <td><strong>Im Haferfeld</strong></td>
+        <td>Im Haferfeld 7 (Neuhof)</td>
+        <td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
+        <td class="mono center">N</td>
+        <td class="mono center">W5P8</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
-<table>
-<thead>
-<tr>
-<th style="width:32%">Station / Adresse</th>
-<th>Aufgabe</th>
-<th class="center" style="width:120px">Lagebild</th>
-<th class="center" style="width:90px">Buchstabe</th>
-<th class="center" style="width:120px">Positionscode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Gewerbestraße 9 (Dorfborn, GTÜ)</strong></td>
-<td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_57.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_57.png"/></a></td>
-<td class="mono center">L</td>
-<td class="mono center">W5P1</td>
-</tr>
-<tr>
-<td><strong>Rasenheeg 6 (Hattenhof)</strong></td>
-<td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
-<td class="center">—</td>
-<td class="mono center">A</td>
-<td class="mono center">W5P2</td>
-</tr>
-<tr>
-<td><strong>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</strong></td>
-<td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
-<td class="center">—</td>
-<td class="mono center">G</td>
-<td class="mono center">W5P3</td>
-</tr>
-<tr>
-<td><strong>Frankfurter Str. 38A (Neuhof)</strong></td>
-<td>FHZ meldet Standort und bekommt das Abfragewort <strong>"EMIL"</strong> gefunkt.</td>
-<td class="center">—</td>
-<td class="mono center">E</td>
-<td class="mono center">W5P4</td>
-</tr>
-<tr>
-<td><strong>Erlenhof 3 (Neuhof)</strong></td>
-<td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
-<td class="mono center">N</td>
-<td class="mono center">W5P5</td>
-</tr>
-<tr>
-<td><strong>Brüder-Grimm-Str. 12 (Rommerz)</strong></td>
-<td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
-<td class="center">—</td>
-<td class="mono center">␣ (Leerzeichen)</td>
-<td class="mono center">W5P6</td>
-</tr>
-<tr>
-<td><strong>Am Stück 22 (Rommerz)</strong></td>
-<td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
-<td class="center">—</td>
-<td class="mono center">I</td>
-<td class="mono center">W5P7</td>
-</tr>
-<tr>
-<td><strong>Im Haferfeld 7 (Neuhof)</strong></td>
-<td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
-<td class="mono center">N</td>
-<td class="mono center">W5P8</td>
-</tr>
-</tbody>
-</table>
-</div>
+
+<!-- ========== FHZ 6 (ELW) ========== -->
 <div class="card">
-<div class="vehicle-title">
-<h2>FHZ 6 (ELW)</h2>
-<span class="badge">Wort: <span class="mono">␣NEUHOF␣</span></span>
+  <div class="vehicle-title">
+    <h2>FHZ 6 (ELW)</h2>
+    <span class="badge">Wort: <span class="mono">␣NEUHOF␣</span></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:18%">Station</th>
+        <th style="width:24%">Adresse</th>
+        <th>Aufgabe</th>
+        <th class="center" style="width:120px">Lagebild</th>
+        <th class="center" style="width:90px">Buchstabe</th>
+        <th class="center" style="width:120px">Positionscode</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Rasenheeg</strong></td>
+        <td>Rasenheeg 6 (Hattenhof)</td>
+        <td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
+        <td class="center">—</td>
+        <td class="mono center">␣ (Leerzeichen)</td>
+        <td class="mono center">W6P1</td>
+      </tr>
+      <tr>
+        <td><strong>Rettungspunkt FD-543</strong></td>
+        <td>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</td>
+        <td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
+        <td class="center">—</td>
+        <td class="mono center">N</td>
+        <td class="mono center">W6P2</td>
+      </tr>
+      <tr>
+        <td><strong>Frankfurter Str.</strong></td>
+        <td>Frankfurter Str. 38A (Neuhof)</td>
+        <td>FHZ meldet Standort und bekommt das Abfragewort <strong>"FRIEDRICH"</strong> gefunkt.</td>
+        <td class="center">—</td>
+        <td class="mono center">E</td>
+        <td class="mono center">W6P3</td>
+      </tr>
+      <tr>
+        <td><strong>Erlenhof</strong></td>
+        <td>Erlenhof 3 (Neuhof)</td>
+        <td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
+        <td class="mono center">U</td>
+        <td class="mono center">W6P4</td>
+      </tr>
+      <tr>
+        <td><strong>Brüder-Grimm-Str.</strong></td>
+        <td>Brüder-Grimm-Str. 12 (Rommerz)</td>
+        <td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
+        <td class="center">—</td>
+        <td class="mono center">H</td>
+        <td class="mono center">W6P5</td>
+      </tr>
+      <tr>
+        <td><strong>Am Stück</strong></td>
+        <td>Am Stück 22 (Rommerz)</td>
+        <td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
+        <td class="center">—</td>
+        <td class="mono center">O</td>
+        <td class="mono center">W6P6</td>
+      </tr>
+      <tr>
+        <td><strong>Im Haferfeld</strong></td>
+        <td>Im Haferfeld 7 (Neuhof)</td>
+        <td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
+        <td class="mono center">F</td>
+        <td class="mono center">W6P7</td>
+      </tr>
+      <tr>
+        <td><strong>Gewerbestraße</strong></td>
+        <td>Gewerbestraße 9 (Dorfborn, GTÜ)</td>
+        <td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
+        <td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_60.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_60.jpg"/></a></td>
+        <td class="mono center">␣ (Leerzeichen)</td>
+        <td class="mono center">W6P8</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
-<table>
-<thead>
-<tr>
-<th style="width:32%">Station / Adresse</th>
-<th>Aufgabe</th>
-<th class="center" style="width:120px">Lagebild</th>
-<th class="center" style="width:90px">Buchstabe</th>
-<th class="center" style="width:120px">Positionscode</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Rasenheeg 6 (Hattenhof)</strong></td>
-<td>Straße unpassierbar: alternative Anfahrt + nächster Hydrant nennen.</td>
-<td class="center">—</td>
-<td class="mono center">␣ (Leerzeichen)</td>
-<td class="mono center">W6P1</td>
-</tr>
-<tr>
-<td><strong>Rettungspunkt FD-543 (Bahnbrücke Ri. Hattenhof)</strong></td>
-<td>UTM-Koordinatenmeldung: Standort über Funk durchgeben.</td>
-<td class="center">—</td>
-<td class="mono center">N</td>
-<td class="mono center">W6P2</td>
-</tr>
-<tr>
-<td><strong>Frankfurter Str. 38A (Neuhof)</strong></td>
-<td>FHZ meldet Standort und bekommt das Abfragewort <strong>"FRIEDRICH"</strong>gefunkt.</td>
-<td class="center">—</td>
-<td class="mono center">E</td>
-<td class="mono center">W6P3</td>
-</tr>
-<tr>
-<td><strong>Erlenhof 3 (Neuhof)</strong></td>
-<td>Wasserversorgung erkunden (Teich/Schieber) und Rückmeldung geben.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/scheuneerlenhof.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/scheuneerlenhof.png"/></a></td>
-<td class="mono center">U</td>
-<td class="mono center">W6P4</td>
-</tr>
-<tr>
-<td><strong>Brüder-Grimm-Str. 12 (Rommerz)</strong></td>
-<td>Buchstabieren: Zentrale nennt ein Wort, das Fahrzeug buchstabiert nach Funkalphabet zurück.</td>
-<td class="center">—</td>
-<td class="mono center">H</td>
-<td class="mono center">W6P5</td>
-</tr>
-<tr>
-<td><strong>Am Stück 22 (Rommerz)</strong></td>
-<td>Funkspruch-Wiederholung: Zahl/Kennzeichen exakt zurückmelden.</td>
-<td class="center">—</td>
-<td class="mono center">O</td>
-<td class="mono center">W6P6</td>
-</tr>
-<tr>
-<td><strong>Im Haferfeld 7 (Neuhof)</strong></td>
-<td>Kellerbrand: Lagemeldung nach FwDV 810 (Lage, Maßnahmen, Kräfte, Gefahren).</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/Kellerbrand.png" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/Kellerbrand.png"/></a></td>
-<td class="mono center">F</td>
-<td class="mono center">W6P7</td>
-</tr>
-<tr>
-<td><strong>Gewerbestraße 9 (Dorfborn, GTÜ)</strong></td>
-<td>BMA ausgelöst: Lagemeldung &amp; Maßnahmen, ggf. Kräfte nachfordern.</td>
-<td class="center"><a href="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_60.jpg" rel="noopener" target="_blank"><img alt="Lagebild" class="thumb" src="https://daniel911211.github.io/Bilder/BMA-Anzeige-Meldergruppe_60.jpg"/></a></td>
-<td class="mono center">␣ (Leerzeichen)</td>
-<td class="mono center">W6P8</td>
-</tr>
-</tbody>
-</table>
-</div>
-</body></html>
+</body>
+</html>
