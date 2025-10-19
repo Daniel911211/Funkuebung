@@ -5,24 +5,88 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>EA-Funkübung – Übersicht (4 Fahrzeuge) – gleicher Lösungssatz</title>
 <style>
-:root{--bg:#f7f8fb;--card:#fff;--line:#e5e7ef;--txt:#111;--muted:#5b6270;--link:#0a66c2}
+:root{
+  --bg:#f7f8fb;
+  --card:#fff;
+  --line:#d5d7de;
+  --head:#44454d;
+  --head-txt:#fff;
+  --txt:#111;
+  --muted:#5b6270;
+  --link:#0a66c2;
+}
 *{box-sizing:border-box}
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;margin:0;background:var(--bg);color:var(--txt);padding:28px}
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+  margin:0;
+  background:var(--bg);
+  color:var(--txt);
+  padding:28px;
+}
 h1{margin:0 0 12px 0;font-size:26px}
 h2{margin:26px 0 8px 0;font-size:20px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 8px rgba(0,0,0,.05);margin-bottom:18px}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:18px;
+  box-shadow:0 1px 8px rgba(0,0,0,.05);
+  margin-bottom:18px;
+}
 .muted{color:var(--muted)}
-table{width:100%;border-collapse:collapse;font-size:15px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-th,td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
-th{background:#fafbff;text-align:left}
-tr:first-child th,tr:first-child td{border-top:0}
-a{color:#0a66c2;text-decoration:none} a:hover{text-decoration:underline}
-.thumb{height:44px;max-width:88px;border:1px solid var(--line);border-radius:6px;object-fit:cover;background:#fff}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+.thumb{
+  height:44px;
+  max-width:88px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  object-fit:cover;
+  background:#fff;
+}
 .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
 .center{text-align:center}
-.vehicle-title{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.badge{font-size:12px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:#fff}
+.vehicle-title{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.badge{
+  font-size:12px;
+  padding:2px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+}
+
+/* --- Tabellenstil wie in Hauptübersicht --- */
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:15px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+}
+thead tr{
+  background:var(--head);
+  color:var(--head-txt);
+}
+th,td{
+  padding:10px 12px;
+  border-top:1px solid var(--line);
+  vertical-align:middle;
+  border-right:1px solid var(--line);
+}
+th:last-child, td:last-child{border-right:none}
+th{text-align:center;font-weight:600}
+td.center{text-align:center}
+tr:first-child th,tr:first-child td{border-top:0}
+tbody tr:nth-child(even){background:#fafafa}
 </style>
+
 </head>
 <body>
 <div class="card">
