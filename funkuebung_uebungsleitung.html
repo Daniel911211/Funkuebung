@@ -1,0 +1,2314 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funkübung – Übungsleitung | Einsatzabteilung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== VARIABLEN & RESET ===== */
+  :root {
+    --rot: #C8102E;
+    --rot-dunkel: #9B0B22;
+    --rot-hell: #E8203E;
+    --schwarz: #141414;
+    --grau-dunkel: #1E1E1E;
+    --grau-mittel: #2E2E2E;
+    --grau-hell: #3E3E3E;
+    --grau-rand: #4A4A4A;
+    --grau-text: #A0A0A0;
+    --weiss: #F4F4F4;
+    --weiss-rein: #FFFFFF;
+    --gelbgruen: #7EC94A;
+    --orange: #E8800A;
+    --blau: #2979C8;
+    --radius: 4px;
+    --radius-lg: 8px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.5);
+    --shadow-lg: 0 6px 30px rgba(0,0,0,0.7);
+    --transition: all 0.2s ease;
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Barlow', sans-serif;
+    --font-condensed: 'Barlow Condensed', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    background: var(--schwarz);
+    color: var(--weiss);
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--grau-dunkel); }
+  ::-webkit-scrollbar-thumb { background: var(--rot); border-radius: 3px; }
+
+  /* ===== PRINT-STYLES ===== */
+  @media print {
+    body { background: white; color: black; }
+    .nav, .hero-badge, .print-hide { display: none !important; }
+    .card { break-inside: avoid; border: 1px solid #ccc; }
+    .tab-btn { display: none; }
+    .tab-pane { display: block !important; }
+  }
+
+  /* ===== NAVIGATION ===== */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--grau-dunkel);
+    border-bottom: 2px solid var(--rot);
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    box-shadow: var(--shadow);
+  }
+  .nav::-webkit-scrollbar { display: none; }
+
+  .nav-brand {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--rot);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 0.75rem 1rem 0.75rem 0;
+    border-right: 1px solid var(--grau-rand);
+    margin-right: 0.5rem;
+  }
+
+  .nav a {
+    color: var(--grau-text);
+    text-decoration: none;
+    font-family: var(--font-condensed);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.75rem 0.75rem;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: var(--transition);
+    margin-bottom: -2px;
+  }
+  .nav a:hover { color: var(--weiss); border-bottom-color: var(--rot-hell); }
+
+  /* ===== HERO ===== */
+  .hero {
+    background: linear-gradient(135deg, var(--grau-dunkel) 0%, #0E0E0E 60%, #200208 100%);
+    border-bottom: 3px solid var(--rot);
+    padding: 3rem 1.5rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(ellipse at center, rgba(200,16,46,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '📡';
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 6rem;
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  .hero-inner { max-width: 1200px; margin: 0 auto; position: relative; }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--rot);
+    color: var(--weiss-rein);
+    font-family: var(--font-condensed);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2px;
+    margin-bottom: 1rem;
+  }
+
+  .hero-badge::before { content: '●'; font-size: 0.5rem; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--weiss-rein);
+    margin-bottom: 0.5rem;
+  }
+
+  .hero h1 span { color: var(--rot); }
+
+  .hero-sub {
+    font-family: var(--font-condensed);
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 400;
+    color: var(--grau-text);
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .hero-tag {
+    background: var(--grau-mittel);
+    border: 1px solid var(--grau-rand);
+    border-radius: var(--radius);
+    padding: 0.3rem 0.75rem;
+    font-family: var(--font-condensed);
+    font-size: 0.8rem;
+    color: var(--grau-text);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .hero-tag strong { color: var(--weiss); }
+
+  /* ===== MAIN LAYOUT ===== */
+  .main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* ===== SECTION HEADING ===== */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--grau-mittel);
+  }
+
+  .section-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--rot);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .section-head h2 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--weiss-rein);
+    text-transform: uppercase;
+  }
+
+  .section-head .num {
+    font-family: var(--font-condensed);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--rot);
+    letter-spacing: 0.1em;
+    background: rgba(200,16,46,0.1);
+    border: 1px solid rgba(200,16,46,0.3);
+    border-radius: 2px;
+    padding: 0.1rem 0.4rem;
+  }
+
+  /* ===== CARD ===== */
+  .card {
+    background: var(--grau-dunkel);
+    border: 1px solid var(--grau-mittel);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .card-sm { padding: 1rem 1.25rem; }
+
+  .card-highlight {
+    border-color: var(--rot);
+    border-left: 4px solid var(--rot);
+  }
+
+  /* ===== GRID ===== */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+
+  /* ===== INFO BOX ===== */
+  .info-box {
+    background: rgba(200,16,46,0.08);
+    border: 1px solid rgba(200,16,46,0.25);
+    border-left: 3px solid var(--rot);
+    border-radius: var(--radius);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+
+  .info-box.gelb {
+    background: rgba(232,128,10,0.08);
+    border-color: rgba(232,128,10,0.25);
+    border-left-color: var(--orange);
+  }
+
+  .info-box.gruen {
+    background: rgba(126,201,74,0.08);
+    border-color: rgba(126,201,74,0.25);
+    border-left-color: var(--gelbgruen);
+  }
+
+  .info-box.blau {
+    background: rgba(41,121,200,0.08);
+    border-color: rgba(41,121,200,0.25);
+    border-left-color: var(--blau);
+  }
+
+  .info-box strong { display: block; font-family: var(--font-condensed); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.2rem; }
+  .info-box.gelb strong { color: var(--orange); }
+  .info-box.gruen strong { color: var(--gelbgruen); }
+  .info-box.blau strong { color: var(--blau); }
+  .info-box strong { color: var(--rot); }
+
+  /* ===== TABELLEN ===== */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  thead { background: var(--grau-mittel); }
+
+  th {
+    font-family: var(--font-condensed);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--grau-text);
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid var(--rot);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--grau-mittel);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  td.center { text-align: center; }
+  td.mono { font-family: 'Courier New', monospace; font-size: 0.8rem; color: var(--rot-hell); }
+
+  /* ===== BADGES / STATUS ===== */
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 2px;
+    font-family: var(--font-condensed);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .badge-rot { background: rgba(200,16,46,0.2); color: #FF6B7A; border: 1px solid rgba(200,16,46,0.4); }
+  .badge-gruen { background: rgba(126,201,74,0.2); color: #7EC94A; border: 1px solid rgba(126,201,74,0.4); }
+  .badge-orange { background: rgba(232,128,10,0.2); color: #E8800A; border: 1px solid rgba(232,128,10,0.4); }
+  .badge-blau { background: rgba(41,121,200,0.2); color: #5BAAF0; border: 1px solid rgba(41,121,200,0.4); }
+  .badge-grau { background: rgba(160,160,160,0.1); color: var(--grau-text); border: 1px solid rgba(160,160,160,0.2); }
+
+  /* ===== CHECKBOX STYLE ===== */
+  .status-check {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .status-check input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--grau-rand);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: var(--transition);
+  }
+
+  .status-check input[type="checkbox"]:checked {
+    background: var(--gelbgruen);
+    border-color: var(--gelbgruen);
+  }
+
+  .status-check input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    color: #1a1a1a;
+    font-weight: 700;
+  }
+
+  .status-check span { font-size: 0.8rem; color: var(--grau-text); }
+  .status-check input:checked ~ span { color: var(--gelbgruen); text-decoration: line-through; }
+
+  /* ===== QR PLACEHOLDER ===== */
+  .qr-box {
+    width: 80px;
+    height: 80px;
+    border: 2px dashed var(--grau-rand);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: var(--grau-text);
+    text-align: center;
+    gap: 0.2rem;
+    transition: var(--transition);
+  }
+  .qr-box:hover { border-color: var(--rot); color: var(--rot-hell); }
+  .qr-box .qr-icon { font-size: 1.5rem; opacity: 0.5; }
+
+  .qr-box-sm {
+    width: 55px;
+    height: 55px;
+    font-size: 0.55rem;
+  }
+  .qr-box-sm .qr-icon { font-size: 1.1rem; }
+
+  /* ===== PLATZHALTER INPUT ===== */
+  .ph {
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed var(--grau-rand);
+    border-radius: var(--radius);
+    padding: 0.25rem 0.5rem;
+    color: var(--grau-text);
+    font-size: 0.8rem;
+    font-style: italic;
+    min-width: 80px;
+    display: inline-block;
+  }
+
+  textarea.doc-field {
+    width: 100%;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--grau-rand);
+    border-radius: var(--radius);
+    color: var(--weiss);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    padding: 0.6rem;
+    resize: vertical;
+    min-height: 60px;
+    transition: var(--transition);
+  }
+  textarea.doc-field:focus {
+    outline: none;
+    border-color: var(--rot);
+    background: rgba(200,16,46,0.05);
+  }
+  textarea.doc-field::placeholder { color: var(--grau-rand); font-style: italic; }
+
+  /* ===== TABS ===== */
+  .tabs { margin-bottom: 1.5rem; }
+
+  .tab-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .tab-btn {
+    background: var(--grau-mittel);
+    border: 1px solid var(--grau-rand);
+    border-radius: var(--radius);
+    color: var(--grau-text);
+    font-family: var(--font-condensed);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.25rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .tab-btn:hover { border-color: var(--rot); color: var(--weiss); }
+  .tab-btn.active { background: var(--rot); border-color: var(--rot); color: var(--weiss-rein); }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ===== KANAL-KARTE ===== */
+  .kanal-card {
+    background: var(--grau-mittel);
+    border: 1px solid var(--grau-rand);
+    border-top: 3px solid var(--rot);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+  }
+
+  .kanal-name {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--rot-hell);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.2rem;
+  }
+
+  .kanal-label {
+    font-family: var(--font-condensed);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--grau-text);
+    margin-bottom: 0.5rem;
+  }
+
+  .kanal-zweck { font-size: 0.875rem; margin-bottom: 0.75rem; color: var(--weiss); }
+
+  .kanal-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+
+  .kanal-hint {
+    font-size: 0.78rem;
+    color: var(--grau-text);
+    border-top: 1px solid var(--grau-rand);
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+    font-style: italic;
+  }
+
+  /* ===== STATION CARD ===== */
+  .station-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .fzg-row {
+    background: var(--grau-mittel);
+    border: 1px solid var(--grau-rand);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .fzg-header {
+    background: linear-gradient(90deg, var(--rot-dunkel) 0%, var(--grau-mittel) 100%);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .fzg-num {
+    background: var(--rot);
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.9rem;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .fzg-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--weiss-rein);
+    flex: 1;
+  }
+
+  .fzg-rufname {
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    color: var(--rot-hell);
+    background: rgba(0,0,0,0.3);
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius);
+  }
+
+  .fzg-body { padding: 0.75rem 1rem; }
+
+  .station-steps {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--grau-dunkel);
+    border: 1px solid var(--grau-rand);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    min-width: 0;
+  }
+
+  .step-num {
+    font-family: var(--font-condensed);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--rot-hell);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .step-name {
+    font-weight: 500;
+    color: var(--weiss);
+    white-space: nowrap;
+  }
+
+  .step-arrow {
+    color: var(--grau-rand);
+    font-size: 0.9rem;
+  }
+
+  /* ===== AUFGABEN ===== */
+  .aufgabe-card {
+    background: var(--grau-dunkel);
+    border: 1px solid var(--grau-mittel);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  .aufgabe-header {
+    background: var(--grau-mittel);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 2px solid var(--rot);
+  }
+
+  .aufgabe-nr {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--rot);
+    line-height: 1;
+    min-width: 2rem;
+  }
+
+  .aufgabe-titel {
+    flex: 1;
+    font-family: var(--font-condensed);
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--weiss-rein);
+    letter-spacing: 0.04em;
+  }
+
+  .aufgabe-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  @media (max-width: 700px) {
+    .aufgabe-body { grid-template-columns: 1fr; }
+  }
+
+  .aufgabe-col {
+    padding: 1rem;
+    border-right: 1px solid var(--grau-mittel);
+  }
+  .aufgabe-col:last-child { border-right: none; }
+
+  .aufgabe-col-label {
+    font-family: var(--font-condensed);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--rot-hell);
+    margin-bottom: 0.4rem;
+  }
+
+  .aufgabe-col p {
+    font-size: 0.875rem;
+    color: var(--weiss);
+    line-height: 1.5;
+  }
+
+  .aufgabe-full {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--grau-mittel);
+  }
+
+  /* ===== FUNK-DOC TABELLE ===== */
+  .funk-log {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--grau-rand);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+  }
+
+  .funk-log-header {
+    background: var(--grau-mittel);
+    padding: 0.4rem 0.75rem;
+    display: grid;
+    grid-template-columns: 70px 100px 1fr 100px;
+    gap: 0.5rem;
+    font-family: var(--font-condensed);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--rot-hell);
+    border-bottom: 1px solid var(--rot);
+  }
+
+  .funk-log-row {
+    display: grid;
+    grid-template-columns: 70px 100px 1fr 100px;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    align-items: center;
+  }
+
+  .funk-log-row:hover { background: rgba(200,16,46,0.05); }
+
+  .funk-log-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--grau-rand);
+    color: var(--weiss);
+    font-family: 'Courier New', monospace;
+    font-size: 0.78rem;
+    width: 100%;
+    padding: 0.1rem 0;
+  }
+  .funk-log-input:focus { outline: none; border-bottom-color: var(--rot-hell); }
+  .funk-log-input::placeholder { color: var(--grau-rand); font-style: italic; font-family: 'Courier New', monospace; }
+
+  /* ===== HINWEIS KARTEN ===== */
+  .hint-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .hint-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.875rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .hint-list li:last-child { border-bottom: none; }
+
+  .hint-list li::before {
+    content: '›';
+    color: var(--rot);
+    font-size: 1rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 0.05rem;
+  }
+
+  /* ===== ABLAUF SCHRITTE ===== */
+  .ablauf-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+
+  .ablauf-step {
+    display: flex;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .ablauf-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 36px;
+    flex-shrink: 0;
+  }
+
+  .ablauf-dot {
+    width: 36px;
+    height: 36px;
+    background: var(--rot);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .ablauf-line {
+    width: 2px;
+    background: var(--grau-mittel);
+    flex: 1;
+    min-height: 1.5rem;
+  }
+
+  .ablauf-content {
+    padding: 0.35rem 0 1.25rem;
+    flex: 1;
+  }
+
+  .ablauf-title {
+    font-family: var(--font-condensed);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--weiss-rein);
+    margin-bottom: 0.2rem;
+  }
+
+  .ablauf-desc {
+    font-size: 0.85rem;
+    color: var(--grau-text);
+    line-height: 1.5;
+  }
+
+  /* ===== TRENNLINIE ===== */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--rot) 0%, var(--grau-mittel) 100%);
+    margin: 2rem 0;
+    border: none;
+  }
+
+  /* ===== ÜBUNGSZIEL KARTEN ===== */
+  .ziel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+
+  .ziel-item {
+    background: var(--grau-mittel);
+    border-radius: var(--radius);
+    padding: 1rem;
+    border-top: 2px solid var(--rot);
+    text-align: center;
+  }
+
+  .ziel-emoji { font-size: 1.8rem; display: block; margin-bottom: 0.4rem; }
+
+  .ziel-text {
+    font-family: var(--font-condensed);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--weiss);
+    line-height: 1.4;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .nav-brand { font-size: 0.8rem; padding-right: 0.75rem; }
+    .hero { padding: 2rem 1rem 1.5rem; }
+    .hero::after { display: none; }
+    .main { padding: 1.25rem 1rem; }
+    .card { padding: 1rem; }
+    .ablauf-content { padding-bottom: 1rem; }
+    .funk-log-header, .funk-log-row { grid-template-columns: 60px 80px 1fr; }
+    .funk-log-header > *:last-child, .funk-log-row > *:last-child { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .tab-list { gap: 0.35rem; }
+    .tab-btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    background: var(--grau-dunkel);
+    border-top: 2px solid var(--rot);
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+    font-family: var(--font-condensed);
+    font-size: 0.75rem;
+    color: var(--grau-text);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ===== PRINT BUTTON ===== */
+  .print-btn {
+    background: var(--rot);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.5rem 1rem;
+    font-family: var(--font-condensed);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .print-btn:hover { background: var(--rot-hell); }
+
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav class="nav" role="navigation">
+  <div class="nav-brand">🚒 ELW – Funkübung</div>
+  <a href="#ziel">Ziel</a>
+  <a href="#vorbereitung">Vorbereitung</a>
+  <a href="#funkkanale">Funkkanäle</a>
+  <a href="#stationen">Stationen</a>
+  <a href="#aufgaben">Aufgaben</a>
+  <a href="#dokumentation">Dokumentation</a>
+  <a href="#nachbesprechung">Nachbesprechung</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">Übungsdokument – Übungsleitung</div>
+    <h1>Funk<span>übung</span><br>Einsatzabteilung</h1>
+    <p class="hero-sub">Koordination · Funkmeldungen · Fahrzeugführung · Lagebildauswertung</p>
+    <div class="hero-meta">
+      <div class="hero-tag">📅 Datum: <strong><span class="ph">TT.MM.JJJJ</span></strong></div>
+      <div class="hero-tag">🕐 Zeit: <strong><span class="ph">HH:MM Uhr</span></strong></div>
+      <div class="hero-tag">📍 Standort ELW: <strong><span class="ph">Platzhalter</span></strong></div>
+      <div class="hero-tag">👤 Übungsleiter: <strong><span class="ph">Name</span></strong></div>
+      <div class="hero-tag">🚒 Fahrzeuge: <strong><span class="ph">Anzahl</span></strong></div>
+      <button class="print-btn print-hide" onclick="window.print()">🖨 Drucken / PDF</button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ===== ABSCHNITT: ÜBUNGSZIEL ===== -->
+  <section id="ziel">
+    <div class="section-head">
+      <div class="section-icon">🎯</div>
+      <h2>Ziel der Übung</h2>
+      <span class="num">ÜBUNGSPLANUNG</span>
+    </div>
+
+    <div class="card card-highlight">
+      <p style="font-size:0.95rem; line-height:1.7; margin-bottom:1.25rem;">
+        Diese Funkübung trainiert die <strong>realistische Abwicklung von Funkmeldungen</strong> unter Einsatzbedingungen. Die Fahrzeugbesatzungen fahren eigenständig definierte Stationen an, scannen dort QR-Codes mit Aufgaben oder Lagebildern und erstatten dem ELW strukturierte <strong>Meldungen nach Feuerwehrstandard</strong>. Der ELW koordiniert die Fahrzeuge, dokumentiert alle Meldungen und gibt Rückmeldungen.
+      </p>
+      <div class="ziel-grid">
+        <div class="ziel-item">
+          <span class="ziel-emoji">📻</span>
+          <span class="ziel-text">Sicherer Umgang mit Funkmeldungen</span>
+        </div>
+        <div class="ziel-item">
+          <span class="ziel-emoji">🗺</span>
+          <span class="ziel-text">Fahrzeugkoordination über Karte / ELW</span>
+        </div>
+        <div class="ziel-item">
+          <span class="ziel-emoji">🧩</span>
+          <span class="ziel-text">Auswertung von Lagebildern</span>
+        </div>
+        <div class="ziel-item">
+          <span class="ziel-emoji">📝</span>
+          <span class="ziel-text">Strukturierte Meldungsübermittlung</span>
+        </div>
+        <div class="ziel-item">
+          <span class="ziel-emoji">⏱</span>
+          <span class="ziel-text">Dokumentation im ELW</span>
+        </div>
+        <div class="ziel-item">
+          <span class="ziel-emoji">🤝</span>
+          <span class="ziel-text">Teamarbeit und Funkdisziplin</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Überblick Übungsaufbau -->
+    <div class="section-head" style="margin-top:2rem;">
+      <div class="section-icon">📋</div>
+      <h2>Überblick Übungsaufbau</h2>
+    </div>
+    <div class="card">
+      <div class="grid-2">
+        <div>
+          <div class="info-box blau">
+            <strong>Grundprinzip</strong>
+            Jedes Fahrzeug fährt alle Stationen in einer abgestimmten Reihenfolge an (Rotationsprinzip). Kein Fahrzeug belegt dieselbe Station gleichzeitig.
+          </div>
+          <ul class="hint-list">
+            <li>Der ELW übernimmt die Koordination und das Lagebild.</li>
+            <li>An jeder Station befindet sich ein QR-Code mit einer Aufgabe.</li>
+            <li>Die Besatzung scannt den Code, wertet das Lagebild aus und meldet per Funk an den ELW.</li>
+            <li>Der ELW quittiert, dokumentiert und gibt ggf. Folgeaufträge.</li>
+            <li>Die Übungsleitung beobachtet und greift nur bei Bedarf ein.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="info-box gelb">
+            <strong>Zielgruppe</strong>
+            Übungsleitung, Funkleitung, ELW-Besatzung und Führungskräfte der Einsatzabteilung.
+          </div>
+          <ul class="hint-list">
+            <li>Übungsdauer gesamt: <strong class="ph">ca. XX Min.</strong></li>
+            <li>Stationsdauer je Fahrzeug: <strong class="ph">ca. XX Min.</strong></li>
+            <li>Anzahl Stationen: <strong class="ph">4 / 5 / 6</strong></li>
+            <li>Anzahl Fahrzeuge: <strong class="ph">4 / 5 / 6</strong></li>
+            <li>ELW-Standort: <strong class="ph">Adresse / Standort</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ===== VORBEREITUNG ===== -->
+  <section id="vorbereitung">
+    <div class="section-head">
+      <div class="section-icon">🛠</div>
+      <h2>Vorbereitung &amp; Hinweise</h2>
+      <span class="num">VOR DER ÜBUNG</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:0.75rem;color:var(--rot-hell);text-transform:uppercase;letter-spacing:0.06em;">Vorbereitung Übungsleitung</h3>
+        <ul class="hint-list">
+          <li>Stationen festlegen, Adressen erfassen und QR-Codes vorbereiten.</li>
+          <li>QR-Codes ausdrucken und wetterfest an den Stationen anbringen (Klarsichtfolie, laminiert).</li>
+          <li>Stationsreihenfolge je Fahrzeug schriftlich festlegen und ausgeben.</li>
+          <li>Karte / Übersichtskarte für den ELW vorbereiten (Stationen einzeichnen).</li>
+          <li>Funkgeräte prüfen: Akkus geladen, Kanal eingestellt, Lautstärke geprüft.</li>
+          <li>ELW-Besatzung einweisen: Dokumentationsblatt bereitstellen.</li>
+          <li>Fahrzeugbesatzungen briefen: Ablauf, Aufgaben, Funkdisziplin.</li>
+          <li>Zeitplan und Startzeiten je Fahrzeug abstimmen.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:0.75rem;color:var(--rot-hell);text-transform:uppercase;letter-spacing:0.06em;">Durchführungshinweise</h3>
+        <ul class="hint-list">
+          <li>Fahrzeuge starten versetzt (ca. <span class="ph">X Min.</span> Abstand), damit Stationen nicht gleichzeitig besetzt sind.</li>
+          <li>Jede Meldung erfolgt nach Meldestruktur: <em>Von – An – Inhalt – Ende</em>.</li>
+          <li>ELW quittiert jede Meldung mit Empfangsbestätigung.</li>
+          <li>Übungsleitung überwacht per eigenem Kanal oder HRT die Lage.</li>
+          <li>Bei Problemen: Eingreifkanal oder direkte Ansprache über Handy.</li>
+          <li>Alle Fahrzeuge melden Ankunft an Station und Abfahrt von Station.</li>
+          <li>Stationsdauer nicht überziehen – Übungsleitung gibt ggf. Zeithinweise.</li>
+          <li>Sicherheit hat Vorrang – Übung jederzeit abbrechbar.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ===== FUNKKANÄLE ===== -->
+  <section id="funkkanale">
+    <div class="section-head">
+      <div class="section-icon">📡</div>
+      <h2>Funkkanäle &amp; Rufgruppen</h2>
+      <span class="num">ABSCHNITT 1</span>
+    </div>
+
+    <div class="info-box">
+      <strong>Funkdisziplin</strong>
+      Vor jeder Sendung Taste halten, kurz warten, dann sprechen. Meldungen kurz und strukturiert: <em>Wer ruft wen – Inhalt – Ende.</em> Kein privates Gespräch auf dem Übungskanal. Buchstabieren nach DIN 5009 bei unklaren Begriffen.
+    </div>
+
+    <!-- Kanalübersicht als Karten -->
+    <div class="grid-3" style="margin-bottom:1.25rem;">
+      <div class="kanal-card">
+        <div class="kanal-label">Kanal / Rufgruppe</div>
+        <div class="kanal-name"><span class="ph">z.B. GRP_A / K1</span></div>
+        <div class="kanal-zweck"><span class="ph">z.B. Hauptübungskanal – Fahrzeugmeldungen an ELW</span></div>
+        <div class="kanal-meta">
+          <span class="badge badge-rot">Fahrzeuge</span>
+          <span class="badge badge-orange">ELW</span>
+        </div>
+        <div class="kanal-hint"><span class="ph">Hinweis: Nur strukturierte Funkmeldungen, kein Freitext.</span></div>
+      </div>
+      <div class="kanal-card">
+        <div class="kanal-label">Kanal / Rufgruppe</div>
+        <div class="kanal-name"><span class="ph">z.B. GRP_B / K2</span></div>
+        <div class="kanal-zweck"><span class="ph">z.B. Übungsleitung – interne Kommunikation</span></div>
+        <div class="kanal-meta">
+          <span class="badge badge-gruen">Übungsleitung</span>
+        </div>
+        <div class="kanal-hint"><span class="ph">Hinweis: Nur für Übungsleiter und Schiedsrichter.</span></div>
+      </div>
+      <div class="kanal-card">
+        <div class="kanal-label">Kanal / Rufgruppe</div>
+        <div class="kanal-name"><span class="ph">z.B. GRP_C / K3</span></div>
+        <div class="kanal-zweck"><span class="ph">z.B. Reserve / Notfallkanal</span></div>
+        <div class="kanal-meta">
+          <span class="badge badge-grau">Reserve</span>
+        </div>
+        <div class="kanal-hint"><span class="ph">Hinweis: Nur bei Ausfall Hauptkanal aktivieren.</span></div>
+      </div>
+    </div>
+
+    <!-- Tabelle Funkkanäle -->
+    <div class="card card-sm">
+      <h3 style="font-family:var(--font-condensed);font-size:0.85rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.75rem;">📊 Tabelle: Funkkanäle im Überblick</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Kanal / Rufgruppe</th>
+              <th>Verwendungszweck</th>
+              <th>Zuständigkeit</th>
+              <th>Hinweise zur Nutzung</th>
+              <th>Priorität</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono"><span class="ph">GRP_A</span></td>
+              <td><span class="ph">Hauptübungskanal – alle Fahrzeuge → ELW</span></td>
+              <td><span class="ph">Alle Einheiten</span></td>
+              <td><span class="ph">Strukturierte Meldungen, keine Privatgespräche</span></td>
+              <td><span class="badge badge-rot">Primär</span></td>
+            </tr>
+            <tr>
+              <td class="mono"><span class="ph">GRP_B</span></td>
+              <td><span class="ph">Koordinationskanal Übungsleitung</span></td>
+              <td><span class="ph">Übungsleitung, Schiedsrichter</span></td>
+              <td><span class="ph">Kein Fahrzeugverkehr</span></td>
+              <td><span class="badge badge-orange">Intern</span></td>
+            </tr>
+            <tr>
+              <td class="mono"><span class="ph">GRP_C</span></td>
+              <td><span class="ph">Notfallkanal / Reserve</span></td>
+              <td><span class="ph">Alle bei Ausfall Hauptkanal</span></td>
+              <td><span class="ph">Nur bei Ausfall aktivieren</span></td>
+              <td><span class="badge badge-grau">Reserve</span></td>
+            </tr>
+            <tr>
+              <td class="mono"><span class="ph">––</span></td>
+              <td><span class="ph">Platzhalter</span></td>
+              <td><span class="ph">Platzhalter</span></td>
+              <td><span class="ph">Platzhalter</span></td>
+              <td><span class="badge badge-grau">––</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Meldestruktur -->
+    <div class="card card-sm" style="margin-top:1rem;">
+      <h3 style="font-family:var(--font-condensed);font-size:0.85rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.75rem;">🗣 Meldestruktur (Beispiel)</h3>
+      <div class="grid-2">
+        <div class="info-box blau">
+          <strong>Fahrzeug → ELW (Meldung)</strong>
+          <em>„[Rufname Fahrzeug] an [Rufname ELW] – komme." → Warten auf Gegenstelle.<br>„[Inhalt der Meldung] – Ende."</em>
+        </div>
+        <div class="info-box gruen">
+          <strong>ELW → Fahrzeug (Quittierung)</strong>
+          <em>„[Rufname ELW] an [Rufname Fahrzeug] – verstanden, [ggf. Auftrag] – Ende."</em>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ===== STATIONEN & REIHENFOLGE ===== -->
+  <section id="stationen">
+    <div class="section-head">
+      <div class="section-icon">🗺</div>
+      <h2>Stationen &amp; Reihenfolge je Fahrzeug</h2>
+      <span class="num">ABSCHNITT 2</span>
+    </div>
+
+    <div class="info-box gelb">
+      <strong>Rotationsprinzip</strong>
+      Jedes Fahrzeug fährt alle Stationen in einer eigenen Reihenfolge an. Dadurch ist jede Station zu jedem Zeitpunkt nur von einem Fahrzeug besetzt. Tabs unten wählen: 4, 5 oder 6 Fahrzeuge.
+    </div>
+
+    <!-- Stationstabelle als Platzhalter -->
+    <div class="card card-sm" style="margin-bottom:1.25rem;">
+      <h3 style="font-family:var(--font-condensed);font-size:0.85rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.75rem;">📍 Stationen Übersicht</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nr.</th>
+              <th>Stationsname</th>
+              <th>Adresse / Standort</th>
+              <th>Aufgabentyp</th>
+              <th>QR-Code</th>
+              <th>Bemerkung</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-rot">S 1</span></td>
+              <td><span class="ph">Station Alpha</span></td>
+              <td><span class="ph">Musterstraße 1, 12345 Musterstadt</span></td>
+              <td><span class="badge badge-blau">Lagebild</span></td>
+              <td><div class="qr-box-sm"><span class="qr-icon">⊞</span>QR</div></td>
+              <td><span class="ph">Hinweis</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-rot">S 2</span></td>
+              <td><span class="ph">Station Bravo</span></td>
+              <td><span class="ph">Beispielweg 5, 12345 Musterstadt</span></td>
+              <td><span class="badge badge-orange">Aufgabe</span></td>
+              <td><div class="qr-box-sm"><span class="qr-icon">⊞</span>QR</div></td>
+              <td><span class="ph">Hinweis</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-rot">S 3</span></td>
+              <td><span class="ph">Station Charlie</span></td>
+              <td><span class="ph">Feuerwehrgasse 3, 12345 Musterstadt</span></td>
+              <td><span class="badge badge-blau">Lagebild</span></td>
+              <td><div class="qr-box-sm"><span class="qr-icon">⊞</span>QR</div></td>
+              <td><span class="ph">Hinweis</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-rot">S 4</span></td>
+              <td><span class="ph">Station Delta</span></td>
+              <td><span class="ph">Ringstraße 8, 12345 Musterstadt</span></td>
+              <td><span class="badge badge-gruen">Rückmeldung</span></td>
+              <td><div class="qr-box-sm"><span class="qr-icon">⊞</span>QR</div></td>
+              <td><span class="ph">Hinweis</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-rot">S 5</span></td>
+              <td><span class="ph">Station Echo</span></td>
+              <td><span class="ph">Hauptplatz 2, 12345 Musterstadt</span></td>
+              <td><span class="badge badge-orange">Aufgabe</span></td>
+              <td><div class="qr-box-sm"><span class="qr-icon">⊞</span>QR</div></td>
+              <td><span class="ph">Hinweis</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-rot">S 6</span></td>
+              <td><span class="ph">Station Foxtrot</span></td>
+              <td><span class="ph">Bahnhofstraße 10, 12345 Musterstadt</span></td>
+              <td><span class="badge badge-blau">Lagebild</span></td>
+              <td><div class="qr-box-sm"><span class="qr-icon">⊞</span>QR</div></td>
+              <td><span class="ph">Hinweis</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABS 4/5/6 Fahrzeuge -->
+    <div class="tabs">
+      <div class="tab-list" role="tablist">
+        <button class="tab-btn active" onclick="showTab('tab4')" role="tab" aria-selected="true">4 Fahrzeuge</button>
+        <button class="tab-btn" onclick="showTab('tab5')" role="tab">5 Fahrzeuge</button>
+        <button class="tab-btn" onclick="showTab('tab6')" role="tab">6 Fahrzeuge</button>
+      </div>
+
+      <!-- TAB 4 FAHRZEUGE -->
+      <div id="tab4" class="tab-pane active">
+        <div class="card card-sm" style="margin-bottom:1rem;">
+          <div class="info-box gruen" style="margin-bottom:0;">
+            <strong>4 Fahrzeuge – 4 Stationen (Rotationsplan)</strong>
+            Jedes Fahrzeug startet an einer anderen Station. Nach Ablauf der Stationszeit wechseln alle gleichzeitig zur nächsten Station (→).
+          </div>
+        </div>
+
+        <div class="station-grid">
+          <!-- FZG 1 -->
+          <div class="fzg-row">
+            <div class="fzg-header">
+              <div class="fzg-num">1</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname (z.B. LF 20)</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname z.B. „Florian 01-41"</span></div>
+            </div>
+            <div class="fzg-body">
+              <div style="font-family:var(--font-condensed);font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.5rem;">Reihenfolge der Stationen:</div>
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">Station 1</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">Station 2</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">Station 3</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">Station 4</span></span></div>
+              </div>
+            </div>
+          </div>
+          <!-- FZG 2 -->
+          <div class="fzg-row">
+            <div class="fzg-header">
+              <div class="fzg-num">2</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname (z.B. HLF 10)</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname z.B. „Florian 01-42"</span></div>
+            </div>
+            <div class="fzg-body">
+              <div style="font-family:var(--font-condensed);font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.5rem;">Reihenfolge der Stationen:</div>
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">Station 2</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">Station 3</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">Station 4</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">Station 1</span></span></div>
+              </div>
+            </div>
+          </div>
+          <!-- FZG 3 -->
+          <div class="fzg-row">
+            <div class="fzg-header">
+              <div class="fzg-num">3</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname (z.B. TLF 3000)</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname z.B. „Florian 01-21"</span></div>
+            </div>
+            <div class="fzg-body">
+              <div style="font-family:var(--font-condensed);font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.5rem;">Reihenfolge der Stationen:</div>
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">Station 3</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">Station 4</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">Station 1</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">Station 2</span></span></div>
+              </div>
+            </div>
+          </div>
+          <!-- FZG 4 -->
+          <div class="fzg-row">
+            <div class="fzg-header">
+              <div class="fzg-num">4</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname (z.B. MTW)</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname z.B. „Florian 01-19"</span></div>
+            </div>
+            <div class="fzg-body">
+              <div style="font-family:var(--font-condensed);font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.5rem;">Reihenfolge der Stationen:</div>
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">Station 4</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">Station 1</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">Station 2</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">Station 3</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detailtabelle 4 Fahrzeuge -->
+        <div class="card card-sm" style="margin-top:1rem;">
+          <h3 style="font-family:var(--font-condensed);font-size:0.85rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.75rem;">📋 Detailtabelle – 4 Fahrzeuge</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fahrzeug</th>
+                  <th>Funkrufname</th>
+                  <th>1. Station</th>
+                  <th>2. Station</th>
+                  <th>3. Station</th>
+                  <th>4. Station</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="ph">FZG 1</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 1</span></td>
+                  <td><span class="ph">S 2</span></td>
+                  <td><span class="ph">S 3</span></td>
+                  <td><span class="ph">S 4</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+                <tr>
+                  <td><span class="ph">FZG 2</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 2</span></td>
+                  <td><span class="ph">S 3</span></td>
+                  <td><span class="ph">S 4</span></td>
+                  <td><span class="ph">S 1</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+                <tr>
+                  <td><span class="ph">FZG 3</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 3</span></td>
+                  <td><span class="ph">S 4</span></td>
+                  <td><span class="ph">S 1</span></td>
+                  <td><span class="ph">S 2</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+                <tr>
+                  <td><span class="ph">FZG 4</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 4</span></td>
+                  <td><span class="ph">S 1</span></td>
+                  <td><span class="ph">S 2</span></td>
+                  <td><span class="ph">S 3</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5 FAHRZEUGE -->
+      <div id="tab5" class="tab-pane">
+        <div class="card card-sm" style="margin-bottom:1rem;">
+          <div class="info-box gruen" style="margin-bottom:0;">
+            <strong>5 Fahrzeuge – 5 Stationen (Rotationsplan)</strong>
+            Jedes Fahrzeug startet an einer anderen Station und rotiert durch alle 5 Stationen.
+          </div>
+        </div>
+
+        <div class="station-grid">
+          <!-- FZG 1-5 als Tabelle -->
+          <div class="card card-sm">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Fahrzeug</th>
+                    <th>Rufname</th>
+                    <th>1. Station</th>
+                    <th>2. Station</th>
+                    <th>3. Station</th>
+                    <th>4. Station</th>
+                    <th>5. Station</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><span class="ph">FZG 1</span></td>
+                    <td class="mono"><span class="ph">Rufname</span></td>
+                    <td><span class="ph">S 1</span></td><td><span class="ph">S 2</span></td>
+                    <td><span class="ph">S 3</span></td><td><span class="ph">S 4</span></td>
+                    <td><span class="ph">S 5</span></td>
+                    <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                  </tr>
+                  <tr>
+                    <td><span class="ph">FZG 2</span></td>
+                    <td class="mono"><span class="ph">Rufname</span></td>
+                    <td><span class="ph">S 2</span></td><td><span class="ph">S 3</span></td>
+                    <td><span class="ph">S 4</span></td><td><span class="ph">S 5</span></td>
+                    <td><span class="ph">S 1</span></td>
+                    <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                  </tr>
+                  <tr>
+                    <td><span class="ph">FZG 3</span></td>
+                    <td class="mono"><span class="ph">Rufname</span></td>
+                    <td><span class="ph">S 3</span></td><td><span class="ph">S 4</span></td>
+                    <td><span class="ph">S 5</span></td><td><span class="ph">S 1</span></td>
+                    <td><span class="ph">S 2</span></td>
+                    <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                  </tr>
+                  <tr>
+                    <td><span class="ph">FZG 4</span></td>
+                    <td class="mono"><span class="ph">Rufname</span></td>
+                    <td><span class="ph">S 4</span></td><td><span class="ph">S 5</span></td>
+                    <td><span class="ph">S 1</span></td><td><span class="ph">S 2</span></td>
+                    <td><span class="ph">S 3</span></td>
+                    <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                  </tr>
+                  <tr>
+                    <td><span class="ph">FZG 5</span></td>
+                    <td class="mono"><span class="ph">Rufname</span></td>
+                    <td><span class="ph">S 5</span></td><td><span class="ph">S 1</span></td>
+                    <td><span class="ph">S 2</span></td><td><span class="ph">S 3</span></td>
+                    <td><span class="ph">S 4</span></td>
+                    <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Fahrzeugkarten 5 -->
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">1</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname</span></div>
+            </div>
+            <div class="fzg-body">
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S 1</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S 2</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S 3</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S 4</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S 5</span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">2</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname</span></div>
+            </div>
+            <div class="fzg-body">
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S 2</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S 3</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S 4</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S 5</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S 1</span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">3</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname</span></div>
+            </div>
+            <div class="fzg-body">
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S 3</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S 4</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S 5</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S 1</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S 2</span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">4</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname</span></div>
+            </div>
+            <div class="fzg-body">
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S 4</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S 5</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S 1</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S 2</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S 3</span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">5</div>
+              <div class="fzg-name"><span class="ph">Fahrzeugname</span></div>
+              <div class="fzg-rufname"><span class="ph">Rufname</span></div>
+            </div>
+            <div class="fzg-body">
+              <div class="station-steps">
+                <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S 5</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S 1</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S 2</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S 3</span></span></div>
+                <span class="step-arrow">→</span>
+                <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S 4</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6 FAHRZEUGE -->
+      <div id="tab6" class="tab-pane">
+        <div class="card card-sm" style="margin-bottom:1rem;">
+          <div class="info-box gruen" style="margin-bottom:0;">
+            <strong>6 Fahrzeuge – 6 Stationen (Rotationsplan)</strong>
+            Jedes Fahrzeug startet an einer anderen Station und rotiert durch alle 6 Stationen.
+          </div>
+        </div>
+
+        <div class="card card-sm" style="margin-bottom:1rem;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fahrzeug</th>
+                  <th>Rufname</th>
+                  <th>1.</th>
+                  <th>2.</th>
+                  <th>3.</th>
+                  <th>4.</th>
+                  <th>5.</th>
+                  <th>6.</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="ph">FZG 1</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 1</span></td><td><span class="ph">S 2</span></td>
+                  <td><span class="ph">S 3</span></td><td><span class="ph">S 4</span></td>
+                  <td><span class="ph">S 5</span></td><td><span class="ph">S 6</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+                <tr>
+                  <td><span class="ph">FZG 2</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 2</span></td><td><span class="ph">S 3</span></td>
+                  <td><span class="ph">S 4</span></td><td><span class="ph">S 5</span></td>
+                  <td><span class="ph">S 6</span></td><td><span class="ph">S 1</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+                <tr>
+                  <td><span class="ph">FZG 3</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 3</span></td><td><span class="ph">S 4</span></td>
+                  <td><span class="ph">S 5</span></td><td><span class="ph">S 6</span></td>
+                  <td><span class="ph">S 1</span></td><td><span class="ph">S 2</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+                <tr>
+                  <td><span class="ph">FZG 4</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 4</span></td><td><span class="ph">S 5</span></td>
+                  <td><span class="ph">S 6</span></td><td><span class="ph">S 1</span></td>
+                  <td><span class="ph">S 2</span></td><td><span class="ph">S 3</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+                <tr>
+                  <td><span class="ph">FZG 5</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 5</span></td><td><span class="ph">S 6</span></td>
+                  <td><span class="ph">S 1</span></td><td><span class="ph">S 2</span></td>
+                  <td><span class="ph">S 3</span></td><td><span class="ph">S 4</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+                <tr>
+                  <td><span class="ph">FZG 6</span></td>
+                  <td class="mono"><span class="ph">Rufname</span></td>
+                  <td><span class="ph">S 6</span></td><td><span class="ph">S 1</span></td>
+                  <td><span class="ph">S 2</span></td><td><span class="ph">S 3</span></td>
+                  <td><span class="ph">S 4</span></td><td><span class="ph">S 5</span></td>
+                  <td><label class="status-check"><input type="checkbox"><span>Fertig</span></label></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="station-grid">
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">1</div><div class="fzg-name"><span class="ph">Fahrzeugname</span></div><div class="fzg-rufname"><span class="ph">Rufname</span></div></div>
+            <div class="fzg-body"><div class="station-steps">
+              <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S1</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S2</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S3</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S4</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S5</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">6.</span><span class="step-name"><span class="ph">S6</span></span></div>
+            </div></div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">2</div><div class="fzg-name"><span class="ph">Fahrzeugname</span></div><div class="fzg-rufname"><span class="ph">Rufname</span></div></div>
+            <div class="fzg-body"><div class="station-steps">
+              <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S2</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S3</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S4</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S5</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S6</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">6.</span><span class="step-name"><span class="ph">S1</span></span></div>
+            </div></div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">3</div><div class="fzg-name"><span class="ph">Fahrzeugname</span></div><div class="fzg-rufname"><span class="ph">Rufname</span></div></div>
+            <div class="fzg-body"><div class="station-steps">
+              <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S3</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S4</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S5</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S6</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S1</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">6.</span><span class="step-name"><span class="ph">S2</span></span></div>
+            </div></div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">4</div><div class="fzg-name"><span class="ph">Fahrzeugname</span></div><div class="fzg-rufname"><span class="ph">Rufname</span></div></div>
+            <div class="fzg-body"><div class="station-steps">
+              <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S4</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S5</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S6</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S1</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S2</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">6.</span><span class="step-name"><span class="ph">S3</span></span></div>
+            </div></div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">5</div><div class="fzg-name"><span class="ph">Fahrzeugname</span></div><div class="fzg-rufname"><span class="ph">Rufname</span></div></div>
+            <div class="fzg-body"><div class="station-steps">
+              <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S5</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S6</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S1</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S2</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S3</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">6.</span><span class="step-name"><span class="ph">S4</span></span></div>
+            </div></div>
+          </div>
+          <div class="fzg-row">
+            <div class="fzg-header"><div class="fzg-num">6</div><div class="fzg-name"><span class="ph">Fahrzeugname</span></div><div class="fzg-rufname"><span class="ph">Rufname</span></div></div>
+            <div class="fzg-body"><div class="station-steps">
+              <div class="step-item"><span class="step-num">1.</span><span class="step-name"><span class="ph">S6</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">2.</span><span class="step-name"><span class="ph">S1</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">3.</span><span class="step-name"><span class="ph">S2</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">4.</span><span class="step-name"><span class="ph">S3</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">5.</span><span class="step-name"><span class="ph">S4</span></span></div>
+              <span class="step-arrow">→</span>
+              <div class="step-item"><span class="step-num">6.</span><span class="step-name"><span class="ph">S5</span></span></div>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /tabs -->
+  </section>
+
+  <hr class="divider">
+
+  <!-- ===== AUFGABEN & LAGEBILDER ===== -->
+  <section id="aufgaben">
+    <div class="section-head">
+      <div class="section-icon">🧩</div>
+      <h2>Aufgaben &amp; Lagebilder</h2>
+      <span class="num">ABSCHNITT 3</span>
+    </div>
+
+    <div class="info-box">
+      <strong>Ablauf an der Station</strong>
+      Fahrzeug kommt an Station an → Funkmeldung an ELW → QR-Code scannen → Aufgabe / Lagebild auswerten → Meldung per Funk an ELW mit strukturierter Rückmeldung → ELW quittiert und dokumentiert → Abfahrt melden.
+    </div>
+
+    <!-- STATION 1 -->
+    <div class="aufgabe-card">
+      <div class="aufgabe-header">
+        <div class="aufgabe-nr">S 1</div>
+        <div class="aufgabe-titel"><span class="ph">Station Alpha – Stationsname</span></div>
+        <div class="qr-box"><span class="qr-icon">⊞</span>QR-Code</div>
+      </div>
+      <div class="aufgabe-body">
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">📍 Adresse / Standort</div>
+          <p><span class="ph">Musterstraße 1, 12345 Musterstadt – vor dem Eingang</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">🖼 Lagebild</div>
+          <p><span class="ph">Beschreibung des Lagebilds, z.B.: Person meldet Rauch aus Keller, keine Flammen sichtbar, 1 Person vor Gebäude wartet.</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">📋 Aufgabe für Besatzung</div>
+          <p><span class="ph">Erkundung der Lage. Rückmeldung an ELW: Lage schildern, Ressourcenbedarf angeben, weitere Maßnahmen vorschlagen.</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">✅ Erwartete Rückmeldung</div>
+          <p><span class="ph">Rufname an ELW: Standort X erkundet. Lage: … Benötigen: … Vorgeschlagene Maßnahme: … Ende.</span></p>
+        </div>
+      </div>
+      <div class="aufgabe-full">
+        <div class="grid-2">
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">💡 Hinweise für Übungsleitung</div>
+            <p style="font-size:0.85rem;color:var(--grau-text);"><span class="ph">Achten auf: Ankunftsmeldung per Funk, korrekte Meldestruktur, Stationsdauer einhalten. Bewertung: Vollständigkeit der Rückmeldung, Funkdisziplin.</span></p>
+          </div>
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">📝 Dokumentation ELW</div>
+            <textarea class="doc-field" rows="3" placeholder="ELW: Meldung aufnehmen, Zeit, Fahrzeug, Inhalt…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATION 2 -->
+    <div class="aufgabe-card">
+      <div class="aufgabe-header">
+        <div class="aufgabe-nr">S 2</div>
+        <div class="aufgabe-titel"><span class="ph">Station Bravo – Stationsname</span></div>
+        <div class="qr-box"><span class="qr-icon">⊞</span>QR-Code</div>
+      </div>
+      <div class="aufgabe-body">
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">📍 Adresse / Standort</div>
+          <p><span class="ph">Beispielweg 5, 12345 Musterstadt</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">🖼 Lagebild</div>
+          <p><span class="ph">Verkehrsunfall mit eingeklemmter Person. Fahrzeug quer auf Fahrbahn. PKW beschädigt. 1 Person eingeklemmt, ansprechbar.</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">📋 Aufgabe für Besatzung</div>
+          <p><span class="ph">Lagebild auswerten, Sicherungsmaßnahmen ableiten, Kräftebedarf melden und Anfahrt weiterer Einheiten anfragen.</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">✅ Erwartete Rückmeldung</div>
+          <p><span class="ph">Rufname an ELW: VU Eingeklemmt, 1 Person ansprechbar, Straße gesperrt, bitte NA und weiteres TLF nachfordern. Ende.</span></p>
+        </div>
+      </div>
+      <div class="aufgabe-full">
+        <div class="grid-2">
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">💡 Hinweise für Übungsleitung</div>
+            <p style="font-size:0.85rem;color:var(--grau-text);"><span class="ph">Prüfen: Werden alle relevanten Informationen übermittelt? Wird Kräftebedarf korrekt benannt?</span></p>
+          </div>
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">📝 Dokumentation ELW</div>
+            <textarea class="doc-field" rows="3" placeholder="ELW: Meldung aufnehmen, Zeit, Fahrzeug, Inhalt…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATION 3 -->
+    <div class="aufgabe-card">
+      <div class="aufgabe-header">
+        <div class="aufgabe-nr">S 3</div>
+        <div class="aufgabe-titel"><span class="ph">Station Charlie – Stationsname</span></div>
+        <div class="qr-box"><span class="qr-icon">⊞</span>QR-Code</div>
+      </div>
+      <div class="aufgabe-body">
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">📍 Adresse / Standort</div>
+          <p><span class="ph">Feuerwehrgasse 3, 12345 Musterstadt</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">🖼 Lagebild</div>
+          <p><span class="ph">Gasaustritt im Keller eines Wohnhauses. Mieter evakuiert. Gasnetz-Absperrung durch Versorger noch ausstehend.</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">📋 Aufgabe für Besatzung</div>
+          <p><span class="ph">Lage sichern, Sperrzone einrichten, ELW über Lage informieren und Anforderung des Gasversorgungsunternehmens koordinieren.</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">✅ Erwartete Rückmeldung</div>
+          <p><span class="ph">Rufname an ELW: Gasaustritt Keller. Bereich 50m gesperrt. Alle Personen evakuiert. Bitte Versorger informieren. Ende.</span></p>
+        </div>
+      </div>
+      <div class="aufgabe-full">
+        <div class="grid-2">
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">💡 Hinweise für Übungsleitung</div>
+            <p style="font-size:0.85rem;color:var(--grau-text);"><span class="ph">Besonderes Augenmerk: Sicherheitsabstand, Anforderungsketette korrekt?</span></p>
+          </div>
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">📝 Dokumentation ELW</div>
+            <textarea class="doc-field" rows="3" placeholder="ELW: Meldung aufnehmen, Zeit, Fahrzeug, Inhalt…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATION 4 -->
+    <div class="aufgabe-card">
+      <div class="aufgabe-header">
+        <div class="aufgabe-nr">S 4</div>
+        <div class="aufgabe-titel"><span class="ph">Station Delta – Stationsname</span></div>
+        <div class="qr-box"><span class="qr-icon">⊞</span>QR-Code</div>
+      </div>
+      <div class="aufgabe-body">
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">📍 Adresse / Standort</div>
+          <p><span class="ph">Ringstraße 8, 12345 Musterstadt</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">🖼 Lagebild</div>
+          <p><span class="ph">Überschwemmung Keller. Pumpe defekt. Wasserstand steigt. Besitzer vor Ort. Keine Verletzten.</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">📋 Aufgabe für Besatzung</div>
+          <p><span class="ph">Wasserstand und Lage erkunden. Maßnahmen koordinieren, Technische Hilfe anfordern. Lagemeldung an ELW.</span></p>
+        </div>
+        <div class="aufgabe-col">
+          <div class="aufgabe-col-label">✅ Erwartete Rückmeldung</div>
+          <p><span class="ph">Rufname an ELW: Überschwemmung Keller ca. 40 cm. Keine Verletzten. Löschangriff nicht nötig. Bitte TS 8/8 nachfordern. Ende.</span></p>
+        </div>
+      </div>
+      <div class="aufgabe-full">
+        <div class="grid-2">
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">💡 Hinweise für Übungsleitung</div>
+            <p style="font-size:0.85rem;color:var(--grau-text);"><span class="ph">Prüfen: Bedarfsermittlung korrekt, TH-Anforderung vollständig gemeldet?</span></p>
+          </div>
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">📝 Dokumentation ELW</div>
+            <textarea class="doc-field" rows="3" placeholder="ELW: Meldung aufnehmen, Zeit, Fahrzeug, Inhalt…"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATIONEN 5 & 6 (Platzhalter) -->
+    <div class="grid-2">
+      <div class="aufgabe-card">
+        <div class="aufgabe-header">
+          <div class="aufgabe-nr">S 5</div>
+          <div class="aufgabe-titel"><span class="ph">Station Echo – Stationsname</span></div>
+          <div class="qr-box qr-box-sm"><span class="qr-icon">⊞</span>QR</div>
+        </div>
+        <div style="padding:1rem;">
+          <div class="grid-2" style="gap:0.6rem;margin-bottom:0.75rem;">
+            <div><div class="aufgabe-col-label">📍 Standort</div><p style="font-size:0.85rem;"><span class="ph">Adresse</span></p></div>
+            <div><div class="aufgabe-col-label">🖼 Lagebild</div><p style="font-size:0.85rem;"><span class="ph">Beschreibung</span></p></div>
+            <div><div class="aufgabe-col-label">📋 Aufgabe</div><p style="font-size:0.85rem;"><span class="ph">Aufgabe für Besatzung</span></p></div>
+            <div><div class="aufgabe-col-label">✅ Rückmeldung</div><p style="font-size:0.85rem;"><span class="ph">Erwartete Meldung</span></p></div>
+          </div>
+          <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">📝 Dokumentation ELW</div>
+          <textarea class="doc-field" rows="2" placeholder="ELW: Meldung…"></textarea>
+        </div>
+      </div>
+      <div class="aufgabe-card">
+        <div class="aufgabe-header">
+          <div class="aufgabe-nr">S 6</div>
+          <div class="aufgabe-titel"><span class="ph">Station Foxtrot – Stationsname</span></div>
+          <div class="qr-box qr-box-sm"><span class="qr-icon">⊞</span>QR</div>
+        </div>
+        <div style="padding:1rem;">
+          <div class="grid-2" style="gap:0.6rem;margin-bottom:0.75rem;">
+            <div><div class="aufgabe-col-label">📍 Standort</div><p style="font-size:0.85rem;"><span class="ph">Adresse</span></p></div>
+            <div><div class="aufgabe-col-label">🖼 Lagebild</div><p style="font-size:0.85rem;"><span class="ph">Beschreibung</span></p></div>
+            <div><div class="aufgabe-col-label">📋 Aufgabe</div><p style="font-size:0.85rem;"><span class="ph">Aufgabe für Besatzung</span></p></div>
+            <div><div class="aufgabe-col-label">✅ Rückmeldung</div><p style="font-size:0.85rem;"><span class="ph">Erwartete Meldung</span></p></div>
+          </div>
+          <div class="aufgabe-col-label" style="margin-bottom:0.35rem;">📝 Dokumentation ELW</div>
+          <textarea class="doc-field" rows="2" placeholder="ELW: Meldung…"></textarea>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ===== ABLAUFBESCHREIBUNG ===== -->
+  <section id="ablauf">
+    <div class="section-head">
+      <div class="section-icon">⏱</div>
+      <h2>Ablaufbeschreibung für Übungsleitung</h2>
+      <span class="num">ABLAUF</span>
+    </div>
+    <div class="card">
+      <div class="ablauf-steps">
+        <div class="ablauf-step">
+          <div class="ablauf-left"><div class="ablauf-dot">1</div><div class="ablauf-line"></div></div>
+          <div class="ablauf-content">
+            <div class="ablauf-title">Einweisung aller Beteiligten</div>
+            <div class="ablauf-desc">Übungsleitung versammelt alle Fahrzeugbesatzungen und ELW-Besatzung. Aufgaben, Ablauf, Funkkanäle und Meldestruktur werden erläutert. Fragen werden geklärt.</div>
+          </div>
+        </div>
+        <div class="ablauf-step">
+          <div class="ablauf-left"><div class="ablauf-dot">2</div><div class="ablauf-line"></div></div>
+          <div class="ablauf-content">
+            <div class="ablauf-title">Ausgabe der Stationsreihenfolge</div>
+            <div class="ablauf-desc">Jedes Fahrzeug erhält seinen individuellen Stationsplan (ausgedruckt oder digital). ELW erhält Übersichtskarte mit allen Stationen.</div>
+          </div>
+        </div>
+        <div class="ablauf-step">
+          <div class="ablauf-left"><div class="ablauf-dot">3</div><div class="ablauf-line"></div></div>
+          <div class="ablauf-content">
+            <div class="ablauf-title">Funktest und Kanaleinstellung</div>
+            <div class="ablauf-desc">Alle Fahrzeuge checken auf dem Übungskanal ein. ELW bestätigt Empfang aller Fahrzeuge. Rufnamen werden überprüft.</div>
+          </div>
+        </div>
+        <div class="ablauf-step">
+          <div class="ablauf-left"><div class="ablauf-dot">4</div><div class="ablauf-line"></div></div>
+          <div class="ablauf-content">
+            <div class="ablauf-title">Start der Übung (versetzter Abmarsch)</div>
+            <div class="ablauf-desc">Fahrzeuge fahren im Abstand von ca. <span class="ph">X Minuten</span> zu ihrer ersten Station ab. ELW gibt Startfreigabe und notiert Zeiten.</div>
+          </div>
+        </div>
+        <div class="ablauf-step">
+          <div class="ablauf-left"><div class="ablauf-dot">5</div><div class="ablauf-line"></div></div>
+          <div class="ablauf-content">
+            <div class="ablauf-title">Übungsbetrieb – Stationen und Meldungen</div>
+            <div class="ablauf-desc">Fahrzeuge melden Ankunft, scannen QR-Code, werten Lagebild aus und erstatten strukturierte Meldung an ELW. ELW quittiert und dokumentiert. Übungsleitung beobachtet.</div>
+          </div>
+        </div>
+        <div class="ablauf-step">
+          <div class="ablauf-left"><div class="ablauf-dot">6</div><div class="ablauf-line"></div></div>
+          <div class="ablauf-content">
+            <div class="ablauf-title">Stationswechsel und Koordination</div>
+            <div class="ablauf-desc">Nach Ablauf der Stationszeit meldet jedes Fahrzeug die Abfahrt und fährt zur nächsten Station. ELW aktualisiert das Lagebild auf der Karte.</div>
+          </div>
+        </div>
+        <div class="ablauf-step">
+          <div class="ablauf-left"><div class="ablauf-dot">7</div><div class="ablauf-line"></div></div>
+          <div class="ablauf-content">
+            <div class="ablauf-title">Übungsende und Rückkehr</div>
+            <div class="ablauf-desc">Nach Abschluss aller Stationen meldet jedes Fahrzeug „Übungsende" an den ELW und kehrt zur Wache zurück. ELW gibt Übungsende bekannt.</div>
+          </div>
+        </div>
+        <div class="ablauf-step">
+          <div class="ablauf-left"><div class="ablauf-dot">8</div><div class="ablauf-line"></div></div>
+          <div class="ablauf-content">
+            <div class="ablauf-title">Nachbesprechung</div>
+            <div class="ablauf-desc">Alle Beteiligten versammeln sich zur gemeinsamen Nachbesprechung. Übungsleitung leitet Feedback-Runde anhand der Dokumentation.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ===== DOKUMENTATION ===== -->
+  <section id="dokumentation">
+    <div class="section-head">
+      <div class="section-icon">📝</div>
+      <h2>Funkdokumentation ELW</h2>
+      <span class="num">ABSCHNITT 4</span>
+    </div>
+
+    <div class="info-box blau">
+      <strong>Hinweis zur Dokumentation</strong>
+      Alle eingehenden Funkmeldungen werden mit Uhrzeit, Rufname des Fahrzeugs und Inhalt erfasst. Die Dokumentation dient der Lageführung im ELW und als Grundlage für die Nachbesprechung.
+    </div>
+
+    <div class="card card-sm">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+        <h3 style="font-family:var(--font-condensed);font-size:0.85rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);">📻 Funkmeldungsprotokoll – ELW</h3>
+        <span style="font-size:0.75rem;color:var(--grau-text);">Datum: <span class="ph">TT.MM.JJJJ</span> | Übung: <span class="ph">Bezeichnung</span></span>
+      </div>
+      <div class="funk-log">
+        <div class="funk-log-header">
+          <span>Uhrzeit</span>
+          <span>Von (Rufname)</span>
+          <span>Meldungsinhalt</span>
+          <span>Quittiert</span>
+        </div>
+        <!-- Zeilen für Meldungen -->
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+        <div class="funk-log-row">
+          <input class="funk-log-input" type="text" placeholder="HH:MM">
+          <input class="funk-log-input" type="text" placeholder="Rufname…">
+          <input class="funk-log-input" type="text" placeholder="Meldungsinhalt…">
+          <input class="funk-log-input" type="text" placeholder="✓ / –">
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-sm" style="margin-top:1rem;">
+      <h3 style="font-family:var(--font-condensed);font-size:0.85rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.75rem;">⚠️ Hinweise zur Funkdokumentation</h3>
+      <div class="grid-2">
+        <ul class="hint-list">
+          <li>Jede Meldung sofort und vollständig aufnehmen – kein Nachschreiben aus dem Gedächtnis.</li>
+          <li>Uhrzeit immer zu Beginn der Meldung notieren.</li>
+          <li>Rufnamen exakt übernehmen, nicht abkürzen.</li>
+          <li>Unklare Meldungen sofort per Funk klären – nicht raten.</li>
+        </ul>
+        <ul class="hint-list">
+          <li>Quittierung nach jeder Meldung – kein unbeantworteter Funkkontakt.</li>
+          <li>Bei mehreren gleichzeitigen Meldungen: Priorität vergeben, andere kurz warten lassen.</li>
+          <li>Protokoll nach Übungsende sichern (Foto / Ausdruck).</li>
+          <li>Protokoll bildet die Basis für die Nachbesprechung.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- ===== NACHBESPRECHUNG ===== -->
+  <section id="nachbesprechung">
+    <div class="section-head">
+      <div class="section-icon">🗣</div>
+      <h2>Nachbesprechung</h2>
+      <span class="num">DEBRIEFING</span>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:0.75rem;color:var(--rot-hell);text-transform:uppercase;letter-spacing:0.06em;">Leitfaden Nachbesprechung</h3>
+        <div class="ablauf-steps">
+          <div class="ablauf-step">
+            <div class="ablauf-left"><div class="ablauf-dot" style="width:26px;height:26px;font-size:0.75rem;">1</div><div class="ablauf-line"></div></div>
+            <div class="ablauf-content" style="padding-bottom:0.75rem;">
+              <div class="ablauf-title" style="font-size:0.85rem;">Allgemeiner Eindruck</div>
+              <div class="ablauf-desc">Wie ist die Übung insgesamt gelaufen? Erster offener Austausch.</div>
+            </div>
+          </div>
+          <div class="ablauf-step">
+            <div class="ablauf-left"><div class="ablauf-dot" style="width:26px;height:26px;font-size:0.75rem;">2</div><div class="ablauf-line"></div></div>
+            <div class="ablauf-content" style="padding-bottom:0.75rem;">
+              <div class="ablauf-title" style="font-size:0.85rem;">Stärken identifizieren</div>
+              <div class="ablauf-desc">Was lief gut? Positive Beispiele benennen (Funkmeldungen, Koordination, Reaktionszeit).</div>
+            </div>
+          </div>
+          <div class="ablauf-step">
+            <div class="ablauf-left"><div class="ablauf-dot" style="width:26px;height:26px;font-size:0.75rem;">3</div><div class="ablauf-line"></div></div>
+            <div class="ablauf-content" style="padding-bottom:0.75rem;">
+              <div class="ablauf-title" style="font-size:0.85rem;">Verbesserungspotenziale</div>
+              <div class="ablauf-desc">Was kann verbessert werden? Konkrete Beispiele aus dem Protokoll ansprechen (sachlich, konstruktiv).</div>
+            </div>
+          </div>
+          <div class="ablauf-step">
+            <div class="ablauf-left"><div class="ablauf-dot" style="width:26px;height:26px;font-size:0.75rem;">4</div><div class="ablauf-line"></div></div>
+            <div class="ablauf-content" style="padding-bottom:0.75rem;">
+              <div class="ablauf-title" style="font-size:0.85rem;">Maßnahmen ableiten</div>
+              <div class="ablauf-desc">Konkrete Trainingsempfehlungen oder nächste Übungsthemen festlegen.</div>
+            </div>
+          </div>
+          <div class="ablauf-step">
+            <div class="ablauf-left"><div class="ablauf-dot" style="width:26px;height:26px;font-size:0.75rem;">5</div></div>
+            <div class="ablauf-content">
+              <div class="ablauf-title" style="font-size:0.85rem;">Abschluss</div>
+              <div class="ablauf-desc">Dank an alle Beteiligten, Termin nächste Übung bekannt geben.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-family:var(--font-display);font-size:1rem;font-weight:600;margin-bottom:0.75rem;color:var(--rot-hell);text-transform:uppercase;letter-spacing:0.06em;">Bewertungsfelder</h3>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.3rem;">📻 Funkdisziplin (allgemein)</div>
+            <textarea class="doc-field" rows="2" placeholder="Beobachtungen zur Funkdisziplin und Meldestruktur…"></textarea>
+          </div>
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.3rem;">🗺 Koordination und Lagebild ELW</div>
+            <textarea class="doc-field" rows="2" placeholder="Wie gut war die Koordination durch den ELW…"></textarea>
+          </div>
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.3rem;">🧩 Qualität der Rückmeldungen</div>
+            <textarea class="doc-field" rows="2" placeholder="Vollständigkeit, Struktur, Reaktionszeit…"></textarea>
+          </div>
+          <div>
+            <div class="aufgabe-col-label" style="margin-bottom:0.3rem;">✅ Maßnahmen für nächste Übung</div>
+            <textarea class="doc-field" rows="2" placeholder="Empfehlungen, Themen, Schwerpunkte…"></textarea>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;">
+          <h3 style="font-family:var(--font-condensed);font-size:0.8rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--grau-text);margin-bottom:0.6rem;">Gesamtbewertung Checkliste</h3>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;">
+            <label class="status-check"><input type="checkbox"><span>Funkmeldungen strukturiert und vollständig</span></label>
+            <label class="status-check"><input type="checkbox"><span>Rufnamen korrekt verwendet</span></label>
+            <label class="status-check"><input type="checkbox"><span>Ankunfts- und Abfahrtsmeldungen erstattet</span></label>
+            <label class="status-check"><input type="checkbox"><span>Lagebild korrekt ausgewertet</span></label>
+            <label class="status-check"><input type="checkbox"><span>ELW hat dokumentiert und quittiert</span></label>
+            <label class="status-check"><input type="checkbox"><span>Kräftebedarf korrekt gemeldet</span></label>
+            <label class="status-check"><input type="checkbox"><span>Alle Fahrzeuge alle Stationen absolviert</span></label>
+            <label class="status-check"><input type="checkbox"><span>Funkdisziplin eingehalten</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  🚒 Funkübung – Übungsleitung | Einsatzabteilung &nbsp;|&nbsp; Dokument: <span class="ph">Version / Datum</span> &nbsp;|&nbsp; Erstellt für interne Übungszwecke
+</footer>
+
+<script>
+  // ===== TAB LOGIK =====
+  function showTab(id) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+    });
+    const pane = document.getElementById(id);
+    const btn = document.querySelector(`[onclick="showTab('${id}')"]`);
+    if (pane) pane.classList.add('active');
+    if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
+  }
+
+  // ===== AKTIVE NAV SECTION =====
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => link.style.color = '');
+        const link = document.querySelector(`.nav a[href="#${entry.target.id}"]`);
+        if (link) link.style.color = '#FF6B7A';
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+
+  // ===== CHECKBOX VISUELLES FEEDBACK =====
+  document.querySelectorAll('.status-check input').forEach(cb => {
+    cb.addEventListener('change', function() {
+      const row = this.closest('tr');
+      if (row) row.style.opacity = this.checked ? '0.55' : '1';
+    });
+  });
+</script>
+</body>
+</html>
