@@ -596,10 +596,18 @@ body {
 .station-table .col-no  { width: 34px; text-align: center; }
 .vehicle-table .col-active,
 .station-table .col-active { width: 56px; text-align: center; }
-.vehicle-table .col-num { width: 92px; text-align: center; }
-/* Fahrzeugtabelle: Fahrzeug kompakt, Funkrufname nimmt den Rest */
-.vehicle-table .col-vehicle  { width: 110px; }
-.vehicle-table .col-callsign { width: 100%; }
+.vehicle-table .col-num { text-align: center; }
+
+/* Fahrzeugtabelle: feste, inhaltsorientierte Spaltenbreiten über <colgroup>.
+   table-layout:fixed sorgt dafür, dass die colgroup-Breiten exakt greifen.
+   Funkrufname bekommt den meisten Platz; Aktiv/Nr. schmal; Min./Max. gleich. */
+.vehicle-table { table-layout: fixed; }
+.vehicle-table .vcol-active   { width: 8%; }
+.vehicle-table .vcol-no       { width: 6%; }
+.vehicle-table .vcol-vehicle  { width: 14%; }
+.vehicle-table .vcol-callsign { width: 42%; }
+.vehicle-table .vcol-min,
+.vehicle-table .vcol-max      { width: 15%; }
 
 .vehicle-no,
 .station-no {
@@ -1273,6 +1281,14 @@ body {
       <div class="panel">
         <div class="vehicle-table-wrap">
           <table class="vehicle-table">
+            <colgroup>
+              <col class="vcol-active">
+              <col class="vcol-no">
+              <col class="vcol-vehicle">
+              <col class="vcol-callsign">
+              <col class="vcol-min">
+              <col class="vcol-max">
+            </colgroup>
             <thead>
               <tr>
                 <th class="col-active">Aktiv</th>
@@ -1336,21 +1352,7 @@ body {
       </div>
     </section>
 
-    <!-- ----- 5) AUFTRAGSPLANUNG ---------------------------------------- -->
-    <section class="section" id="sec-auftraege">
-      <div class="section-head">
-        <h2>Auftragsplanung</h2>
-        <p>Zuordnung der Funkaufträge zu Stationen und Fahrzeugen.</p>
-      </div>
-      <div class="placeholder">
-        <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
-        <h3>Aufträge zuordnen</h3>
-        <p>Hier werden später die einzelnen Funkaufträge definiert und den Stationen bzw. Fahrzeugen zugewiesen.</p>
-        <span class="ph-tag">In Vorbereitung</span>
-      </div>
-    </section>
-
-    <!-- ----- 6) ROUTENPLANUNG ------------------------------------------ -->
+    <!-- ----- 5) ROUTENPLANUNG ------------------------------------------ -->
     <section class="section" id="sec-routen">
       <div class="section-head">
         <h2>Routenplanung</h2>
@@ -1462,7 +1464,6 @@ body {
     { id: "grunddaten", label: "Grunddaten",      icon: "doc",     nav: true,  card: true,  desc: "Übungstitel, Datum, Uhrzeit, Übungsleitung sowie Funkkanäle (TMO/DMO)." },
     { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Kurzbezeichnungen als Grundlage für die spätere Routenplanung." },
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Inhalte der Stationen, Aufgaben, Hinweise und Lagebilder festlegen." },
-    { id: "auftraege",  label: "Auftragsplanung", icon: "check",   nav: true,  card: true,  desc: "Funkaufträge den Stationen zuordnen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Reihenfolge und Wege der Fahrzeuge durch die Stationen planen." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
