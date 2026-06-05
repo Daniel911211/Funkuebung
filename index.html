@@ -7,9 +7,16 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.9.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.9.1)
   ============================================================================
-  Stand 1.9.0: Versions-Baseline nachgezogen. Seit 1.8.1 sind sichtbare
+  Stand 1.9.1 (Layout/Text): Spaltenbreiten nachjustiert – Fahrzeugtabelle
+  Aktiv/Nr./Fahrzeug/Funkrufname/Min./Max. = 7/6/18/47/11/11 %, Stationsliste
+  Nr./Bezeichnung/Aufgabe-kurz/Lagebilder/Aktionen = 6/28/42/10/14 %. Die
+  Min./Max.-Eingabefelder werden zusätzlich per max-width:64px begrenzt und
+  zentriert, damit sie trotz Spaltenbreite kompakt bleiben. Text korrigiert:
+  Fahrzeug-Beschreibung „Kurzbezeichnungen" → „Personenrahmen" (Bereich und
+  Dashboard-Karte). Reine Layout-/Textänderung, keine Logik.
+  Davor (1.9.0): Versions-Baseline nachgezogen. Seit 1.8.1 sind sichtbare
   Bedienerweiterungen hinzugekommen – Lagebild-Fahrzeug-Zuordnung je Station,
   erweiterte Stations-Statuslogik (Aufgabe + Lagebild-URL je Bild + ab 2
   Lagebildern je Bild mindestens ein Fahrzeug) sowie Entfall des Aktiv-
@@ -608,14 +615,16 @@ body {
 
 /* Fahrzeugtabelle: feste, inhaltsorientierte Spaltenbreiten über <colgroup>.
    table-layout:fixed sorgt dafür, dass die colgroup-Breiten exakt greifen.
-   Funkrufname bekommt den meisten Platz; Aktiv/Nr. schmal; Min./Max. gleich. */
+   Fahrzeug/Funkrufname bekommen den meisten Platz; Aktiv/Nr. sowie Min./Max.
+   bleiben schmal. Die Number-Inputs werden zusätzlich per max-width begrenzt
+   (siehe unten), damit Min./Max. trotz Spaltenbreite optisch kompakt bleiben. */
 .vehicle-table { table-layout: fixed; }
-.vehicle-table .vcol-active   { width: 8%; }
+.vehicle-table .vcol-active   { width: 7%; }
 .vehicle-table .vcol-no       { width: 6%; }
-.vehicle-table .vcol-vehicle  { width: 16%; }
-.vehicle-table .vcol-callsign { width: 36%; }
+.vehicle-table .vcol-vehicle  { width: 18%; }
+.vehicle-table .vcol-callsign { width: 47%; }
 .vehicle-table .vcol-min,
-.vehicle-table .vcol-max      { width: 17%; }
+.vehicle-table .vcol-max      { width: 11%; }
 
 .vehicle-no,
 .station-no {
@@ -641,7 +650,17 @@ body {
 }
 .vehicle-table input:focus,
 .station-table input:focus { outline: none; border-color: var(--red); }
-.vehicle-table .col-num input { text-align: center; padding: 8px 6px; }
+/* Min./Max.-Personen: schmales, zentriertes Eingabefeld – die Spalte darf
+   etwas Luft haben, das Feld selbst soll aber nicht über die ganze Spalte
+   laufen. max-width begrenzt es, margin:auto zentriert es in der Zelle. */
+.vehicle-table .col-num input {
+  display: block;
+  width: 100%;
+  max-width: 64px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 8px 6px;
+}
 /* native Number-Spinner dezent lassen */
 .vehicle-table input[type="number"] { -moz-appearance: textfield; }
 
@@ -659,13 +678,13 @@ body {
 /* --- Stationsliste: Verwaltung -------------------------------------------*/
 .station-toolbar { margin-bottom: 14px; }
 /* Feste, gleichmäßige Spaltenbreiten über <colgroup> (table-layout:fixed):
-   Nr. 7 | Bezeichnung 35 | Aufgabe kurz 36 | Lagebilder 10 | Aktionen 12 (%). */
+   Nr. 6 | Bezeichnung 28 | Aufgabe kurz 42 | Lagebilder 10 | Aktionen 14 (%). */
 .station-list-table { table-layout: fixed; }
-.station-list-table .scol-no      { width: 7%; }
-.station-list-table .scol-title   { width: 35%; }
-.station-list-table .scol-task    { width: 36%; }
+.station-list-table .scol-no      { width: 6%; }
+.station-list-table .scol-title   { width: 28%; }
+.station-list-table .scol-task    { width: 42%; }
 .station-list-table .scol-imgs    { width: 10%; }
-.station-list-table .scol-actions { width: 12%; }
+.station-list-table .scol-actions { width: 14%; }
 .station-list-table .col-imgs { text-align: center; font-variant-numeric: tabular-nums; color: var(--text-muted); }
 .station-list-table .col-actions { text-align: center; white-space: nowrap; }
 /* lange Bezeichnung/Aufgabe sauber kürzen statt das Layout zu sprengen */
@@ -1351,7 +1370,7 @@ body {
     <section class="section" id="sec-fahrzeuge">
       <div class="section-head">
         <h2>Fahrzeuge</h2>
-        <p>Teilnehmende Fahrzeuge, Funkrufnamen und Kurzbezeichnungen als Grundlage für die spätere Routenplanung.</p>
+        <p>Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung.</p>
       </div>
 
       <!-- Feste sechs Standardfahrzeuge – editierbar und aktiv/inaktiv schaltbar.
@@ -1554,7 +1573,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.9.0"
+    version: "1.9.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -1562,7 +1581,7 @@ body {
   var SECTIONS = [
     { id: "uebersicht", label: "Übersicht",       icon: "grid",    nav: true,  card: false },
     { id: "grunddaten", label: "Grunddaten",      icon: "doc",     nav: true,  card: true,  desc: "Übungstitel, Datum, Uhrzeit, Übungsleitung sowie Funkkanäle (TMO/DMO)." },
-    { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Kurzbezeichnungen als Grundlage für die spätere Routenplanung." },
+    { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung." },
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Inhalte der Stationen, Aufgaben, Hinweise und Lagebilder festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Reihenfolge und Wege der Fahrzeuge durch die Stationen planen." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
