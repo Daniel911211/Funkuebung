@@ -742,6 +742,50 @@ body {
 }
 .img-remove { flex: none; margin-top: 1px; }
 
+/* Lagebild → Fahrzeug-Sichtbarkeit (nur bei 2+ Lagebildern einer Station).
+   Kompakte Toggle-Chips im bestehenden Stil; aktiv = roter Akzent. */
+.img-vehicles { margin-top: 2px; }
+.img-vehicles-label {
+  display: block;
+  font-size: .7rem; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text-faint); margin-bottom: 7px;
+}
+.vehicle-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.veh-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .8rem; line-height: 1;
+  padding: 6px 11px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  background: var(--bg-2);
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: background .12s, border-color .12s, color .12s;
+}
+/* Checkbox visuell entfernen – die Chip-Fläche selbst ist der Schalter */
+.veh-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+.veh-chip:hover { border-color: var(--red); color: var(--text); }
+.veh-chip.selected {
+  background: var(--red-soft);
+  border-color: var(--red);
+  color: #fff;
+}
+.veh-chip input:focus-visible + span { text-decoration: underline; }
+/* inaktive Fahrzeuge: dezent ausgegraut, aber weiterhin wählbar */
+.veh-chip.inactive { opacity: .45; }
+.veh-chip.inactive span::after {
+  content: " · inaktiv";
+  font-size: .64rem; letter-spacing: .3px; color: var(--text-faint);
+}
+.veh-chip.inactive.selected span::after { color: rgba(255,255,255,.7); }
+
+/* Hinweis bei genau einem Lagebild */
+.img-vehicles-hint {
+  font-size: .76rem; color: var(--text-faint);
+  margin-top: 10px;
+}
+
 
 /* Aktiv-Toggle (Schalter) */
 .toggle { display: inline-flex; cursor: pointer; vertical-align: middle; }
@@ -1404,6 +1448,19 @@ body {
      → später ggf. eigene Datei (z. B. handbuch.html) bzw. Inhalte aus data/.
      Kapitelgerüst je Planungsbereich; Inhalte werden Schritt für Schritt
      ergänzt, passend zur jeweils eingebauten Funktion.
+
+     → später: Auslagerung in eine eigene Datei handbuch.html.
+       Der aktuelle Overlay-Aufbau bleibt vorerst unverändert bestehen.
+       Der Handbuch-Button kann später statt des Overlays die Datei
+       handbuch.html öffnen. Optional lassen sich einzelne Kapitel per
+       URL-Parameter direkt ansteuern, z. B. handbuch.html?kapitel=fahrzeuge.
+       Geplante Auslagerung im Detail:
+         - eigene Datei: handbuch.html
+         - gemeinsames Design über assets/style.css
+         - gemeinsame App-Daten/Version über APP_INFO bzw. zentrale config
+         - Kapitelstruktur weiterhin aus SECTIONS übernehmen
+         - optionaler Kapitel-Aufruf per URL-Parameter
+         - Handbuch-Button öffnet dann handbuch.html statt des Overlays
      ====================================================================== -->
 <div class="manual-overlay" id="manualOverlay" hidden>
   <div class="manual-backdrop" data-manual-close></div>
@@ -1651,7 +1708,14 @@ body {
               : ("Station " + (idx + 1));
     var images = Array.isArray(s.images) ? s.images.map(function (im) {
       im = im || {};
-      return { id: im.id || newImageId(), title: im.title != null ? im.title : "", url: im.url != null ? im.url : "" };
+      return {
+        id: im.id || newImageId(),
+        title: im.title != null ? im.title : "",
+        url: im.url != null ? im.url : "",
+        /* Migration: altes Lagebild ohne vehicleIds → leeres Array.
+           Welche Fahrzeuge ein Lagebild sehen (nur relevant bei 2+ Bildern). */
+        vehicleIds: Array.isArray(im.vehicleIds) ? im.vehicleIds.slice() : []
+      };
     }) : [];
     return {
       id: s.id || newStationId(),
@@ -2114,6 +2178,11 @@ body {
       tr.className = "station-row" + (s.active ? "" : " inactive") + (s.id === selectedStationId ? " selected" : "");
       tr.dataset.id = s.id;
       var taskCell = nonEmpty(s.task) ? escapeAttr(stationTruncate(s.task, 50)) : '<span class="cell-muted">—</span>';
+      /* Lagebilder-Kurzform: 0 / 1 schlicht; ab 2 zusätzlich Anzahl
+         unterschiedlicher zugeordneter Fahrzeuge ("N · M Fzg."). */
+      var imgCell = (s.images.length >= 2)
+        ? (s.images.length + ' · ' + distinctVehicleCount(s) + ' Fzg.')
+        : String(s.images.length);
       tr.innerHTML =
         '<td class="col-active">' +
           '<label class="toggle" title="Station aktiv/inaktiv">' +
@@ -2124,7 +2193,7 @@ body {
         '<td class="col-no"><span class="station-no">' + (idx + 1) + '</span></td>' +
         '<td class="station-cell-title">' + escapeAttr(s.title) + '</td>' +
         '<td class="station-cell-task">' + taskCell + '</td>' +
-        '<td class="col-imgs">' + s.images.length + '</td>' +
+        '<td class="col-imgs">' + imgCell + '</td>' +
         '<td class="col-actions">' + stationActionsHtml(idx, list.length) + '</td>';
 
       /* Zeile auswählen (Klicks auf Toggle/Aktionen sind ausgenommen) */
@@ -2269,14 +2338,40 @@ body {
       return;
     }
 
+    /* Fahrzeug-Zuordnung ist nur bei 2+ Lagebildern relevant. Bei genau
+       einem Lagebild gilt es automatisch für alle Fahrzeuge → keine Auswahl. */
+    var showVehicles = s.images.length >= 2;
+    var vehicles = showVehicles ? loadVehicles() : [];
+
     s.images.forEach(function (im, k) {
+      if (!Array.isArray(im.vehicleIds)) im.vehicleIds = [];
       var row = document.createElement("div");
       row.className = "image-row";
+
+      var vehiclesHtml = "";
+      if (showVehicles) {
+        var chips = vehicles.map(function (v) {
+          var on = im.vehicleIds.indexOf(v.id) >= 0;
+          return '<label class="veh-chip' + (on ? " selected" : "") + (v.active ? "" : " inactive") + '"' +
+                   (v.active ? "" : ' title="Fahrzeug derzeit inaktiv"') + '>' +
+                   '<input type="checkbox" class="veh-chip-input" data-veh="' + escapeAttr(v.id) + '"' +
+                     (on ? " checked" : "") + ' aria-label="Sichtbar für ' + escapeAttr(v.type) + '">' +
+                   '<span>' + escapeAttr(v.type) + '</span>' +
+                 '</label>';
+        }).join("");
+        vehiclesHtml =
+          '<div class="img-vehicles">' +
+            '<span class="img-vehicles-label">Sichtbar für Fahrzeuge</span>' +
+            '<div class="vehicle-chips">' + chips + '</div>' +
+          '</div>';
+      }
+
       row.innerHTML =
         '<img class="image-preview empty" alt="">' +
         '<div class="image-fields">' +
           '<input type="text" class="img-title" value="' + escapeAttr(im.title) + '" placeholder="Titel (z. B. Lagebild ' + (k + 1) + ')">' +
           '<input type="text" class="img-url" value="' + escapeAttr(im.url) + '" placeholder="Bild-URL (https://…)">' +
+          vehiclesHtml +
         '</div>' +
         '<button type="button" class="icon-btn danger img-remove" title="Lagebild entfernen" aria-label="Lagebild entfernen">' + stationIcon("trash") + '</button>';
 
@@ -2295,9 +2390,28 @@ body {
         removeStationImage(stationId, im.id);
       });
 
+      /* Fahrzeug-Chips: Auswahl sofort speichern; Listen-Kurzform aktualisieren.
+         Kein Re-Render der Bildliste → Eingaben/Scroll bleiben erhalten. */
+      row.querySelectorAll(".veh-chip-input").forEach(function (cb) {
+        cb.addEventListener("change", function () {
+          toggleImageVehicle(stationId, im.id, this.dataset.veh, this.checked);
+          var chip = this.closest(".veh-chip");
+          if (chip) chip.classList.toggle("selected", this.checked);
+          renderStationList();
+        });
+      });
+
       host.appendChild(row);
       updatePreview(preview, im.url);
     });
+
+    /* Hinweis bei genau einem Lagebild (keine Zuordnung erforderlich). */
+    if (s.images.length === 1) {
+      var hint = document.createElement("p");
+      hint.className = "img-vehicles-hint";
+      hint.textContent = "Bei einem Lagebild ist keine Fahrzeug-Zuordnung erforderlich.";
+      host.appendChild(hint);
+    }
   }
 
   function updatePreview(img, url) {
@@ -2321,11 +2435,48 @@ body {
     im[prop] = value;
     saveStations(list);
   }
+
+  /* Fahrzeug-Sichtbarkeit eines Lagebilds umschalten (sofort speichern). */
+  function toggleImageVehicle(stationId, imageId, vehicleId, on) {
+    var list = loadStations();
+    var s = list[indexOfId(list, stationId)];
+    if (!s) return;
+    var im = s.images.filter(function (x) { return x.id === imageId; })[0];
+    if (!im) return;
+    if (!Array.isArray(im.vehicleIds)) im.vehicleIds = [];
+    var pos = im.vehicleIds.indexOf(vehicleId);
+    if (on && pos < 0) im.vehicleIds.push(vehicleId);
+    else if (!on && pos >= 0) im.vehicleIds.splice(pos, 1);
+    saveStations(list);
+  }
+
+  /* Anzahl unterschiedlicher Fahrzeuge, die mindestens einem Lagebild der
+     Station zugeordnet sind (für die Kurzform in der Stationsliste). */
+  function distinctVehicleCount(s) {
+    var seen = {};
+    (s.images || []).forEach(function (im) {
+      (im.vehicleIds || []).forEach(function (vid) { seen[vid] = true; });
+    });
+    return Object.keys(seen).length;
+  }
+
+  /* Vorbereitung für die spätere Anzeige (noch NICHT aktiv verwendet):
+     Liefert die für ein Fahrzeug sichtbaren Lagebilder einer Station.
+     - keine Lagebilder  → []
+     - genau 1 Lagebild  → dieses eine Lagebild (gilt für alle Fahrzeuge)
+     - 2+ Lagebilder     → nur Lagebilder, deren vehicleIds die vehicleId enthält */
+  function getImagesForVehicle(station, vehicleId) {
+    if (!station || !Array.isArray(station.images) || station.images.length === 0) return [];
+    if (station.images.length === 1) return station.images.slice();
+    return station.images.filter(function (im) {
+      return Array.isArray(im.vehicleIds) && im.vehicleIds.indexOf(vehicleId) >= 0;
+    });
+  }
   function addStationImage(stationId) {
     var list = loadStations();
     var s = list[indexOfId(list, stationId)];
     if (!s) return;
-    s.images.push({ id: newImageId(), title: "Lagebild " + (s.images.length + 1), url: "" });
+    s.images.push({ id: newImageId(), title: "Lagebild " + (s.images.length + 1), url: "", vehicleIds: [] });
     saveStations(list);
     renderStationImages(stationId);
     renderStationList();
