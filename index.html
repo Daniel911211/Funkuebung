@@ -7,9 +7,14 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.8.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.8.2)
   ============================================================================
-  Stand 1.8.1 (Bereinigung): Kommentare/Beschreibungen aktualisiert (Script-
+  Stand 1.8.2 (Layout): Spaltenbreiten der Stationsliste (Nr./Bezeichnung/
+  Aufgabe-kurz/Lagebilder/Aktionen = 7/35/36/10/12 %, table-layout:fixed via
+  colgroup) und der Fahrzeugtabelle (Aktiv/Nr./Fahrzeug/Funkrufname/Min./Max.
+  = 8/6/16/36/17/17 %) gleichmäßiger verteilt. Reine CSS-/Layout-Anpassung,
+  keine Funktions-, Status- oder Datenänderung.
+  Davor (1.8.1, Bereinigung): Kommentare/Beschreibungen aktualisiert (Script-
   Übersicht, SECTIONS-Text Stationsplanung, updateStatus-Hinweis); neutrale
   Klasse "section-summary" für Fahrzeug- und Stationszusammenfassung (Optik
   unverändert). Keine Funktionsänderung.
@@ -603,10 +608,10 @@ body {
 .vehicle-table { table-layout: fixed; }
 .vehicle-table .vcol-active   { width: 8%; }
 .vehicle-table .vcol-no       { width: 6%; }
-.vehicle-table .vcol-vehicle  { width: 14%; }
-.vehicle-table .vcol-callsign { width: 42%; }
+.vehicle-table .vcol-vehicle  { width: 16%; }
+.vehicle-table .vcol-callsign { width: 36%; }
 .vehicle-table .vcol-min,
-.vehicle-table .vcol-max      { width: 15%; }
+.vehicle-table .vcol-max      { width: 17%; }
 
 .vehicle-no,
 .station-no {
@@ -649,12 +654,24 @@ body {
 
 /* --- Stationsliste: Verwaltung -------------------------------------------*/
 .station-toolbar { margin-bottom: 14px; }
-.station-list-table .col-imgs { width: 96px; text-align: center; }
-.station-list-table .col-actions { width: 124px; text-align: center; white-space: nowrap; }
+/* Feste, gleichmäßige Spaltenbreiten über <colgroup> (table-layout:fixed):
+   Nr. 7 | Bezeichnung 35 | Aufgabe kurz 36 | Lagebilder 10 | Aktionen 12 (%). */
+.station-list-table { table-layout: fixed; }
+.station-list-table .scol-no      { width: 7%; }
+.station-list-table .scol-title   { width: 35%; }
+.station-list-table .scol-task    { width: 36%; }
+.station-list-table .scol-imgs    { width: 10%; }
+.station-list-table .scol-actions { width: 12%; }
+.station-list-table .col-imgs { text-align: center; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.station-list-table .col-actions { text-align: center; white-space: nowrap; }
+/* lange Bezeichnung/Aufgabe sauber kürzen statt das Layout zu sprengen */
+.station-list-table .station-cell-title,
+.station-list-table .station-cell-task {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .station-list-table .station-cell-title { font-size: .92rem; color: var(--text); }
 .station-list-table .station-cell-task { font-size: .88rem; color: var(--text-muted); }
 .station-list-table .cell-muted { color: var(--text-faint); }
-.station-list-table .col-imgs { font-variant-numeric: tabular-nums; color: var(--text-muted); }
 
 .station-row { cursor: pointer; transition: background .12s; }
 .station-row:hover td { background: rgba(255,255,255,.02); }
@@ -1387,6 +1404,13 @@ body {
         </div>
         <div class="station-table-wrap">
           <table class="station-table station-list-table">
+            <colgroup>
+              <col class="scol-no">
+              <col class="scol-title">
+              <col class="scol-task">
+              <col class="scol-imgs">
+              <col class="scol-actions">
+            </colgroup>
             <thead>
               <tr>
                 <th class="col-no">Nr.</th>
@@ -1526,7 +1550,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.8.1"
+    version: "1.8.2"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
