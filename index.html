@@ -786,6 +786,22 @@ body {
   margin-top: 10px;
 }
 
+/* Dezente Pflicht-Markierung im Lagebildbereich (kein Blockieren).
+   Bewusst gedeckter Amber-Ton wie "In Bearbeitung", nicht grelles Rot. */
+.img-field-warn {
+  display: none;            /* per JS bei fehlender Pflichtangabe eingeblendet */
+  font-size: .72rem;
+  color: var(--status-prog);
+  margin-top: 2px;
+}
+.image-fields .img-url.warn {
+  border-color: var(--btn-warn);
+  background: rgba(210,154,43,.10);
+}
+.image-fields .img-url.warn:focus { border-color: var(--btn-warn-h); }
+/* Chip-Bereich, solange noch kein Fahrzeug gewählt ist (nur bei 2+ Lagebildern) */
+.img-vehicles.needs-veh .img-vehicles-label { color: var(--btn-warn); }
+
 
 /* Aktiv-Toggle (Schalter) */
 .toggle { display: inline-flex; cursor: pointer; vertical-align: middle; }
@@ -1747,17 +1763,44 @@ body {
     catch (e) { return false; }
   }
 
+  /* Eine AKTIVE Station gilt als vollständig, wenn:
+     1. die Aufgabe ausgefüllt ist,
+     2. alle vorhandenen Lagebilder eine ausgefüllte URL haben,
+     3. bei 2+ Lagebildern jedes Lagebild mindestens einem Fahrzeug
+        zugeordnet ist.
+     Sonderfälle: 0 Lagebilder → nur Aufgabe; 1 Lagebild → nur URL-Pflicht,
+     keine Fahrzeugpflicht (vehicleIds darf leer bleiben). */
+  function isStationComplete(station) {
+    if (!nonEmpty(station.task)) return false;
+
+    var images = Array.isArray(station.images) ? station.images : [];
+
+    var allImageUrlsFilled = images.every(function (im) {
+      return nonEmpty(im.url);
+    });
+    if (!allImageUrlsFilled) return false;
+
+    if (images.length >= 2) {
+      var allImagesAssigned = images.every(function (im) {
+        return Array.isArray(im.vehicleIds) && im.vehicleIds.length > 0;
+      });
+      if (!allImagesAssigned) return false;
+    }
+
+    return true;
+  }
+
   /* Status der Stationsplanung:
      - "open" : keine Station oder keine aktive Station
-     - "done" : alle aktiven Stationen haben eine Aufgabe
-     - "prog" : aktive Stationen vorhanden, aber nicht alle mit Aufgabe */
+     - "done" : alle aktiven Stationen sind vollständig (isStationComplete)
+     - "prog" : aktive Stationen vorhanden, aber nicht alle vollständig */
   function computeStationStatus() {
     var list;
     try { list = loadStations(); } catch (e) { return "prog"; }
     if (!Array.isArray(list) || list.length === 0) return "open";
     var active = list.filter(function (s) { return s.active; });
     if (active.length === 0) return "open";
-    return active.every(function (s) { return nonEmpty(s.task); }) ? "done" : "prog";
+    return active.every(isStationComplete) ? "done" : "prog";
   }
 
   /* --- Navigation -------------------------------------------------------*/
@@ -2363,6 +2406,7 @@ body {
           '<div class="img-vehicles">' +
             '<span class="img-vehicles-label">Sichtbar für Fahrzeuge</span>' +
             '<div class="vehicle-chips">' + chips + '</div>' +
+            '<p class="img-field-warn img-veh-warn">Bei mehreren Lagebildern mindestens ein Fahrzeug auswählen.</p>' +
           '</div>';
       }
 
@@ -2371,6 +2415,7 @@ body {
         '<div class="image-fields">' +
           '<input type="text" class="img-title" value="' + escapeAttr(im.title) + '" placeholder="Titel (z. B. Lagebild ' + (k + 1) + ')">' +
           '<input type="text" class="img-url" value="' + escapeAttr(im.url) + '" placeholder="Bild-URL (https://…)">' +
+          '<p class="img-field-warn img-url-warn">Bild-URL erforderlich.</p>' +
           vehiclesHtml +
         '</div>' +
         '<button type="button" class="icon-btn danger img-remove" title="Lagebild entfernen" aria-label="Lagebild entfernen">' + stationIcon("trash") + '</button>';
@@ -2379,27 +2424,57 @@ body {
       preview.addEventListener("error", function () { preview.classList.add("empty"); preview.removeAttribute("src"); });
       preview.addEventListener("load", function () { preview.classList.remove("empty"); });
 
+      var urlInput = row.querySelector(".img-url");
+      var urlWarn  = row.querySelector(".img-url-warn");
+      var vehWrap  = row.querySelector(".img-vehicles");
+      var vehWarn  = row.querySelector(".img-veh-warn");
+
+      /* Dezente Markierung der Pflichtangaben dieses Lagebilds (kein Blockieren).
+         - leere URL → URL-Feld markieren + Hinweis
+         - bei 2+ Lagebildern ohne Fahrzeugauswahl → Chip-Bereich markieren + Hinweis */
+      function refreshImageMarks() {
+        var urlEmpty = !nonEmpty(urlInput.value);
+        urlInput.classList.toggle("warn", urlEmpty);
+        if (urlWarn) urlWarn.style.display = urlEmpty ? "block" : "none";
+        if (vehWrap) {
+          var anyVeh = row.querySelectorAll(".veh-chip-input:checked").length > 0;
+          vehWrap.classList.toggle("needs-veh", !anyVeh);
+          if (vehWarn) vehWarn.style.display = anyVeh ? "none" : "block";
+        }
+      }
+
       row.querySelector(".img-title").addEventListener("input", function () {
         setImageField(stationId, im.id, "title", this.value);
       });
-      row.querySelector(".img-url").addEventListener("input", function () {
+      urlInput.addEventListener("input", function () {
         setImageField(stationId, im.id, "url", this.value);
         updatePreview(preview, this.value);
+        refreshImageMarks();
+        /* URL beeinflusst die Vollständigkeit → Status/Zusammenfassung/Liste neu */
+        updateStationSummary();
+        renderStationList();
+        updateStatus();
       });
       row.querySelector(".img-remove").addEventListener("click", function () {
         removeStationImage(stationId, im.id);
       });
 
-      /* Fahrzeug-Chips: Auswahl sofort speichern; Listen-Kurzform aktualisieren.
-         Kein Re-Render der Bildliste → Eingaben/Scroll bleiben erhalten. */
+      /* Fahrzeug-Chips: Auswahl sofort speichern; Markierung, Liste, Status und
+         Zusammenfassung aktualisieren. Kein Re-Render der Bildliste → Fokus/Scroll
+         bleiben erhalten. */
       row.querySelectorAll(".veh-chip-input").forEach(function (cb) {
         cb.addEventListener("change", function () {
           toggleImageVehicle(stationId, im.id, this.dataset.veh, this.checked);
           var chip = this.closest(".veh-chip");
           if (chip) chip.classList.toggle("selected", this.checked);
+          refreshImageMarks();
+          updateStationSummary();
           renderStationList();
+          updateStatus();
         });
       });
+
+      refreshImageMarks();
 
       host.appendChild(row);
       updatePreview(preview, im.url);
@@ -2481,6 +2556,7 @@ body {
     renderStationImages(stationId);
     renderStationList();
     updateStationSummary();
+    updateStatus();
   }
   function removeStationImage(stationId, imageId) {
     var list = loadStations();
@@ -2491,20 +2567,23 @@ body {
     renderStationImages(stationId);
     renderStationList();
     updateStationSummary();
+    updateStatus();
   }
 
-  /* Zusammenfassung: aktive Stationen · Lagebilder gesamt · Aufgaben vollständig */
+  /* Zusammenfassung: aktive Stationen · Lagebilder gesamt · Stationen
+     vollständig (nach isStationComplete: Aufgabe + Lagebild-URLs + bei 2+
+     Lagebildern je Lagebild mindestens ein Fahrzeug). */
   function updateStationSummary() {
     var el = document.getElementById("stationSummary");
     if (!el) return;
     var list = loadStations();
     var active = list.filter(function (s) { return s.active; });
     var images = list.reduce(function (a, s) { return a + s.images.length; }, 0);
-    var withTask = active.filter(function (s) { return nonEmpty(s.task); }).length;
+    var complete = active.filter(isStationComplete).length;
     el.innerHTML =
       'Aktive Stationen: <strong>' + active.length + '</strong>' +
       ' · Lagebilder: <strong>' + images + '</strong>' +
-      ' · Aufgaben vollständig: <strong>' + withTask + '</strong> von <strong>' + active.length + '</strong>';
+      ' · Stationen vollständig: <strong>' + complete + '</strong> von <strong>' + active.length + '</strong>';
   }
 
   /* ======================================================================
