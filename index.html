@@ -1,0 +1,2493 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funkübung – Planungstool</title>
+
+<!--
+  ============================================================================
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.8.1)
+  ============================================================================
+  Stand 1.8.1 (Bereinigung): Kommentare/Beschreibungen aktualisiert (Script-
+  Übersicht, SECTIONS-Text Stationsplanung, updateStatus-Hinweis); neutrale
+  Klasse "section-summary" für Fahrzeug- und Stationszusammenfassung (Optik
+  unverändert). Keine Funktionsänderung.
+  Davor (1.8): Stationsplanung als flexible Verwaltung – Liste (Aktiv, Nr. =
+  Position, Bezeichnung, Aufgabe-kurz, Lagebild-Anzahl, Aktionen oben/unten/
+  löschen), "Station hinzufügen", Detailbereich (Bezeichnung, Aufgabe als
+  großes Textfeld, Kurzbeschreibung) und Lagebilder je Station (Titel, URL,
+  Vorschau). Inhalt only – Standort/Adresse/Koordinaten folgen in der Routen-
+  planung. Speicherung funkuebung_stationen_v1 (altes Format wird migriert),
+  Reihenfolge = Array-Reihenfolge. Status: Offen/In Bearbeitung/Vollständig
+  nach Aufgabe je aktiver Station. Fahrzeug-Funkrufnamen in Kurzschreibweise
+  (z. B. "Florian Neuhof 1/11/1").
+  Davor (1.7.3): Funkrufnamen-Format, feste Felder aus Vorgaben, Spalten­breiten.
+  Davor (1.7.2): Fahrzeug-Kurzname entfernt; Fahrzeug/Funkrufname feste Texte.
+  Davor (1.7): Bereich "Stationsplanung" als editierbare Standard-Tabelle (acht
+  feste Stationen, Nummern 1–8 fest). Spalten Aktiv | Nr. | Bezeichnung |
+  Standort/Adresse | Kurzbeschreibung; aktiv/inaktiv per Toggle, Speicherung
+  unter funkuebung_stationen_v1, Statuskarte (Offen/Vollständig) +
+  Zusammenfassung "Aktive Stationen: X von 8".
+  Davor (1.6.1): Fahrzeuge-Tabelle + Validierung Min./Max. Personen.
+  Davor (1.5): Pflichtfeld-Sterne + Hinweis, nummerierte Funkkanäle, APP_INFO;
+  dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
+
+  Ziel dieser Datei:
+    - Grundaufbau (Navigation, Dashboard, Grunddaten, Platzhalter).
+    - Eine einzige, sofort lauffähige HTML-Datei (kein Server, keine APIs).
+    - Intern so strukturiert, dass die spätere Aufteilung in mehrere Dateien
+      (GitHub-Pages-Struktur) ohne Umbau möglich ist.
+
+  Geplante spätere Struktur (Aufteilungs-Marker im Code mit "→ später:"):
+    /
+    ├─ index.html              → dieser Kopf + Dashboard + Grunddaten
+    ├─ station.html            → Abschnitt "Stationsplanung"
+    ├─ assets/
+    │  ├─ style.css            → der komplette <style>-Block
+    │  └─ app.js               → der komplette <script>-Block
+    ├─ data/
+    │  └─ current.json         → später: persistente Planungsdaten
+    ├─ qr/
+    │  └─ qr-codes.html        → Abschnitt "QR-Code-Plan"
+    └─ print/
+       └─ druckansicht.html    → Abschnitt "Druck / Export"
+
+  In diesem Stand NICHT enthalten (bewusst):
+    - QR-Code-Erzeugung, Export, automatische Routenplanung, Server-Upload.
+  ============================================================================
+-->
+
+<style>
+/* ===========================================================================
+   → später: assets/style.css
+   =========================================================================== */
+
+/* --- Design-Tokens / Farbschema -----------------------------------------
+   Anthrazit als Grundfarbe, Feuerwehr-Rot als Hauptakzent.
+   Sachlich, robust, kein Alarm- oder Cyber-Look.                          */
+:root {
+  --bg:            #16181c;   /* tiefes Anthrazit (Seitenhintergrund)      */
+  --bg-2:          #1b1e23;   /* Hintergrund Inhaltsbereich                */
+  --surface:       #23272e;   /* Kartenflächen                            */
+  --surface-2:     #2a2f37;   /* erhöhte Flächen / Hover                   */
+  --line:          #353b44;   /* Rahmen / Trennlinien                     */
+  --line-soft:     #2c313a;   /* dezente Trennlinien                      */
+
+  --text:          #e8eaed;   /* Haupttext                                */
+  --text-muted:    #99a0aa;   /* Sekundärtext                             */
+  --text-faint:    #6b727c;   /* Hinweise / Labels                        */
+
+  --red:           #861619;   /* Feuerwehr-Rot (dunkler Hauptakzent)      */
+  --red-strong:    #a11f27;   /* Rot Hover / aktiv (etwas heller)         */
+  --red-soft:      rgba(134,22,25,.18);
+
+  /* Statusfarben (sachlich gehalten) */
+  --status-open:   #6b727c;   /* Offen                                    */
+  --status-prog:   #e0a32e;   /* In Bearbeitung                           */
+  --status-done:   #3fae6b;   /* Vollständig                              */
+
+  /* Button-Semantik (gedeckt gehalten, kein Neon) */
+  --btn-neutral:   #2a2f37;   /* Anthrazit – neutrale Aktion              */
+  --btn-neutral-h: #333944;   /* Anthrazit Hover                          */
+  --btn-warn:      #d29a2b;   /* Gelb – Hinweis / Prüfen                  */
+  --btn-warn-h:    #e0a32e;   /* Gelb Hover                               */
+  --btn-warn-fg:   #18190d;   /* dunkle Schrift auf Gelb                  */
+  --btn-ok:        #2f9e60;   /* Grün – fertig / erfolgreich              */
+  --btn-ok-h:      #37b06d;   /* Grün Hover                               */
+
+  --radius:        10px;
+  --radius-sm:     7px;
+  --shadow:        0 2px 10px rgba(0,0,0,.35);
+  --sidebar-w:     250px;
+
+  --font: "Segoe UI", "Roboto", "Helvetica Neue", system-ui, -apple-system, sans-serif;
+  --font-mono: "Consolas", "SF Mono", "Roboto Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* --- Kopfbereich ----------------------------------------------------------*/
+.app-header {
+  background: linear-gradient(180deg, #1f2329 0%, #181b20 100%);
+  border-bottom: 1px solid var(--line);
+  position: relative;
+}
+/* dünner roter Akzentstreifen oben */
+.app-header::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--red);
+}
+/* Drei Zonen: links (brand) | mitte (meta, zentriert) | rechts (actions).
+   Gleich breite Außenspalten (1fr) halten die Mitte geometrisch zentriert. */
+.header-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 26px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.brand-mark {
+  width: 42px; height: 42px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: var(--red);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset;
+}
+.brand-mark svg { width: 24px; height: 24px; }
+.brand-text h1 {
+  font-size: 1.22rem;
+  font-weight: 600;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.brand-text .subtitle {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-faint);
+}
+/* MITTE: zentrierte Zone für die Kurzinfos */
+.header-center {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+/* kompakte Übungs-Kurzinfo als EIN zusammengehöriger Block (mit Trennern) */
+.header-meta {
+  display: inline-flex;
+  align-items: stretch;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  max-width: 100%;
+}
+.meta-item {
+  text-align: center;
+  padding: 6px 20px;
+  min-width: 0;
+}
+.meta-item + .meta-item { border-left: 1px solid var(--line); }
+.meta-item .meta-label {
+  font-size: .62rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-faint);
+}
+
+/* RECHTS: Aktionszone, Button am rechten Rand */
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+/* Handbuch-Button – Farbe via .btn-secondary. Größe bewusst unverändert:
+   höhere Spezifität (.btn.manual-open-btn) als die verkleinerte .btn-Basis,
+   damit die bisherige Größe sicher erhalten bleibt. */
+.btn.manual-open-btn {
+  font-size: .84rem;
+  padding: 8px 14px;
+  gap: 7px;
+  white-space: nowrap;
+}
+.btn.manual-open-btn svg { width: 16px; height: 16px; }
+.meta-item .meta-value {
+  font-size: .9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.meta-item .meta-value.empty { color: var(--text-faint); font-weight: 400; }
+
+/* --- Layout: Sidebar + Inhalt --------------------------------------------*/
+.app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar {
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
+  background: var(--bg-2);
+  border-right: 1px solid var(--line);
+  padding: 18px 14px;
+  overflow-y: auto;
+}
+.nav-section-label {
+  font-size: .64rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-faint);
+  padding: 4px 12px 10px;
+}
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: .92rem;
+  padding: 11px 12px;
+  margin-bottom: 3px;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+  border-left: 3px solid transparent;
+}
+.nav-btn svg { width: 18px; height: 18px; flex: 0 0 auto; opacity: .85; }
+.nav-btn:hover { background: var(--surface); color: var(--text); }
+.nav-btn.active {
+  background: var(--red-soft);
+  color: #fff;
+  border-left-color: var(--red);
+}
+.nav-btn.active svg { opacity: 1; }
+
+/* --- Inhaltsbereich -------------------------------------------------------*/
+.content {
+  flex: 1;
+  background: var(--bg);
+  padding: 28px 32px 48px;
+  overflow-y: auto;
+}
+.section { display: none; max-width: 1080px; }
+.section.active { display: block; animation: fade .18s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.section-head { margin-bottom: 22px; }
+.section-head h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+.section-head p {
+  color: var(--text-muted);
+  font-size: .94rem;
+  margin-top: 4px;
+}
+
+/* --- Dashboard-Statuskarten ----------------------------------------------*/
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+  gap: 16px;
+}
+.status-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 18px 16px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  transition: border-color .14s, transform .14s, background .14s;
+  position: relative;
+  overflow: hidden;
+}
+.status-card:hover {
+  border-color: var(--red);
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+.status-card .card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.status-card .card-icon {
+  width: 38px; height: 38px;
+  border-radius: 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  display: grid; place-items: center;
+}
+.status-card .card-icon svg { width: 20px; height: 20px; color: var(--text-muted); }
+.status-card h3 {
+  font-size: 1.02rem;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.status-card .card-desc {
+  font-size: .82rem;
+  color: var(--text-muted);
+  min-height: 2.4em;
+}
+
+/* Status-Pille */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+}
+.status-pill .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--status-open);
+}
+.status-pill[data-status="open"]  { color: var(--status-open); }
+.status-pill[data-status="open"]  .dot { background: var(--status-open); }
+.status-pill[data-status="prog"]  { color: var(--status-prog); border-color: rgba(224,163,46,.4); }
+.status-pill[data-status="prog"]  .dot { background: var(--status-prog); }
+.status-pill[data-status="done"]  { color: var(--status-done); border-color: rgba(63,174,107,.4); }
+.status-pill[data-status="done"]  .dot { background: var(--status-done); }
+
+/* Fortschrittsleiste im Dashboard-Kopf */
+.overview-summary {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 22px;
+}
+.progress-ring-label { font-variant-numeric: tabular-nums; }
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 100px;
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.progress-bar > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--red);
+  transition: width .3s ease;
+}
+.overview-summary .sum-text { font-size: .9rem; color: var(--text-muted); }
+.overview-summary .sum-text strong { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* --- Formular (Grunddaten) -----------------------------------------------*/
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px 22px;
+}
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field.full { grid-column: 1 / -1; }
+.field label {
+  font-size: .76rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.field input {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: .98rem;
+  padding: 12px 14px;
+  transition: border-color .14s, background .14s;
+}
+.field input::placeholder { color: var(--text-faint); }
+.field input:focus {
+  outline: none;
+  border-color: var(--red);
+  background: #1d2026;
+}
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-soft);
+}
+.save-hint {
+  font-size: .82rem;
+  color: var(--text-faint);
+  margin-left: auto;
+}
+.save-hint.saved { color: var(--status-done); }
+
+/* --- Untertitel innerhalb des Formulars ----------------------------------*/
+.subsection-title {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: .2px;
+  margin-bottom: 16px;
+}
+.subsection-title.accent { margin-bottom: 4px; }
+
+/* Hilfetext unter einem Eingabefeld */
+.field-hint {
+  font-size: .76rem;
+  color: var(--text-faint);
+  line-height: 1.35;
+}
+
+/* dezenter Pflicht-Stern (passt zum roten Akzent) */
+.req {
+  color: var(--red-strong);
+  font-weight: 700;
+  margin-left: 1px;
+}
+
+/* dezenter Pflichtfeld-Hinweis unter den Formularaktionen */
+.required-note {
+  margin-top: 12px;
+  font-size: .78rem;
+  color: var(--text-faint);
+  line-height: 1.4;
+}
+.required-note .req { margin-left: 0; margin-right: 1px; }
+
+/* --- Funkkanäle (zweispaltige Matrix) ------------------------------------*/
+.radio-block {
+  margin-top: 26px;
+  padding: 20px 22px 22px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--red);   /* dezente rote Abschnittsmarkierung */
+  border-radius: var(--radius);
+  background: var(--bg-2);
+}
+
+/* gemeinsames Spaltenraster für Kopfzeile und Datenzeilen:
+   Nr. | TMO | DMO | Aktion (Entfernen). Erste und letzte Spalte fest. */
+.channel-matrix { margin-top: 16px; margin-bottom: 18px; }
+
+.channel-matrix-head,
+.channel-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0,1fr) minmax(0,1fr) 38px;
+  gap: 12px;
+  align-items: center;
+}
+.channel-matrix-head {
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+.channel-matrix-head span {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.channel-head-no { text-align: center; }
+.channel-head-spacer { display: block; }
+
+.channel-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* dezente laufende Nummer je Zeile */
+.channel-no {
+  text-align: center;
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  user-select: none;
+}
+
+.channel-row input {
+  width: 100%;
+  background: #1d2026;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: .92rem;
+  padding: 9px 12px;
+  transition: border-color .14s;
+}
+.channel-row input::placeholder { color: var(--text-faint); }
+.channel-row input:focus { outline: none; border-color: var(--red); }
+
+/* Entfernen-Schaltfläche je Zeile */
+.btn-remove {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color .14s, color .14s, background .14s;
+}
+.btn-remove:hover { border-color: var(--red); color: var(--red-strong); background: var(--red-soft); }
+.btn-remove svg { width: 16px; height: 16px; }
+
+/* Platzhalter in der Aktionsspalte der ersten (nicht entfernbaren) Zeile */
+.channel-row .remove-placeholder { width: 38px; height: 38px; }
+
+/* --- Datentabellen: Fahrzeuge & Stationen (editierbar) -------------------*/
+.vehicle-table-wrap,
+.station-table-wrap { overflow-x: auto; }
+.vehicle-table,
+.station-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+.vehicle-table th,
+.station-table th {
+  text-align: left;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  color: var(--text-faint);
+  padding: 0 10px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.vehicle-table td,
+.station-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
+}
+.vehicle-table tr:last-child td,
+.station-table tr:last-child td { border-bottom: none; }
+.vehicle-table .col-no,
+.station-table .col-no  { width: 34px; text-align: center; }
+.vehicle-table .col-active,
+.station-table .col-active { width: 56px; text-align: center; }
+.vehicle-table .col-num { width: 92px; text-align: center; }
+/* Fahrzeugtabelle: Fahrzeug kompakt, Funkrufname nimmt den Rest */
+.vehicle-table .col-vehicle  { width: 110px; }
+.vehicle-table .col-callsign { width: 100%; }
+
+.vehicle-no,
+.station-no {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* Eingabefelder in den Tabellen */
+.vehicle-table input[type="text"],
+.vehicle-table input[type="number"],
+.station-table input[type="text"] {
+  width: 100%;
+  background: #1d2026;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: .9rem;
+  padding: 8px 10px;
+  transition: border-color .14s;
+}
+.vehicle-table input:focus,
+.station-table input:focus { outline: none; border-color: var(--red); }
+.vehicle-table .col-num input { text-align: center; padding: 8px 6px; }
+/* native Number-Spinner dezent lassen */
+.vehicle-table input[type="number"] { -moz-appearance: textfield; }
+
+/* feste (nicht editierbare) Textwerte in der Tabelle */
+.cell-fixed {
+  display: inline-block;
+  font-size: .92rem;
+  color: var(--text);
+  padding: 8px 0;
+}
+
+/* inaktive Zeile dezent abdunkeln (Toggle bleibt klar sichtbar) */
+.vehicle-row.inactive td:not(.col-active),
+.station-row.inactive td:not(.col-active) { opacity: .4; }
+
+/* --- Stationsliste: Verwaltung -------------------------------------------*/
+.station-toolbar { margin-bottom: 14px; }
+.station-list-table .col-imgs { width: 96px; text-align: center; }
+.station-list-table .col-actions { width: 124px; text-align: center; white-space: nowrap; }
+.station-list-table .station-cell-title { font-size: .92rem; color: var(--text); }
+.station-list-table .station-cell-task { font-size: .88rem; color: var(--text-muted); }
+.station-list-table .cell-muted { color: var(--text-faint); }
+.station-list-table .col-imgs { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+
+.station-row { cursor: pointer; transition: background .12s; }
+.station-row:hover td { background: rgba(255,255,255,.02); }
+.station-row.selected td { background: rgba(134,22,25,.12); }
+.station-row.selected td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+
+.station-empty {
+  text-align: center;
+  color: var(--text-faint);
+  font-size: .9rem;
+  padding: 22px 10px !important;
+}
+
+/* kleine Icon-Buttons für Aktionen */
+.icon-btn {
+  width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--btn-neutral);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer; padding: 0;
+  margin: 0 1px;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.icon-btn svg { width: 15px; height: 15px; }
+.icon-btn:hover:not(:disabled) { background: var(--btn-neutral-h); color: var(--text); }
+.icon-btn:disabled { opacity: .35; cursor: default; }
+.icon-btn.danger:hover:not(:disabled) { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* --- Stationsdetail -------------------------------------------------------*/
+.station-detail-panel { margin-top: 18px; }
+.detail-head {
+  font-size: .9rem; font-weight: 600; color: var(--text);
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.detail-empty { color: var(--text-faint); font-size: .9rem; }
+.detail-empty.small { font-size: .82rem; margin: 4px 0 0; }
+.detail-field { margin-bottom: 15px; }
+.detail-field > label,
+.detail-images-head label {
+  display: block; font-size: .72rem; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--text-faint); margin-bottom: 6px;
+}
+.detail-field input[type="text"],
+.detail-field textarea,
+.image-fields input[type="text"] {
+  width: 100%;
+  background: #1d2026;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit; font-size: .92rem;
+  padding: 9px 11px;
+  transition: border-color .14s;
+}
+.detail-field textarea { resize: vertical; line-height: 1.45; }
+.detail-task { min-height: 110px; }
+.detail-field input:focus,
+.detail-field textarea:focus,
+.image-fields input:focus { outline: none; border-color: var(--red); }
+
+.detail-images { margin-top: 6px; }
+.detail-images-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.detail-images-head label { margin-bottom: 0; }
+
+.image-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 0; border-top: 1px solid var(--line-soft);
+}
+.image-row:first-child { border-top: none; }
+.image-fields { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.image-preview {
+  flex: none; width: 64px; height: 48px;
+  object-fit: cover; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: #1d2026;
+}
+.image-preview.empty {
+  border-style: dashed;
+  /* leeres/fehlerhaftes Bild: nur Platzhalterrahmen, kein Broken-Icon */
+  font-size: 0; color: transparent;
+}
+.img-remove { flex: none; margin-top: 1px; }
+
+
+/* Aktiv-Toggle (Schalter) */
+.toggle { display: inline-flex; cursor: pointer; vertical-align: middle; }
+.toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.toggle .track {
+  width: 32px; height: 18px;
+  border-radius: 100px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  position: relative;
+  transition: background .15s, border-color .15s;
+}
+.toggle .thumb {
+  position: absolute;
+  top: 1px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform .15s, background .15s;
+}
+.toggle input:checked + .track { background: var(--red); border-color: var(--red); }
+.toggle input:checked + .track .thumb { transform: translateX(12px); background: #fff; }
+.toggle input:focus-visible + .track { box-shadow: 0 0 0 2px var(--red-soft); }
+
+/* Zusammenfassung je Bereich (Fahrzeuge, Stationen, …) */
+.section-summary {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+  font-size: .9rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.section-summary strong { color: var(--text); font-weight: 600; }
+
+/* dezenter Hinweis unter der Zusammenfassung */
+.vehicle-hint {
+  margin-top: 8px;
+  font-size: .78rem;
+  color: var(--text-faint);
+  line-height: 1.4;
+}
+
+/* ungültige Personenwerte bei aktiven Fahrzeugen – dezent rot, kein Neon */
+.vehicle-table input.invalid {
+  border-color: var(--red);
+  background: var(--red-soft);
+}
+.vehicle-table input.invalid:focus { border-color: var(--red-strong); }
+.vehicle-row.invalid-row td { background: rgba(134,22,25,.06); }
+
+/* --- Einheitliches Button-System ----------------------------------------
+   Farbsemantik (konsequent verwenden):
+     .btn-primary    Rot       – Hauptaktion / Speichern / Hinzufügen
+     .btn-secondary  Anthrazit – neutrale Aktion
+     .btn-warning    Gelb      – Hinweis / Prüfen / Kontrolle
+     .btn-success    Grün      – fertig / erfolgreich
+     .btn-disabled   Grau      – deaktiviert / noch nicht verfügbar
+   Gedeckte Farben, klare Kontraste, kein Neon, keine Spieloptik.          */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 6px 11px;
+  cursor: pointer;
+  /* Standard = neutral, falls keine Variante gesetzt ist */
+  background: var(--btn-neutral);
+  color: var(--text);
+  border-color: var(--line);
+  transition: background .14s, border-color .14s, color .14s, opacity .14s;
+}
+.btn svg { width: 14px; height: 14px; }
+
+/* Rot – Hauptaktion */
+.btn-primary { background: var(--red); border-color: var(--red); color: #fff; }
+.btn-primary:hover { background: var(--red-strong); border-color: var(--red-strong); }
+
+/* Anthrazit – neutrale Aktion */
+.btn-secondary { background: var(--btn-neutral); border-color: var(--line); color: var(--text); }
+.btn-secondary:hover { background: var(--btn-neutral-h); border-color: #3d444e; }
+
+/* Gelb – Hinweis / Prüfen (dunkle Schrift für gute Lesbarkeit) */
+.btn-warning { background: var(--btn-warn); border-color: var(--btn-warn); color: var(--btn-warn-fg); }
+.btn-warning:hover { background: var(--btn-warn-h); border-color: var(--btn-warn-h); }
+
+/* Grün – fertig / erfolgreich */
+.btn-success { background: var(--btn-ok); border-color: var(--btn-ok); color: #fff; }
+.btn-success:hover { background: var(--btn-ok-h); border-color: var(--btn-ok-h); }
+
+/* Grau – deaktiviert / noch nicht verfügbar.
+   Greift für .btn-disabled sowie für echte disabled-Buttons.             */
+.btn-disabled,
+.btn:disabled,
+.btn[disabled] {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text-faint);
+  cursor: not-allowed;
+  opacity: .7;
+  pointer-events: none;       /* kein Hover/Klick auf deaktivierten Buttons */
+}
+
+/* --- Platzhalter (noch nicht ausgebaute Bereiche) ------------------------*/
+.placeholder {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: repeating-linear-gradient(
+      135deg, transparent, transparent 11px,
+      rgba(255,255,255,.012) 11px, rgba(255,255,255,.012) 22px);
+  padding: 40px 32px;
+  text-align: center;
+}
+.placeholder .ph-icon {
+  width: 54px; height: 54px;
+  border-radius: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  display: grid; place-items: center;
+  margin: 0 auto 16px;
+}
+.placeholder .ph-icon svg { width: 26px; height: 26px; color: var(--text-faint); }
+.placeholder h3 { font-size: 1.1rem; margin-bottom: 8px; }
+.placeholder p {
+  color: var(--text-muted);
+  font-size: .92rem;
+  max-width: 520px;
+  margin: 0 auto 14px;
+}
+.placeholder .ph-tag {
+  display: inline-block;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-faint);
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  padding: 4px 12px;
+}
+
+/* --- Handbuch-Overlay -----------------------------------------------------*/
+.manual-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+}
+.manual-overlay[hidden] { display: none; }
+
+.manual-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 9, 11, .72);
+  backdrop-filter: blur(2px);
+  animation: manualFade .16s ease;
+}
+@keyframes manualFade { from { opacity: 0; } to { opacity: 1; } }
+
+.manual-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 940px;
+  height: min(82vh, 760px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  overflow: hidden;
+  animation: manualPop .18s ease;
+}
+@keyframes manualPop { from { opacity: 0; transform: translateY(8px) scale(.99); } to { opacity: 1; transform: none; } }
+
+.manual-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #20242a 0%, #1b1e23 100%);
+  position: relative;
+}
+.manual-header::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--red);
+}
+.manual-title-wrap { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.manual-title-icon {
+  width: 40px; height: 40px;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: var(--red-soft);
+  border: 1px solid rgba(134,22,25,.4);
+  display: grid; place-items: center;
+  color: var(--red-strong);
+}
+.manual-title-icon svg { width: 21px; height: 21px; }
+.manual-header h2 { font-size: 1.18rem; font-weight: 600; }
+.manual-subtitle { font-size: .76rem; color: var(--text-faint); }
+.manual-close {
+  width: 36px; height: 36px;
+  flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color .14s, color .14s, background .14s;
+}
+.manual-close:hover { border-color: var(--red); color: var(--red-strong); background: var(--red-soft); }
+.manual-close svg { width: 18px; height: 18px; }
+
+.manual-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 0;
+}
+
+/* Inhaltsverzeichnis */
+.manual-toc {
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+  padding: 14px 12px;
+  overflow-y: auto;
+}
+.manual-toc-btn {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: .9rem;
+  padding: 10px 11px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.manual-toc-btn svg { width: 17px; height: 17px; flex: 0 0 auto; opacity: .85; }
+.manual-toc-btn:hover { background: var(--surface); color: var(--text); }
+.manual-toc-btn.active {
+  background: var(--red-soft);
+  color: #fff;
+  border-left-color: var(--red);
+}
+/* kleiner Punkt, der "noch nicht ausgefüllt" markiert */
+.manual-toc-btn .toc-flag {
+  margin-left: auto;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--status-prog);
+  opacity: .8;
+}
+
+/* Kapitelinhalt */
+.manual-content { padding: 26px 30px; overflow-y: auto; }
+.manual-chapter-head { margin-bottom: 16px; }
+.manual-chapter-head h3 { font-size: 1.4rem; font-weight: 600; }
+.manual-chapter-body { color: var(--text); font-size: .96rem; line-height: 1.6; }
+.manual-chapter-body p { margin-bottom: 12px; color: var(--text-muted); }
+
+/* Platzhalter für noch nicht ausgefüllte Kapitel */
+.manual-todo {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  border: 1px dashed var(--line);
+  border-left: 3px solid var(--status-prog);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 16px 18px;
+}
+.manual-todo svg { width: 20px; height: 20px; color: var(--status-prog); flex: 0 0 auto; margin-top: 1px; }
+.manual-todo .todo-title { font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.manual-todo .todo-text { font-size: .9rem; color: var(--text-muted); }
+
+/* --- Fußzeile -------------------------------------------------------------*/
+.app-footer {
+  border-top: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 12px 26px;
+  font-size: .76rem;
+  color: var(--text-faint);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* --- Responsiv: Tablet/kleinere Laptops ----------------------------------*/
+@media (max-width: 900px) {
+  .app-body { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    flex: none;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 10px 12px;
+  }
+  .nav-section-label { display: none; }
+  .nav-btn {
+    flex: 0 0 auto;
+    margin: 0;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+  }
+  .nav-btn.active { border-left: none; border-bottom-color: var(--red); }
+  .content { padding: 22px 18px 40px; }
+  /* Kopfzeile auf schmalen Geräten: brand + Handbuch in Reihe 1,
+     Meta-Block zentriert in Reihe 2 */
+  .header-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .brand { order: 0; }
+  .header-actions { order: 1; margin-left: auto; }
+  .header-center { order: 2; width: 100%; justify-content: center; }
+  .form-grid { grid-template-columns: 1fr; }
+  /* Funkkanäle: Nr. | TMO | DMO | Aktion, Nr.- und Aktionsspalte schmaler */
+  .channel-matrix-head,
+  .channel-row { grid-template-columns: 26px minmax(0,1fr) minmax(0,1fr) 38px; }
+
+  /* Handbuch: Vollbild, Inhaltsverzeichnis als horizontale Leiste oben */
+  .manual-overlay { padding: 0; }
+  .manual-dialog { max-width: none; height: 100%; border-radius: 0; border: none; }
+  .manual-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .manual-toc {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 10px 12px;
+  }
+  .manual-toc-btn {
+    flex: 0 0 auto;
+    margin: 0;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+  }
+  .manual-toc-btn.active { border-left: none; border-bottom-color: var(--red); }
+  .manual-toc-btn .toc-flag { margin-left: 4px; }
+  .manual-content { padding: 22px 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- =========================================================================
+     KOPFBEREICH
+     ====================================================================== -->
+<header class="app-header">
+  <div class="header-inner">
+
+    <!-- LINKS: Logo, Titel, Untertitel -->
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <!-- schlichtes Funk-/Antennen-Symbol -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 12v9"/><circle cx="12" cy="9" r="2"/>
+          <path d="M6.3 15.3a8 8 0 0 1 0-11.3M17.7 4a8 8 0 0 1 0 11.3"/>
+          <path d="M8.5 12.5a4 4 0 0 1 0-5.6M15.5 6.9a4 4 0 0 1 0 5.6"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Funkübung &ndash; Planungstool</h1>
+        <div class="subtitle">Vorbereitung &amp; Übersicht</div>
+      </div>
+    </div>
+
+    <!-- MITTE: Kurzinfos als zusammengehöriger Block (aus den Grunddaten).
+         Bewusst nur Titel / Datum / Uhrzeit. -->
+    <div class="header-center">
+      <div class="header-meta">
+        <div class="meta-item">
+          <div class="meta-label">Titel</div>
+          <div class="meta-value empty" id="metaName">–</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Datum</div>
+          <div class="meta-value empty" id="metaDate">–</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Uhrzeit</div>
+          <div class="meta-value empty" id="metaTime">–</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHTS: Handbuch-Button (neutral/dunkel) am rechten Rand -->
+    <div class="header-actions">
+      <button type="button" class="btn btn-secondary manual-open-btn" id="btnOpenManual" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Handbuch
+      </button>
+    </div>
+
+  </div>
+</header>
+
+<div class="app-body">
+
+  <!-- =======================================================================
+       NAVIGATION (Sidebar)
+       ==================================================================== -->
+  <nav class="sidebar" id="sidebar">
+    <div class="nav-section-label">Planungsbereiche</div>
+    <!-- Buttons werden per JS aus der SECTIONS-Liste erzeugt -->
+  </nav>
+
+  <!-- =======================================================================
+       INHALTSBEREICH
+       ==================================================================== -->
+  <main class="content">
+
+    <!-- ----- 1) ÜBERSICHT / DASHBOARD ---------------------------------- -->
+    <section class="section active" id="sec-uebersicht">
+      <div class="section-head">
+        <h2>Übersicht</h2>
+        <p>Planungsfortschritt der Funkübung auf einen Blick. Karten anklicken, um direkt in den Bereich zu wechseln.</p>
+      </div>
+
+      <div class="overview-summary">
+        <div class="progress-bar"><span id="progressFill"></span></div>
+        <div class="sum-text"><strong id="progressDone">0</strong> von <strong id="progressTotal">6</strong> Bereichen vollständig</div>
+      </div>
+
+      <!-- Statuskarten werden per JS erzeugt -->
+      <div class="card-grid" id="statusCards"></div>
+    </section>
+
+    <!-- ----- 2) GRUNDDATEN --------------------------------------------- -->
+    <!-- → später: Kern von index.html -->
+    <section class="section" id="sec-grunddaten">
+      <div class="section-head">
+        <h2>Grunddaten</h2>
+        <p>Allgemeine Eckdaten der Funkübung. Eingaben werden automatisch im Browser gespeichert.</p>
+      </div>
+
+      <div class="panel">
+
+        <!-- ===== Grunddaten der Übung ===== -->
+        <h3 class="subsection-title">Grunddaten der Übung</h3>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="f-name">Übungstitel <span class="req" title="Pflichtfeld">*</span></label>
+            <input type="text" id="f-name" data-key="name" placeholder="z. B. Funkübung Herbst 2026">
+          </div>
+          <div class="field">
+            <label for="f-date">Datum <span class="req" title="Pflichtfeld">*</span></label>
+            <input type="date" id="f-date" data-key="date">
+          </div>
+          <div class="field">
+            <label for="f-time">Uhrzeit <span class="req" title="Pflichtfeld">*</span></label>
+            <input type="time" id="f-time" data-key="time">
+          </div>
+          <div class="field full">
+            <label for="f-leader">Übungsleitung <span class="req" title="Pflichtfeld">*</span></label>
+            <input type="text" id="f-leader" data-key="leader" placeholder="Name / Funktion">
+          </div>
+        </div>
+
+        <!-- ===== Funkkanäle =====
+             Zweispaltige Matrix: je Zeile ein zusammengehöriger
+             Funkkanal-Datensatz (TMO + DMO). Erste Zeile ist Pflicht
+             und nicht entfernbar; weitere Zeilen sind optional. -->
+        <div class="radio-block">
+          <h3 class="subsection-title accent">Funkkanäle</h3>
+
+          <div class="channel-matrix">
+            <div class="channel-matrix-head">
+              <span class="channel-head-no">Nr.</span>
+              <span>TMO-Rufgruppe <span class="req" title="Pflichtfeld (erste Zeile)">*</span></span>
+              <span>DMO-Rufgruppe <span class="req" title="Pflichtfeld (erste Zeile)">*</span></span>
+              <span class="channel-head-spacer" aria-hidden="true"></span>
+            </div>
+            <div id="channelList" class="channel-list">
+              <!-- Zeilen werden per JS erzeugt -->
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary" id="btnAddChannel">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Funkkanal hinzufügen
+          </button>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" id="btnSave">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+            Speichern
+          </button>
+          <button class="btn btn-secondary" id="btnReset">Felder leeren</button>
+          <span class="save-hint" id="saveHint">Automatische Speicherung aktiv</span>
+        </div>
+        <p class="required-note"><span class="req">*</span> Pflichtfelder müssen ausgefüllt sein, damit der Bereich als vollständig gilt.</p>
+      </div>
+    </section>
+
+    <!-- ----- 3) FAHRZEUGE ---------------------------------------------- -->
+    <section class="section" id="sec-fahrzeuge">
+      <div class="section-head">
+        <h2>Fahrzeuge</h2>
+        <p>Teilnehmende Fahrzeuge, Funkrufnamen und Kurzbezeichnungen als Grundlage für die spätere Routenplanung.</p>
+      </div>
+
+      <!-- Feste sechs Standardfahrzeuge – editierbar und aktiv/inaktiv schaltbar.
+           Bewusst KEINE Hinzufügen-/Entfernen-Funktion (festes Maximum 6).
+           Optional kann später eine Personenplanung je aktivem Fahrzeug folgen. -->
+      <div class="panel">
+        <div class="vehicle-table-wrap">
+          <table class="vehicle-table">
+            <thead>
+              <tr>
+                <th class="col-active">Aktiv</th>
+                <th class="col-no">Nr.</th>
+                <th class="col-vehicle">Fahrzeug</th>
+                <th class="col-callsign">Funkrufname</th>
+                <th class="col-num">Min. Pers.</th>
+                <th class="col-num">Max. Pers.</th>
+              </tr>
+            </thead>
+            <tbody id="vehicleTableBody">
+              <!-- Zeilen werden per JS erzeugt -->
+            </tbody>
+          </table>
+        </div>
+
+        <p class="section-summary" id="vehicleSummary"></p>
+        <p class="vehicle-hint">Aktive Fahrzeuge müssen vollständig ausgefüllt sein. Max. Pers. darf nicht kleiner als Min. Pers. sein.</p>
+      </div>
+    </section>
+
+    <!-- ----- 4) STATIONSPLANUNG ---------------------------------------- -->
+    <!-- → später: station.html -->
+    <section class="section" id="sec-stationen">
+      <div class="section-head">
+        <h2>Stationsplanung</h2>
+        <p>Inhalt der Stationen: Bezeichnung, Aufgabe, Hinweise und Lagebilder. Standort, Adresse und Koordinaten folgen später in der Routenplanung.</p>
+      </div>
+
+      <!-- Flexible Stationsverwaltung: Liste (Reihenfolge, aktiv, löschen) +
+           Detailbereich der ausgewählten Station inkl. Lagebildern.
+           Nummer = Listenposition (nicht editierbar). -->
+      <div class="panel">
+        <div class="station-toolbar">
+          <button type="button" class="btn btn-primary" id="stationAddBtn">+ Station hinzufügen</button>
+        </div>
+        <div class="station-table-wrap">
+          <table class="station-table station-list-table">
+            <thead>
+              <tr>
+                <th class="col-active">Aktiv</th>
+                <th class="col-no">Nr.</th>
+                <th>Bezeichnung</th>
+                <th>Aufgabe kurz</th>
+                <th class="col-imgs">Lagebilder</th>
+                <th class="col-actions">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="stationTableBody">
+              <!-- Zeilen werden per JS erzeugt -->
+            </tbody>
+          </table>
+        </div>
+
+        <p class="section-summary" id="stationSummary"></p>
+      </div>
+
+      <!-- Detailbereich der ausgewählten Station -->
+      <div class="panel station-detail-panel">
+        <div id="stationDetail"><!-- per JS gefüllt --></div>
+      </div>
+    </section>
+
+    <!-- ----- 5) AUFTRAGSPLANUNG ---------------------------------------- -->
+    <section class="section" id="sec-auftraege">
+      <div class="section-head">
+        <h2>Auftragsplanung</h2>
+        <p>Zuordnung der Funkaufträge zu Stationen und Fahrzeugen.</p>
+      </div>
+      <div class="placeholder">
+        <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <h3>Aufträge zuordnen</h3>
+        <p>Hier werden später die einzelnen Funkaufträge definiert und den Stationen bzw. Fahrzeugen zugewiesen.</p>
+        <span class="ph-tag">In Vorbereitung</span>
+      </div>
+    </section>
+
+    <!-- ----- 6) ROUTENPLANUNG ------------------------------------------ -->
+    <section class="section" id="sec-routen">
+      <div class="section-head">
+        <h2>Routenplanung</h2>
+        <p>Reihenfolge und Wege der Fahrzeuge durch die Stationen planen.</p>
+      </div>
+      <div class="placeholder">
+        <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></div>
+        <h3>Routen vorbereiten</h3>
+        <p>Hier wird später geplant, welche Fahrzeuge welche Stationen in welcher Reihenfolge anfahren. Die Routenplanung greift auf Fahrzeugdaten und Stationsdaten zurück.</p>
+        <span class="ph-tag">In Vorbereitung</span>
+      </div>
+    </section>
+
+    <!-- ----- 7) QR-CODE-PLAN ------------------------------------------- -->
+    <!-- → später: qr/qr-codes.html -->
+    <section class="section" id="sec-qr">
+      <div class="section-head">
+        <h2>QR-Code-Plan</h2>
+        <p>Übersicht der QR-Codes für die Stationen der Funkübung.</p>
+      </div>
+      <div class="placeholder">
+        <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg></div>
+        <h3>QR-Codes verwalten</h3>
+        <p>Hier wird später der QR-Code-Plan erstellt. Die eigentliche QR-Code-Erzeugung folgt in einem späteren Schritt und wird in eine eigene Datei (qr/qr-codes.html) ausgelagert.</p>
+        <span class="ph-tag">In Vorbereitung</span>
+      </div>
+    </section>
+
+    <!-- ----- 8) DRUCK / EXPORT ----------------------------------------- -->
+    <!-- → später: print/druckansicht.html -->
+    <section class="section" id="sec-druck">
+      <div class="section-head">
+        <h2>Druck / Export</h2>
+        <p>Aufbereitung der Planung für Ausdruck und Weitergabe.</p>
+      </div>
+      <div class="placeholder">
+        <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></div>
+        <h3>Druckansicht &amp; Export</h3>
+        <p>Hier entsteht später die Druck- und Exportansicht der gesamten Planung. Wird in eine eigene Datei (print/druckansicht.html) ausgelagert.</p>
+        <span class="ph-tag">In Vorbereitung</span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- =========================================================================
+     HANDBUCH (Overlay)
+     → später ggf. eigene Datei (z. B. handbuch.html) bzw. Inhalte aus data/.
+     Kapitelgerüst je Planungsbereich; Inhalte werden Schritt für Schritt
+     ergänzt, passend zur jeweils eingebauten Funktion.
+     ====================================================================== -->
+<div class="manual-overlay" id="manualOverlay" hidden>
+  <div class="manual-backdrop" data-manual-close></div>
+  <div class="manual-dialog" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+    <header class="manual-header">
+      <div class="manual-title-wrap">
+        <span class="manual-title-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </span>
+        <div>
+          <h2 id="manualTitle">Handbuch</h2>
+          <div class="manual-subtitle">Bedienung &amp; Hinweise zum Planungstool</div>
+        </div>
+      </div>
+      <button type="button" class="manual-close" id="btnCloseManual" data-manual-close aria-label="Handbuch schließen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </header>
+    <div class="manual-body">
+      <nav class="manual-toc" id="manualToc" aria-label="Handbuch-Kapitel">
+        <!-- Kapitel-Verzeichnis wird per JS erzeugt -->
+      </nav>
+      <div class="manual-content" id="manualContent">
+        <!-- aktives Kapitel wird per JS erzeugt -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     FUSSZEILE
+     ====================================================================== -->
+<footer class="app-footer">
+  <span id="footerBrand">Funkübung – Planungstool</span>
+  <span>Lokal · Keine Datenübertragung · Speicherung nur im Browser</span>
+</footer>
+
+<script>
+/* ===========================================================================
+   → später: assets/app.js
+   JavaScript für Navigation, Grunddaten, Funkkanäle, Fahrzeuge, Stationen, Statusanzeige und Handbuch.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  /* --- Zentrale App-Metadaten ------------------------------------------
+     Name und Version an EINER Stelle als Objekt; spätere Seiten können
+     APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
+  var APP_INFO = {
+    name: "Funkübung – Planungstool",
+    version: "1.8.1"
+  };
+
+  /* --- Zentrale Bereichsliste ------------------------------------------
+     Steuert Navigation UND Dashboard-Karten aus einer einzigen Quelle.   */
+  var SECTIONS = [
+    { id: "uebersicht", label: "Übersicht",       icon: "grid",    nav: true,  card: false },
+    { id: "grunddaten", label: "Grunddaten",      icon: "doc",     nav: true,  card: true,  desc: "Übungstitel, Datum, Uhrzeit, Übungsleitung sowie Funkkanäle (TMO/DMO)." },
+    { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Kurzbezeichnungen als Grundlage für die spätere Routenplanung." },
+    { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Inhalte der Stationen, Aufgaben, Hinweise und Lagebilder festlegen." },
+    { id: "auftraege",  label: "Auftragsplanung", icon: "check",   nav: true,  card: true,  desc: "Funkaufträge den Stationen zuordnen." },
+    { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Reihenfolge und Wege der Fahrzeuge durch die Stationen planen." },
+    { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
+    { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
+  ];
+
+  /* --- Kleine Inline-Icon-Bibliothek (kein externer Abruf) --------------*/
+  var ICONS = {
+    grid:   '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    doc:    '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
+    truck:  '<path d="M3 13l2-5h11l3 5M3 13h17v4H3z"/><circle cx="7" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/>',
+    pin:    '<path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+    check:  '<path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+    loop:   '<path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/>',
+    qr:     '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/>',
+    printer:'<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/>',
+    book:   '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>'
+  };
+  function svg(name) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+           'stroke-linecap="round" stroke-linejoin="round">' + (ICONS[name] || "") + '</svg>';
+  }
+
+  /* --- Speicher (localStorage) -----------------------------------------*/
+  var STORAGE_KEY = "funkuebung_grunddaten_v1";
+
+  /* Felder, die in den Grunddaten-Status einfließen (für die Statuskarte). */
+  var CORE_KEYS = ["name", "date", "time", "leader"];
+
+  /* loadData liefert IMMER eine vollständige, normalisierte Struktur:
+     { name, date, time, leader, radioChannels: [ { id, tmo, dmo } ] }
+     Es ist stets mindestens eine (Pflicht-)Zeile vorhanden.
+     Migration: ein evtl. vorhandenes altes radio-Objekt {tmo,dmo} wird in
+     die erste Funkkanal-Zeile übernommen. */
+  function loadData() {
+    var raw = {};
+    try { raw = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch (e) { raw = {}; }
+
+    var channels = [];
+    if (Array.isArray(raw.radioChannels)) {
+      channels = raw.radioChannels.map(function (c) {
+        c = c || {};
+        return { id: c.id || newId(), tmo: c.tmo || "", dmo: c.dmo || "" };
+      });
+    } else if (raw.radio && typeof raw.radio === "object") {
+      /* alte Struktur (Schritt 1.1) → erste Zeile übernehmen */
+      channels = [{ id: newId(), tmo: raw.radio.tmo || "", dmo: raw.radio.dmo || "" }];
+    }
+    if (channels.length === 0) {
+      channels = [{ id: newId(), tmo: "", dmo: "" }]; /* Pflichtzeile garantieren */
+    }
+
+    return {
+      name:   raw.name   || "",
+      date:   raw.date   || "",
+      time:   raw.time   || "",
+      leader: raw.leader || "",
+      radioChannels: channels
+    };
+  }
+  function saveData(data) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); return true; }
+    catch (e) { return false; } /* z. B. privater Modus / Speicher voll */
+  }
+
+  /* eindeutige ID für eine Funkkanal-Zeile */
+  function newId() {
+    return "ch_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+  }
+
+  /* ======================================================================
+     FAHRZEUGE
+     ----------------------------------------------------------------------
+     Festes Maximum von sechs Standardfahrzeugen (kein Hinzufügen/Entfernen).
+     Editierbar + aktiv/inaktiv. Eigener Storage-Key, getrennt von Grunddaten.
+     ====================================================================== */
+  var VEHICLE_STORAGE_KEY = "funkuebung_fahrzeuge_v1";
+
+  var DEFAULT_VEHICLES = [
+    { id: "elw", active: true, type: "ELW",  callsign: "Florian Neuhof 1/11/1", short: "ELW",  minPersons: 2, maxPersons: 4 },
+    { id: "hlf", active: true, type: "HLF",  callsign: "Florian Neuhof 1/46/1", short: "HLF",  minPersons: 2, maxPersons: 4 },
+    { id: "lf",  active: true, type: "LF",   callsign: "Florian Neuhof 1/46/2", short: "LF",   minPersons: 2, maxPersons: 4 },
+    { id: "gwl", active: true, type: "GW-L", callsign: "Florian Neuhof 1/64/1", short: "GW-L", minPersons: 2, maxPersons: 4 },
+    { id: "mtw", active: true, type: "MTW",  callsign: "Florian Neuhof 1/19/1", short: "MTW",  minPersons: 2, maxPersons: 4 },
+    { id: "tsf", active: true, type: "TSF",  callsign: "Florian Neuhof 1/47/1", short: "TSF",  minPersons: 2, maxPersons: 4 }
+  ];
+
+  /* Liefert IMMER die sechs Fahrzeuge in fester Reihenfolge.
+     Nicht editierbare Felder (type, callsign, short) kommen IMMER aus den
+     Vorgaben – nur editierbare Felder (active, minPersons, maxPersons) werden
+     aus dem Speicher übernommen. So wirken Vorgaben-Änderungen sofort. */
+  function loadVehicles() {
+    var stored = {};
+    try {
+      var arr = JSON.parse(localStorage.getItem(VEHICLE_STORAGE_KEY));
+      if (Array.isArray(arr)) arr.forEach(function (v) { if (v && v.id) stored[v.id] = v; });
+    } catch (e) { /* fehlerhafter/leerer Speicher → Vorgaben */ }
+
+    return DEFAULT_VEHICLES.map(function (def) {
+      var s = stored[def.id] || {};
+      return {
+        id: def.id,
+        active: typeof s.active === "boolean" ? s.active : def.active,
+        type:     def.type,      /* fest */
+        callsign: def.callsign,  /* fest */
+        short:    def.short,      /* intern, nicht editierbar */
+        minPersons: s.minPersons != null ? s.minPersons : def.minPersons,
+        maxPersons: s.maxPersons != null ? s.maxPersons : def.maxPersons
+      };
+    });
+  }
+  function saveVehicles(list) {
+    try { localStorage.setItem(VEHICLE_STORAGE_KEY, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
+  }
+
+  function num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+  function nonEmpty(v) { return v != null && String(v).trim() !== ""; }
+
+  /* Personenwert prüfen: liefert die Zahl oder null (leer/ungültig). */
+  function personValue(x) {
+    if (x === "" || x == null) return null;
+    var n = Number(x);
+    return isNaN(n) ? null : n;
+  }
+
+  /* Ein AKTIVES Fahrzeug ist vollständig, wenn:
+     - Fahrzeug und Funkrufname vorhanden sind (feste Texte, immer gesetzt),
+     - Min. und Max. Pers. gültige Zahlen ≥ 0 sind,
+     - Max. Pers. nicht kleiner als Min. Pers. ist. */
+  function isVehicleComplete(v) {
+    if (!nonEmpty(v.type) || !nonEmpty(v.callsign)) return false;
+    var mn = personValue(v.minPersons), mx = personValue(v.maxPersons);
+    if (mn === null || mn < 0) return false;
+    if (mx === null || mx < 0) return false;
+    if (mx < mn) return false;
+    return true;
+  }
+
+  /* Status der Fahrzeuge:
+     - "open"  : kein aktives Fahrzeug
+     - "done"  : alle AKTIVEN Fahrzeuge vollständig & gültig
+     - "prog"  : sonst (aktive Fahrzeuge mit fehlenden/ungültigen Daten) */
+  function computeVehicleStatus() {
+    var list = loadVehicles();
+    var active = list.filter(function (v) { return v.active; });
+    if (active.length === 0) return "open";
+    return active.every(isVehicleComplete) ? "done" : "prog";
+  }
+
+  /* ======================================================================
+     STATIONEN
+     ----------------------------------------------------------------------
+     Flexible Stationsverwaltung: hinzufügen, löschen, sortieren. Eine Station
+     beschreibt nur ihren INHALT (Bezeichnung, Aufgabe, Hinweise, Lagebilder) –
+     Standort/Adresse/Koordinaten gehören später in die Routenplanung.
+     Nummer = Position in der Liste (nicht editierbar). Eigener Storage-Key;
+     altes Format (label/location/number) wird beim Laden migriert.
+     ====================================================================== */
+  var STATION_STORAGE_KEY = "funkuebung_stationen_v1";
+  var STATION_SEED_COUNT = 8;
+
+  function newStationId() {
+    return "station_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+  }
+  function newImageId() {
+    return "image_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+  }
+
+  /* Standardstart: acht vorbereitete Stationen. */
+  function defaultStations() {
+    var list = [];
+    for (var i = 1; i <= STATION_SEED_COUNT; i++) {
+      list.push({ id: "station_" + i, active: true, title: "Station " + i, task: "", description: "", images: [] });
+    }
+    return list;
+  }
+
+  /* Normalisiert einen (ggf. alten) Datensatz auf die aktuelle Struktur.
+     Migration altes Format: label → title; location/number entfallen. */
+  function normalizeStation(s, idx) {
+    s = s || {};
+    var title = (s.title != null && s.title !== "") ? s.title
+              : (s.label != null && s.label !== "") ? s.label
+              : ("Station " + (idx + 1));
+    var images = Array.isArray(s.images) ? s.images.map(function (im) {
+      im = im || {};
+      return { id: im.id || newImageId(), title: im.title != null ? im.title : "", url: im.url != null ? im.url : "" };
+    }) : [];
+    return {
+      id: s.id || newStationId(),
+      active: typeof s.active === "boolean" ? s.active : true,
+      title: title,
+      task: s.task != null ? s.task : "",
+      description: s.description != null ? s.description : "",
+      images: images
+    };
+  }
+
+  /* Liefert die Stationsliste in Array-Reihenfolge.
+     - kein/ungültiger Speicher → erster Start: acht Standardstationen anlegen
+     - vorhandenes (auch leeres) Array → übernehmen/migrieren */
+  function loadStations() {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(STATION_STORAGE_KEY)); }
+    catch (e) { raw = null; }
+
+    if (!Array.isArray(raw)) {
+      var seed = defaultStations();
+      saveStations(seed);
+      return seed;
+    }
+    return raw.map(function (s, idx) { return normalizeStation(s, idx); });
+  }
+  function saveStations(list) {
+    try { localStorage.setItem(STATION_STORAGE_KEY, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
+  }
+
+  /* Status der Stationsplanung:
+     - "open" : keine Station oder keine aktive Station
+     - "done" : alle aktiven Stationen haben eine Aufgabe
+     - "prog" : aktive Stationen vorhanden, aber nicht alle mit Aufgabe */
+  function computeStationStatus() {
+    var list;
+    try { list = loadStations(); } catch (e) { return "prog"; }
+    if (!Array.isArray(list) || list.length === 0) return "open";
+    var active = list.filter(function (s) { return s.active; });
+    if (active.length === 0) return "open";
+    return active.every(function (s) { return nonEmpty(s.task); }) ? "done" : "prog";
+  }
+
+  /* --- Navigation -------------------------------------------------------*/
+  function buildNav() {
+    var sidebar = document.getElementById("sidebar");
+    SECTIONS.filter(function (s) { return s.nav; }).forEach(function (s) {
+      var btn = document.createElement("button");
+      btn.className = "nav-btn" + (s.id === "uebersicht" ? " active" : "");
+      btn.dataset.target = s.id;
+      btn.innerHTML = svg(s.icon) + "<span>" + s.label + "</span>";
+      btn.addEventListener("click", function () { showSection(s.id); });
+      sidebar.appendChild(btn);
+    });
+  }
+
+  function showSection(id) {
+    document.querySelectorAll(".section").forEach(function (el) {
+      el.classList.toggle("active", el.id === "sec-" + id);
+    });
+    document.querySelectorAll(".nav-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.target === id);
+    });
+    document.querySelector(".content").scrollTop = 0;
+  }
+
+  /* --- Dashboard-Statuskarten ------------------------------------------*/
+  function buildCards() {
+    var grid = document.getElementById("statusCards");
+    grid.innerHTML = "";
+    SECTIONS.filter(function (s) { return s.card; }).forEach(function (s) {
+      var card = document.createElement("button");
+      card.className = "status-card";
+      card.dataset.target = s.id;
+      card.innerHTML =
+        '<div class="card-top">' +
+          '<div class="card-icon">' + svg(s.icon) + '</div>' +
+          '<span class="status-pill" data-status="open" id="pill-' + s.id + '">' +
+            '<span class="dot"></span><span class="pill-text">Offen</span>' +
+          '</span>' +
+        '</div>' +
+        '<h3>' + s.label + '</h3>' +
+        '<div class="card-desc">' + (s.desc || "") + '</div>';
+      card.addEventListener("click", function () { showSection(s.id); });
+      grid.appendChild(card);
+    });
+  }
+
+  function setPill(id, status, text) {
+    var pill = document.getElementById("pill-" + id);
+    if (!pill) return;
+    pill.dataset.status = status;
+    pill.querySelector(".pill-text").textContent = text;
+  }
+
+  /* Status der Grunddaten automatisch berechnen.
+     Pflicht: Übungstitel, Datum, Uhrzeit, Übungsleitung sowie TMO/DMO der
+     ERSTEN Funkkanal-Zeile. Zusätzliche Zeilen sind freiwillig, MÜSSEN aber –
+     sobald vorhanden – vollständig sein (TMO und DMO): eine leere oder nur
+     halb gefüllte Zusatzzeile setzt den Status auf "In Bearbeitung".
+     Fahrzeuge und Stationen werden separat bewertet (siehe unten).         */
+  function updateStatus() {
+    var data = loadData();
+    var channels = data.radioChannels;
+    var first = channels[0] || { tmo: "", dmo: "" };
+    function filled(v) { return v && String(v).trim() !== ""; }
+
+    /* Pflichtfelder (Kernfelder + erste Funkkanal-Zeile) */
+    var required = CORE_KEYS.map(function (k) { return data[k]; });
+    required.push(first.tmo, first.dmo);
+    var requiredTotal  = required.length;
+    var requiredFilled = required.filter(filled).length;
+
+    /* Zusatzzeilen ab Index 1: vollständig nur, wenn TMO UND DMO gefüllt */
+    var extras = channels.slice(1);
+    var extrasIncomplete = extras.some(function (c) { return !(filled(c.tmo) && filled(c.dmo)); });
+
+    var complete = (requiredFilled === requiredTotal) && !extrasIncomplete;
+
+    if (complete) {
+      setPill("grunddaten", "done", "Vollständig");
+    } else if (requiredFilled > 0 || extras.length > 0) {
+      setPill("grunddaten", "prog", "In Bearbeitung");
+    } else {
+      setPill("grunddaten", "open", "Offen");
+    }
+
+    /* Fahrzeuge-Statuskarte */
+    var vehStatus = computeVehicleStatus();
+    setPill("fahrzeuge", vehStatus,
+      vehStatus === "done" ? "Vollständig" : (vehStatus === "prog" ? "In Bearbeitung" : "Offen"));
+
+    /* Stationen-Statuskarte */
+    var staStatus = computeStationStatus();
+    setPill("stationen", staStatus,
+      staStatus === "done" ? "Vollständig" : (staStatus === "prog" ? "In Bearbeitung" : "Offen"));
+
+    /* Fortschrittsleiste: Anzahl vollständiger Karten-Bereiche.
+       Aktuell werden Grunddaten, Fahrzeuge und Stationen bewertet. Weitere
+       Bereiche werden je nach Ausbaustand ergänzt. */
+    var cardSections = SECTIONS.filter(function (s) { return s.card; });
+    var doneCount = (complete ? 1 : 0) + (vehStatus === "done" ? 1 : 0) + (staStatus === "done" ? 1 : 0);
+    document.getElementById("progressDone").textContent  = doneCount;
+    document.getElementById("progressTotal").textContent = cardSections.length;
+    document.getElementById("progressFill").style.width  = (doneCount / cardSections.length * 100) + "%";
+
+    updateHeaderMeta(data);
+  }
+
+  /* --- Kopf-Kurzinfo aktualisieren (Titel / Datum / Uhrzeit getrennt) ---*/
+  function updateHeaderMeta(data) {
+    setMeta("metaName", data.name);
+    setMeta("metaDate", formatDate(data.date));
+    setMeta("metaTime", data.time);
+  }
+  function setMeta(elId, value) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    var has = value && String(value).trim() !== "";
+    el.textContent = has ? value : "–";
+    el.classList.toggle("empty", !has);
+  }
+  function formatDate(iso) {
+    if (!iso) return "";
+    var p = iso.split("-"); /* yyyy-mm-dd → dd.mm.yyyy */
+    return (p.length === 3) ? p[2] + "." + p[1] + "." + p[0] : iso;
+  }
+
+  /* --- Grunddaten-Formular ---------------------------------------------*/
+  function initForm() {
+    /* WICHTIG: normalisierte Struktur einmal persistieren, BEVOR die
+       Funkkanäle gerendert werden. loadData() vergibt für noch nicht
+       gespeicherte Zeilen sonst bei jedem Aufruf neue IDs – dann stimmen
+       die im DOM gerenderten IDs nicht mit den gespeicherten überein und
+       Eingaben in TMO/DMO würden nicht gespeichert. */
+    saveData(loadData());
+
+    var data = loadData();
+    var hint = document.getElementById("saveHint");
+
+    /* 1) Feste Kernfelder (Übungstitel, Datum, Uhrzeit, Übungsleitung) */
+    document.querySelectorAll("[data-key]").forEach(function (input) {
+      var k = input.dataset.key;
+      if (data[k] != null) input.value = data[k];
+      input.addEventListener("input", function () {
+        var d = loadData();
+        d[k] = input.value;
+        saveData(d);
+        updateStatus();
+        flashHint(hint, "Gespeichert");
+      });
+    });
+
+    /* 2) Funkkanäle (dynamische Matrix) */
+    renderChannels();
+
+    document.getElementById("btnAddChannel").addEventListener("click", function () {
+      var d = loadData();
+      d.radioChannels.push({ id: newId(), tmo: "", dmo: "" });
+      saveData(d);
+      renderChannels();
+      updateStatus();
+      flashHint(hint, "Funkkanal hinzugefügt");
+      /* Fokus auf das TMO-Feld der neuen (letzten) Zeile */
+      var rows = document.querySelectorAll("#channelList .channel-row");
+      var last = rows[rows.length - 1];
+      if (last) { var inp = last.querySelector('input[data-prop="tmo"]'); if (inp) inp.focus(); }
+    });
+
+    /* Buttons */
+    document.getElementById("btnSave").addEventListener("click", function () {
+      var d = loadData(); /* Funkkanäle bleiben erhalten */
+      document.querySelectorAll("[data-key]").forEach(function (input) {
+        d[input.dataset.key] = input.value;
+      });
+      saveData(d);
+      updateStatus();
+      flashHint(hint, "Gespeichert");
+    });
+
+    document.getElementById("btnReset").addEventListener("click", function () {
+      if (!confirm("Alle Grunddaten inkl. Funkkanäle leeren?")) return;
+      document.querySelectorAll("[data-key]").forEach(function (input) { input.value = ""; });
+      saveData({ name: "", date: "", time: "", leader: "",
+                 radioChannels: [{ id: newId(), tmo: "", dmo: "" }] });
+      renderChannels();
+      updateStatus();
+      flashHint(hint, "Felder geleert");
+    });
+  }
+
+  /* Zeichnet die Funkkanal-Matrix neu aus dem Speicher.
+     Erste Zeile (Index 0) ist Pflicht und besitzt keinen Entfernen-Button. */
+  function renderChannels() {
+    var list = document.getElementById("channelList");
+    var data = loadData();
+    var rows = data.radioChannels;
+
+    list.innerHTML = "";
+
+    rows.forEach(function (item, index) {
+      var isFirst = (index === 0);
+      var row = document.createElement("div");
+      row.className = "channel-row";
+      row.innerHTML =
+        '<span class="channel-no" aria-hidden="true">' + (index + 1) + '</span>' +
+        '<input type="text" data-id="' + item.id + '" data-prop="tmo" placeholder="z. B. E18"' +
+          (isFirst ? ' aria-label="TMO-Rufgruppe (Pflicht)"' : ' aria-label="TMO-Rufgruppe"') + '>' +
+        '<input type="text" data-id="' + item.id + '" data-prop="dmo" placeholder="z. B. 316F"' +
+          (isFirst ? ' aria-label="DMO-Rufgruppe (Pflicht)"' : ' aria-label="DMO-Rufgruppe"') + '>' +
+        (isFirst
+          ? '<span class="remove-placeholder" aria-hidden="true"></span>'
+          : '<button type="button" class="btn-remove" title="Funkkanal entfernen" aria-label="Funkkanal entfernen">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>' +
+            '</button>');
+
+      /* Werte einsetzen */
+      row.querySelector('input[data-prop="tmo"]').value = item.tmo || "";
+      row.querySelector('input[data-prop="dmo"]').value = item.dmo || "";
+
+      /* Eingaben speichern (kein Re-Render → Fokus bleibt erhalten) */
+      row.querySelectorAll("input").forEach(function (input) {
+        input.addEventListener("input", function () {
+          updateChannel(input.dataset.id, input.dataset.prop, input.value);
+        });
+      });
+
+      /* Entfernen (nur ab Zeile 2 vorhanden) */
+      var rm = row.querySelector(".btn-remove");
+      if (rm) rm.addEventListener("click", function () { removeChannel(item.id); });
+
+      list.appendChild(row);
+    });
+  }
+
+  function updateChannel(id, prop, value) {
+    var d = loadData();
+    var entry = d.radioChannels.filter(function (x) { return x.id === id; })[0];
+    if (!entry) return;
+    entry[prop] = value;
+    saveData(d);
+    updateStatus(); /* erste Zeile kann den Pflichtstatus ändern */
+    flashHint(document.getElementById("saveHint"), "Gespeichert");
+  }
+
+  function removeChannel(id) {
+    var d = loadData();
+    /* erste Zeile schützen: nur entfernen, wenn es NICHT die erste ist */
+    if (d.radioChannels.length && d.radioChannels[0].id === id) return;
+    d.radioChannels = d.radioChannels.filter(function (x) { return x.id !== id; });
+    if (d.radioChannels.length === 0) {
+      d.radioChannels = [{ id: newId(), tmo: "", dmo: "" }];
+    }
+    saveData(d);
+    renderChannels();
+    updateStatus();
+    flashHint(document.getElementById("saveHint"), "Funkkanal entfernt");
+  }
+
+  /* --- Fahrzeuge: Tabelle rendern & bearbeiten -------------------------*/
+  function escapeAttr(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function initVehicles() {
+    renderVehicles();
+    updateVehicleSummary();
+    refreshVehicleValidation();
+  }
+
+  /* Tabelle einmal aufbauen; Eingaben aktualisieren danach nur den Speicher
+     (kein Re-Render → Eingabefokus bleibt erhalten). */
+  function renderVehicles() {
+    var body = document.getElementById("vehicleTableBody");
+    if (!body) return;
+    var list = loadVehicles();
+    body.innerHTML = "";
+
+    list.forEach(function (v, index) {
+      var tr = document.createElement("tr");
+      tr.className = "vehicle-row" + (v.active ? "" : " inactive");
+      tr.dataset.id = v.id;
+      tr.innerHTML =
+        '<td class="col-active">' +
+          '<label class="toggle" title="Fahrzeug aktiv/inaktiv">' +
+            '<input type="checkbox" data-prop="active"' + (v.active ? " checked" : "") +
+              ' aria-label="Fahrzeug aktiv">' +
+            '<span class="track"><span class="thumb"></span></span>' +
+          '</label>' +
+        '</td>' +
+        '<td class="col-no"><span class="vehicle-no">' + (index + 1) + '</span></td>' +
+        '<td><span class="cell-fixed">' + escapeAttr(v.type) + '</span></td>' +
+        '<td><span class="cell-fixed">' + escapeAttr(v.callsign) + '</span></td>' +
+        '<td class="col-num"><input type="number" min="0" data-prop="minPersons" value="' + escapeAttr(v.minPersons) + '" aria-label="Min. Personen"></td>' +
+        '<td class="col-num"><input type="number" min="0" data-prop="maxPersons" value="' + escapeAttr(v.maxPersons) + '" aria-label="Max. Personen"></td>';
+
+      /* Text-/Zahlenfelder: bei Eingabe speichern */
+      tr.querySelectorAll('input[type="text"], input[type="number"]').forEach(function (input) {
+        input.addEventListener("input", function () {
+          updateVehicle(v.id, input.dataset.prop, input.value);
+        });
+      });
+
+      /* Aktiv-Toggle */
+      tr.querySelector('input[type="checkbox"]').addEventListener("change", function () {
+        updateVehicle(v.id, "active", this.checked);
+        tr.classList.toggle("inactive", !this.checked);
+      });
+
+      body.appendChild(tr);
+    });
+  }
+
+  function updateVehicle(id, prop, value) {
+    var list = loadVehicles();
+    var entry = list.filter(function (x) { return x.id === id; })[0];
+    if (!entry) return;
+    if (prop === "minPersons" || prop === "maxPersons") {
+      entry[prop] = (value === "" ? "" : num(value));
+    } else {
+      entry[prop] = value;
+    }
+    saveVehicles(list);
+    updateVehicleSummary();
+    refreshVehicleValidation();
+    updateStatus();
+  }
+
+  /* Markiert bei AKTIVEN Fahrzeugen ungültige Personenwerte dezent rot:
+     Min./Max. leer oder < 0, oder Max. kleiner als Min. */
+  function refreshVehicleValidation() {
+    var body = document.getElementById("vehicleTableBody");
+    if (!body) return;
+    var byId = {};
+    loadVehicles().forEach(function (v) { byId[v.id] = v; });
+    body.querySelectorAll(".vehicle-row").forEach(function (tr) {
+      var v = byId[tr.dataset.id]; if (!v) return;
+      var minInput = tr.querySelector('input[data-prop="minPersons"]');
+      var maxInput = tr.querySelector('input[data-prop="maxPersons"]');
+      var minBad = false, maxBad = false;
+      if (v.active) {
+        var mn = personValue(v.minPersons), mx = personValue(v.maxPersons);
+        minBad = (mn === null || mn < 0);
+        maxBad = (mx === null || mx < 0);
+        if (!minBad && !maxBad && mx < mn) maxBad = true; /* Bereich: Max < Min */
+      }
+      minInput.classList.toggle("invalid", minBad);
+      maxInput.classList.toggle("invalid", maxBad);
+      tr.classList.toggle("invalid-row", v.active && (minBad || maxBad));
+    });
+  }
+
+  /* Zusammenfassung: aktive Fahrzeuge + Personenbedarf (Summe über aktive) */
+  function updateVehicleSummary() {
+    var el = document.getElementById("vehicleSummary");
+    if (!el) return;
+    var list = loadVehicles();
+    var active = list.filter(function (v) { return v.active; });
+    var minSum = active.reduce(function (a, v) { return a + num(v.minPersons); }, 0);
+    var maxSum = active.reduce(function (a, v) { return a + num(v.maxPersons); }, 0);
+    el.innerHTML =
+      'Aktive Fahrzeuge: <strong>' + active.length + '</strong> von <strong>' + list.length + '</strong>' +
+      ' · Personenbedarf: <strong>' + minSum + '</strong> bis <strong>' + maxSum + '</strong>';
+  }
+
+  /* --- Stationen: flexible Verwaltung (Liste + Detail) -----------------*/
+  var selectedStationId = null;
+
+  function initStations() {
+    var addBtn = document.getElementById("stationAddBtn");
+    if (addBtn) addBtn.addEventListener("click", addStation);
+    var list = loadStations();
+    selectedStationId = list.length ? list[0].id : null;
+    renderStationList();
+    renderStationDetail();
+    updateStationSummary();
+  }
+
+  function indexOfId(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return i;
+    return -1;
+  }
+  function stationTruncate(t, n) {
+    t = String(t || "");
+    return t.length > n ? t.slice(0, n).replace(/\s+\S*$/, "") + "…" : t;
+  }
+  function stationIcon(name) {
+    var p = {
+      up:    '<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
+      down:  '<path d="M12 5v14"/><path d="M6 13l6 6 6-6"/>',
+      trash: '<path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M6 7l1 13h10l1-13"/>'
+    }[name] || "";
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+  }
+  function stationActionsHtml(idx, total) {
+    var upDis = idx === 0 ? " disabled" : "";
+    var dnDis = idx === total - 1 ? " disabled" : "";
+    return '' +
+      '<button type="button" class="icon-btn" data-act="up"' + upDis + ' title="Nach oben" aria-label="Nach oben">' + stationIcon("up") + '</button>' +
+      '<button type="button" class="icon-btn" data-act="down"' + dnDis + ' title="Nach unten" aria-label="Nach unten">' + stationIcon("down") + '</button>' +
+      '<button type="button" class="icon-btn danger" data-act="delete" title="Löschen" aria-label="Löschen">' + stationIcon("trash") + '</button>';
+  }
+
+  function renderStationList() {
+    var body = document.getElementById("stationTableBody");
+    if (!body) return;
+    var list = loadStations();
+    body.innerHTML = "";
+
+    if (list.length === 0) {
+      var er = document.createElement("tr");
+      er.innerHTML = '<td colspan="6" class="station-empty">Keine Stationen vorhanden. Mit „Station hinzufügen" beginnen.</td>';
+      body.appendChild(er);
+      return;
+    }
+
+    list.forEach(function (s, idx) {
+      var tr = document.createElement("tr");
+      tr.className = "station-row" + (s.active ? "" : " inactive") + (s.id === selectedStationId ? " selected" : "");
+      tr.dataset.id = s.id;
+      var taskCell = nonEmpty(s.task) ? escapeAttr(stationTruncate(s.task, 50)) : '<span class="cell-muted">—</span>';
+      tr.innerHTML =
+        '<td class="col-active">' +
+          '<label class="toggle" title="Station aktiv/inaktiv">' +
+            '<input type="checkbox" data-prop="active"' + (s.active ? " checked" : "") + ' aria-label="Station aktiv">' +
+            '<span class="track"><span class="thumb"></span></span>' +
+          '</label>' +
+        '</td>' +
+        '<td class="col-no"><span class="station-no">' + (idx + 1) + '</span></td>' +
+        '<td class="station-cell-title">' + escapeAttr(s.title) + '</td>' +
+        '<td class="station-cell-task">' + taskCell + '</td>' +
+        '<td class="col-imgs">' + s.images.length + '</td>' +
+        '<td class="col-actions">' + stationActionsHtml(idx, list.length) + '</td>';
+
+      /* Zeile auswählen (Klicks auf Toggle/Aktionen sind ausgenommen) */
+      tr.addEventListener("click", function () { selectStation(s.id); });
+
+      var cb = tr.querySelector('input[type="checkbox"]');
+      cb.addEventListener("click", function (e) { e.stopPropagation(); });
+      cb.addEventListener("change", function () {
+        var l = loadStations();
+        var st = l[indexOfId(l, s.id)];
+        if (st) { st.active = this.checked; saveStations(l); }
+        renderStationList();
+        updateStationSummary();
+        updateStatus();
+      });
+
+      tr.querySelectorAll(".col-actions .icon-btn").forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var act = btn.dataset.act;
+          if (act === "up") moveStation(s.id, -1);
+          else if (act === "down") moveStation(s.id, 1);
+          else if (act === "delete") deleteStation(s.id);
+        });
+      });
+
+      body.appendChild(tr);
+    });
+  }
+
+  function selectStation(id) {
+    selectedStationId = id;
+    renderStationList();
+    renderStationDetail();
+  }
+
+  function moveStation(id, dir) {
+    var list = loadStations();
+    var i = indexOfId(list, id), j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+    saveStations(list);
+    renderStationList();
+    renderStationDetail();
+    updateStationSummary();
+    updateStatus();
+  }
+
+  function deleteStation(id) {
+    if (!window.confirm("Diese Station wirklich löschen?")) return;
+    var list = loadStations();
+    var i = indexOfId(list, id);
+    if (i < 0) return;
+    list.splice(i, 1);
+    saveStations(list);
+    if (selectedStationId === id) {
+      selectedStationId = list.length ? list[Math.min(i, list.length - 1)].id : null;
+    }
+    renderStationList();
+    renderStationDetail();
+    updateStationSummary();
+    updateStatus();
+  }
+
+  function addStation() {
+    var list = loadStations();
+    var st = { id: newStationId(), active: true, title: "Station " + (list.length + 1), task: "", description: "", images: [] };
+    list.push(st);
+    saveStations(list);
+    selectedStationId = st.id;
+    renderStationList();
+    renderStationDetail();
+    updateStationSummary();
+    updateStatus();
+  }
+
+  /* Detailbereich der ausgewählten Station */
+  function renderStationDetail() {
+    var wrap = document.getElementById("stationDetail");
+    if (!wrap) return;
+    var list = loadStations();
+    var idx = indexOfId(list, selectedStationId);
+    var s = idx >= 0 ? list[idx] : null;
+
+    if (!s) {
+      wrap.innerHTML = '<p class="detail-empty">Keine Station ausgewählt. Wähle links eine Station oder füge eine hinzu.</p>';
+      return;
+    }
+
+    wrap.innerHTML =
+      '<div class="detail-head">Station ' + (idx + 1) + ' bearbeiten</div>' +
+      '<div class="detail-field">' +
+        '<label for="detTitle">Bezeichnung</label>' +
+        '<input type="text" id="detTitle" value="' + escapeAttr(s.title) + '" placeholder="z. B. Station 1">' +
+      '</div>' +
+      '<div class="detail-field">' +
+        '<label for="detTask">Aufgabe der Station</label>' +
+        '<textarea id="detTask" class="detail-task" rows="5" placeholder="Was ist an dieser Station zu tun?">' + escapeAttr(s.task) + '</textarea>' +
+      '</div>' +
+      '<div class="detail-field">' +
+        '<label for="detDesc">Kurzbeschreibung / Hinweise</label>' +
+        '<textarea id="detDesc" rows="3" placeholder="optionale Hinweise">' + escapeAttr(s.description) + '</textarea>' +
+      '</div>' +
+      '<div class="detail-images">' +
+        '<div class="detail-images-head">' +
+          '<label>Lagebilder</label>' +
+          '<button type="button" class="btn btn-secondary" id="detAddImg">+ Lagebild hinzufügen</button>' +
+        '</div>' +
+        '<div id="detImageList"></div>' +
+      '</div>';
+
+    document.getElementById("detTitle").addEventListener("input", function () {
+      setStationField(s.id, "title", this.value);
+      renderStationList();
+    });
+    document.getElementById("detTask").addEventListener("input", function () {
+      setStationField(s.id, "task", this.value);
+      renderStationList();
+      updateStationSummary();
+      updateStatus();
+    });
+    document.getElementById("detDesc").addEventListener("input", function () {
+      setStationField(s.id, "description", this.value);
+    });
+    document.getElementById("detAddImg").addEventListener("click", function () {
+      addStationImage(s.id);
+    });
+
+    renderStationImages(s.id);
+  }
+
+  function renderStationImages(stationId) {
+    var host = document.getElementById("detImageList");
+    if (!host) return;
+    var list = loadStations();
+    var s = list[indexOfId(list, stationId)];
+    if (!s) return;
+    host.innerHTML = "";
+
+    if (s.images.length === 0) {
+      host.innerHTML = '<p class="detail-empty small">Noch keine Lagebilder hinterlegt.</p>';
+      return;
+    }
+
+    s.images.forEach(function (im, k) {
+      var row = document.createElement("div");
+      row.className = "image-row";
+      row.innerHTML =
+        '<img class="image-preview empty" alt="">' +
+        '<div class="image-fields">' +
+          '<input type="text" class="img-title" value="' + escapeAttr(im.title) + '" placeholder="Titel (z. B. Lagebild ' + (k + 1) + ')">' +
+          '<input type="text" class="img-url" value="' + escapeAttr(im.url) + '" placeholder="Bild-URL (https://…)">' +
+        '</div>' +
+        '<button type="button" class="icon-btn danger img-remove" title="Lagebild entfernen" aria-label="Lagebild entfernen">' + stationIcon("trash") + '</button>';
+
+      var preview = row.querySelector(".image-preview");
+      preview.addEventListener("error", function () { preview.classList.add("empty"); preview.removeAttribute("src"); });
+      preview.addEventListener("load", function () { preview.classList.remove("empty"); });
+
+      row.querySelector(".img-title").addEventListener("input", function () {
+        setImageField(stationId, im.id, "title", this.value);
+      });
+      row.querySelector(".img-url").addEventListener("input", function () {
+        setImageField(stationId, im.id, "url", this.value);
+        updatePreview(preview, this.value);
+      });
+      row.querySelector(".img-remove").addEventListener("click", function () {
+        removeStationImage(stationId, im.id);
+      });
+
+      host.appendChild(row);
+      updatePreview(preview, im.url);
+    });
+  }
+
+  function updatePreview(img, url) {
+    if (nonEmpty(url)) { img.classList.remove("empty"); img.src = url; }
+    else { img.classList.add("empty"); img.removeAttribute("src"); }
+  }
+
+  function setStationField(id, prop, value) {
+    var list = loadStations();
+    var s = list[indexOfId(list, id)];
+    if (!s) return;
+    s[prop] = value;
+    saveStations(list);
+  }
+  function setImageField(stationId, imageId, prop, value) {
+    var list = loadStations();
+    var s = list[indexOfId(list, stationId)];
+    if (!s) return;
+    var im = s.images.filter(function (x) { return x.id === imageId; })[0];
+    if (!im) return;
+    im[prop] = value;
+    saveStations(list);
+  }
+  function addStationImage(stationId) {
+    var list = loadStations();
+    var s = list[indexOfId(list, stationId)];
+    if (!s) return;
+    s.images.push({ id: newImageId(), title: "Lagebild " + (s.images.length + 1), url: "" });
+    saveStations(list);
+    renderStationImages(stationId);
+    renderStationList();
+    updateStationSummary();
+  }
+  function removeStationImage(stationId, imageId) {
+    var list = loadStations();
+    var s = list[indexOfId(list, stationId)];
+    if (!s) return;
+    s.images = s.images.filter(function (x) { return x.id !== imageId; });
+    saveStations(list);
+    renderStationImages(stationId);
+    renderStationList();
+    updateStationSummary();
+  }
+
+  /* Zusammenfassung: aktive Stationen · Lagebilder gesamt · Aufgaben vollständig */
+  function updateStationSummary() {
+    var el = document.getElementById("stationSummary");
+    if (!el) return;
+    var list = loadStations();
+    var active = list.filter(function (s) { return s.active; });
+    var images = list.reduce(function (a, s) { return a + s.images.length; }, 0);
+    var withTask = active.filter(function (s) { return nonEmpty(s.task); }).length;
+    el.innerHTML =
+      'Aktive Stationen: <strong>' + active.length + '</strong>' +
+      ' · Lagebilder: <strong>' + images + '</strong>' +
+      ' · Aufgaben vollständig: <strong>' + withTask + '</strong> von <strong>' + active.length + '</strong>';
+  }
+
+  /* ======================================================================
+     HANDBUCH (Overlay)
+     ----------------------------------------------------------------------
+     Kapitelgerüst je Planungsbereich. Inhalte werden Schritt für Schritt
+     ergänzt: dazu einfach in MANUAL_CONTENT[<id>] HTML hinterlegen – fehlt
+     ein Eintrag, zeigt das Kapitel automatisch einen "wird ergänzt"-Hinweis.
+     ====================================================================== */
+
+  /* Kapitel: ein einleitendes "Allgemein" plus je ein Kapitel pro Bereich.
+     Die Bereichs-Kapitel teilen sich Id/Icon mit SECTIONS → 1:1-Kontextbezug. */
+  var MANUAL_CHAPTERS = [{ id: "intro", title: "Allgemein", icon: "book" }].concat(
+    SECTIONS.map(function (s) { return { id: s.id, title: s.label, icon: s.icon }; })
+  );
+
+  /* Inhalte (HTML-Strings). Hier werden später die Texte je Kapitel ergänzt.
+     Aktuell bewusst leer → alle Kapitel zeigen den Platzhalter. */
+  var MANUAL_CONTENT = {
+    // intro:      "<p>…</p>",
+    // grunddaten: "<p>…</p>",
+    // ...
+  };
+
+  var manualActiveId = "intro";
+  var manualLastFocus = null;
+
+  function buildManual() {
+    var toc = document.getElementById("manualToc");
+    toc.innerHTML = "";
+    MANUAL_CHAPTERS.forEach(function (ch) {
+      var hasContent = !!MANUAL_CONTENT[ch.id];
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "manual-toc-btn";
+      btn.dataset.chapter = ch.id;
+      btn.innerHTML = svg(ch.icon) + "<span>" + ch.title + "</span>" +
+        (hasContent ? "" : '<span class="toc-flag" title="Kapitel noch nicht ausgefüllt"></span>');
+      btn.addEventListener("click", function () { showManualChapter(ch.id); });
+      toc.appendChild(btn);
+    });
+  }
+
+  function showManualChapter(id) {
+    var chapter = MANUAL_CHAPTERS.filter(function (c) { return c.id === id; })[0];
+    if (!chapter) chapter = MANUAL_CHAPTERS[0];
+    manualActiveId = chapter.id;
+
+    /* aktiven TOC-Eintrag markieren */
+    document.querySelectorAll(".manual-toc-btn").forEach(function (b) {
+      b.classList.toggle("active", b.dataset.chapter === chapter.id);
+    });
+
+    /* Inhalt rendern (oder Platzhalter) */
+    var content = document.getElementById("manualContent");
+    var body = MANUAL_CONTENT[chapter.id] || manualPlaceholder(chapter.title);
+    content.innerHTML =
+      '<div class="manual-chapter-head"><h3>' + chapter.title + '</h3></div>' +
+      '<div class="manual-chapter-body">' + body + '</div>';
+    content.scrollTop = 0;
+  }
+
+  function manualPlaceholder(title) {
+    return '<div class="manual-todo">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>' +
+      '<div><div class="todo-title">Dieses Kapitel wird noch ergänzt</div>' +
+      '<div class="todo-text">Der Handbuch-Abschnitt zu „' + title + '" wird gefüllt, ' +
+      'sobald die zugehörige Funktion eingebaut ist.</div></div></div>';
+  }
+
+  function openManual() {
+    var overlay = document.getElementById("manualOverlay");
+    manualLastFocus = document.activeElement;
+
+    /* kontextbezogen: Kapitel des gerade aktiven Bereichs öffnen */
+    var activeNav = document.querySelector(".nav-btn.active");
+    var target = activeNav ? activeNav.dataset.target : "intro";
+    if (!MANUAL_CHAPTERS.some(function (c) { return c.id === target; })) target = "intro";
+
+    showManualChapter(target);
+    overlay.hidden = false;
+    document.body.style.overflow = "hidden";
+    document.getElementById("btnCloseManual").focus();
+  }
+
+  function closeManual() {
+    var overlay = document.getElementById("manualOverlay");
+    overlay.hidden = true;
+    document.body.style.overflow = "";
+    if (manualLastFocus && typeof manualLastFocus.focus === "function") manualLastFocus.focus();
+  }
+
+  function initManual() {
+    buildManual();
+    document.getElementById("btnOpenManual").addEventListener("click", openManual);
+
+    /* Schließen: X-Button und Klick auf den Hintergrund */
+    document.querySelectorAll("[data-manual-close]").forEach(function (el) {
+      el.addEventListener("click", closeManual);
+    });
+
+    /* Schließen mit Escape */
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !document.getElementById("manualOverlay").hidden) {
+        closeManual();
+      }
+    });
+  }
+
+  var hintTimer;
+  function flashHint(el, text) {
+    el.textContent = text;
+    el.classList.add("saved");
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(function () {
+      el.textContent = "Automatische Speicherung aktiv";
+      el.classList.remove("saved");
+    }, 1600);
+  }
+
+  /* --- Start ------------------------------------------------------------*/
+  document.addEventListener("DOMContentLoaded", function () {
+    buildNav();
+    buildCards();
+    initForm();
+    initVehicles();
+    initStations();
+    initManual();
+    updateStatus();
+
+    /* Fußzeile aus den zentralen App-Metadaten setzen */
+    var footerBrand = document.getElementById("footerBrand");
+    if (footerBrand) footerBrand.textContent = APP_INFO.name + " · v" + APP_INFO.version;
+  });
+})();
+</script>
+</body>
+</html>
