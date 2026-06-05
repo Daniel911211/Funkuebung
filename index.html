@@ -1404,6 +1404,19 @@ body {
      → später ggf. eigene Datei (z. B. handbuch.html) bzw. Inhalte aus data/.
      Kapitelgerüst je Planungsbereich; Inhalte werden Schritt für Schritt
      ergänzt, passend zur jeweils eingebauten Funktion.
+
+     → später: Auslagerung in eine eigene Datei handbuch.html.
+       Der aktuelle Overlay-Aufbau bleibt vorerst unverändert bestehen.
+       Der Handbuch-Button kann später statt des Overlays die Datei
+       handbuch.html öffnen. Optional lassen sich einzelne Kapitel per
+       URL-Parameter direkt ansteuern, z. B. handbuch.html?kapitel=fahrzeuge.
+       Geplante Auslagerung im Detail:
+         - eigene Datei: handbuch.html
+         - gemeinsames Design über assets/style.css
+         - gemeinsame App-Daten/Version über APP_INFO bzw. zentrale config
+         - Kapitelstruktur weiterhin aus SECTIONS übernehmen
+         - optionaler Kapitel-Aufruf per URL-Parameter
+         - Handbuch-Button öffnet dann handbuch.html statt des Overlays
      ====================================================================== -->
 <div class="manual-overlay" id="manualOverlay" hidden>
   <div class="manual-backdrop" data-manual-close></div>
