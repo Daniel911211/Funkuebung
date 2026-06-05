@@ -594,8 +594,7 @@ body {
 .station-table tr:last-child td { border-bottom: none; }
 .vehicle-table .col-no,
 .station-table .col-no  { width: 34px; text-align: center; }
-.vehicle-table .col-active,
-.station-table .col-active { width: 56px; text-align: center; }
+.vehicle-table .col-active { width: 56px; text-align: center; }
 .vehicle-table .col-num { text-align: center; }
 
 /* Fahrzeugtabelle: feste, inhaltsorientierte Spaltenbreiten über <colgroup>.
@@ -646,8 +645,7 @@ body {
 }
 
 /* inaktive Zeile dezent abdunkeln (Toggle bleibt klar sichtbar) */
-.vehicle-row.inactive td:not(.col-active),
-.station-row.inactive td:not(.col-active) { opacity: .4; }
+.vehicle-row.inactive td:not(.col-active) { opacity: .4; }
 
 /* --- Stationsliste: Verwaltung -------------------------------------------*/
 .station-toolbar { margin-bottom: 14px; }
@@ -1378,8 +1376,10 @@ body {
         <p>Inhalt der Stationen: Bezeichnung, Aufgabe, Hinweise und Lagebilder. Standort, Adresse und Koordinaten folgen später in der Routenplanung.</p>
       </div>
 
-      <!-- Flexible Stationsverwaltung: Liste (Reihenfolge, aktiv, löschen) +
+      <!-- Flexible Stationsverwaltung: Liste (Reihenfolge, löschen) +
            Detailbereich der ausgewählten Station inkl. Lagebildern.
+           Jede angelegte Station gilt als zu planende Station (kein aktiv/
+           inaktiv); nicht benötigte Stationen werden gelöscht.
            Nummer = Listenposition (nicht editierbar). -->
       <div class="panel">
         <div class="station-toolbar">
@@ -1389,7 +1389,6 @@ body {
           <table class="station-table station-list-table">
             <thead>
               <tr>
-                <th class="col-active">Aktiv</th>
                 <th class="col-no">Nr.</th>
                 <th>Bezeichnung</th>
                 <th>Aufgabe kurz</th>
@@ -1710,7 +1709,7 @@ body {
   function defaultStations() {
     var list = [];
     for (var i = 1; i <= STATION_SEED_COUNT; i++) {
-      list.push({ id: "station_" + i, active: true, title: "Station " + i, task: "", description: "", images: [] });
+      list.push({ id: "station_" + i, title: "Station " + i, task: "", description: "", images: [] });
     }
     return list;
   }
@@ -1733,9 +1732,11 @@ body {
         vehicleIds: Array.isArray(im.vehicleIds) ? im.vehicleIds.slice() : []
       };
     }) : [];
+    /* Hinweis: Stationen kennen kein active mehr. Ein evtl. in alten
+       localStorage-Daten vorhandenes s.active wird bewusst ignoriert und
+       beim Normalisieren nicht erneut geschrieben. */
     return {
       id: s.id || newStationId(),
-      active: typeof s.active === "boolean" ? s.active : true,
       title: title,
       task: s.task != null ? s.task : "",
       description: s.description != null ? s.description : "",
@@ -1790,17 +1791,15 @@ body {
     return true;
   }
 
-  /* Status der Stationsplanung:
-     - "open" : keine Station oder keine aktive Station
-     - "done" : alle aktiven Stationen sind vollständig (isStationComplete)
-     - "prog" : aktive Stationen vorhanden, aber nicht alle vollständig */
+  /* Status der Stationsplanung (Stationen kennen kein aktiv/inaktiv mehr):
+     - "open" : keine Station vorhanden
+     - "done" : alle vorhandenen Stationen sind vollständig (isStationComplete)
+     - "prog" : mindestens eine Station vorhanden, aber nicht alle vollständig */
   function computeStationStatus() {
     var list;
     try { list = loadStations(); } catch (e) { return "prog"; }
     if (!Array.isArray(list) || list.length === 0) return "open";
-    var active = list.filter(function (s) { return s.active; });
-    if (active.length === 0) return "open";
-    return active.every(isStationComplete) ? "done" : "prog";
+    return list.every(isStationComplete) ? "done" : "prog";
   }
 
   /* --- Navigation -------------------------------------------------------*/
@@ -2211,14 +2210,14 @@ body {
 
     if (list.length === 0) {
       var er = document.createElement("tr");
-      er.innerHTML = '<td colspan="6" class="station-empty">Keine Stationen vorhanden. Mit „Station hinzufügen" beginnen.</td>';
+      er.innerHTML = '<td colspan="5" class="station-empty">Keine Stationen vorhanden. Mit „Station hinzufügen" beginnen.</td>';
       body.appendChild(er);
       return;
     }
 
     list.forEach(function (s, idx) {
       var tr = document.createElement("tr");
-      tr.className = "station-row" + (s.active ? "" : " inactive") + (s.id === selectedStationId ? " selected" : "");
+      tr.className = "station-row" + (s.id === selectedStationId ? " selected" : "");
       tr.dataset.id = s.id;
       var taskCell = nonEmpty(s.task) ? escapeAttr(stationTruncate(s.task, 50)) : '<span class="cell-muted">—</span>';
       /* Lagebilder-Kurzform: 0 / 1 schlicht; ab 2 zusätzlich Anzahl
@@ -2227,31 +2226,14 @@ body {
         ? (s.images.length + ' · ' + distinctVehicleCount(s) + ' Fzg.')
         : String(s.images.length);
       tr.innerHTML =
-        '<td class="col-active">' +
-          '<label class="toggle" title="Station aktiv/inaktiv">' +
-            '<input type="checkbox" data-prop="active"' + (s.active ? " checked" : "") + ' aria-label="Station aktiv">' +
-            '<span class="track"><span class="thumb"></span></span>' +
-          '</label>' +
-        '</td>' +
         '<td class="col-no"><span class="station-no">' + (idx + 1) + '</span></td>' +
         '<td class="station-cell-title">' + escapeAttr(s.title) + '</td>' +
         '<td class="station-cell-task">' + taskCell + '</td>' +
         '<td class="col-imgs">' + imgCell + '</td>' +
         '<td class="col-actions">' + stationActionsHtml(idx, list.length) + '</td>';
 
-      /* Zeile auswählen (Klicks auf Toggle/Aktionen sind ausgenommen) */
+      /* Zeile auswählen (Klicks auf Aktionen sind ausgenommen) */
       tr.addEventListener("click", function () { selectStation(s.id); });
-
-      var cb = tr.querySelector('input[type="checkbox"]');
-      cb.addEventListener("click", function (e) { e.stopPropagation(); });
-      cb.addEventListener("change", function () {
-        var l = loadStations();
-        var st = l[indexOfId(l, s.id)];
-        if (st) { st.active = this.checked; saveStations(l); }
-        renderStationList();
-        updateStationSummary();
-        updateStatus();
-      });
 
       tr.querySelectorAll(".col-actions .icon-btn").forEach(function (btn) {
         btn.addEventListener("click", function (e) {
@@ -2303,7 +2285,7 @@ body {
 
   function addStation() {
     var list = loadStations();
-    var st = { id: newStationId(), active: true, title: "Station " + (list.length + 1), task: "", description: "", images: [] };
+    var st = { id: newStationId(), title: "Station " + (list.length + 1), task: "", description: "", images: [] };
     list.push(st);
     saveStations(list);
     selectedStationId = st.id;
@@ -2570,20 +2552,19 @@ body {
     updateStatus();
   }
 
-  /* Zusammenfassung: aktive Stationen · Lagebilder gesamt · Stationen
+  /* Zusammenfassung: Stationen gesamt · Lagebilder gesamt · Stationen
      vollständig (nach isStationComplete: Aufgabe + Lagebild-URLs + bei 2+
      Lagebildern je Lagebild mindestens ein Fahrzeug). */
   function updateStationSummary() {
     var el = document.getElementById("stationSummary");
     if (!el) return;
     var list = loadStations();
-    var active = list.filter(function (s) { return s.active; });
     var images = list.reduce(function (a, s) { return a + s.images.length; }, 0);
-    var complete = active.filter(isStationComplete).length;
+    var complete = list.filter(isStationComplete).length;
     el.innerHTML =
-      'Aktive Stationen: <strong>' + active.length + '</strong>' +
+      'Stationen: <strong>' + list.length + '</strong>' +
       ' · Lagebilder: <strong>' + images + '</strong>' +
-      ' · Stationen vollständig: <strong>' + complete + '</strong> von <strong>' + active.length + '</strong>';
+      ' · Stationen vollständig: <strong>' + complete + '</strong> von <strong>' + list.length + '</strong>';
   }
 
   /* ======================================================================
