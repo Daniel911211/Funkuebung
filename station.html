@@ -9,8 +9,10 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.1 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.2 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.2: Titel in der Kopfzeile nicht mehr fett – gleiche Optik wie Datum
+  und Uhrzeit.
   Stand 1.0.1: Kopfzeile wieder kompakt einzeilig (Titel · Datum · Uhrzeit), Datum
   als TT.MM.JJJJ. Werte aus data/uebung.json → meta.
   Stand 1.0.0: Neutraler Positionscode-Hinweis (ohne Formatbeispiel),
@@ -52,7 +54,6 @@
   body{margin:0;background:var(--bg-0);color:var(--text);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;}
   .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 44px;}
   .meta{font-size:.82rem;color:var(--text-faint);text-align:center;margin-bottom:12px;}
-  .meta b{color:var(--text-muted);font-weight:600;}
 
   .topbar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);position:relative;overflow:hidden;margin-bottom:16px;}
   .topbar::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);}
@@ -108,7 +109,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.1" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.2" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -134,7 +135,7 @@
   function render(data, station, vehicle, fhz){
     var meta=data.meta||{};
     var ex=[];
-    if(nonEmpty(meta.name)) ex.push('<b>'+escapeHTML(meta.name)+'</b>');
+    if(nonEmpty(meta.name)) ex.push(escapeHTML(meta.name));
     if(nonEmpty(meta.date)) ex.push(escapeHTML(fmtDate(meta.date)));
     if(nonEmpty(meta.time)) ex.push(escapeHTML(meta.time)+' Uhr');
     document.getElementById("exMeta").innerHTML=ex.join(' · ');
