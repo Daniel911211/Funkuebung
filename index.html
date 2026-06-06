@@ -13,9 +13,18 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.25.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.26.0)
   ============================================================================
-  Stand 1.25.1 (QR-Code-Großvorschau im Overlay): Klick/Enter auf einen QR-Code in
+  Stand 1.26.0 (Druck / Export aufgebaut): Neuer Funktionsblock „Druck / Export":
+  (1) Planung exportieren/importieren als vollständiges Tool-JSON (alle
+  funkuebung_*-Keys; Import mit Bestätigung → Überschreiben → Reload, ungültige
+  Datei wird abgefangen). (2) „data/uebung.json exportieren" für station.html –
+  enthält nur meta/vehicles/stations/assignments (char+code), Base64-Wrapper wie
+  bisher, OHNE Lösungssatz-phrase. (3) QR-Code-Karten drucken: je Fahrzeug eine
+  A4-Seite (2×4), Reihenfolge aus der Routenplanung, Karten nur mit Fahrzeug/
+  Funkrufname/Station/QR (keine Bezeichnung, kein Link). Nutzt QRGEN/Canvas, kein
+  CDN. Zwei veraltete QR-Hinweistexte korrigiert. station.html/Repo-data/uebung.json
+  unverändert. Davor – Stand 1.25.1 (QR-Code-Großvorschau im Overlay): Klick/Enter auf einen QR-Code in
   der Übersicht öffnet ihn groß in einem Overlay (analog zur Lagebild-Vorschau,
   Schließen per X/Backdrop/Escape) – mit Stations-/Fahrzeug-Beschriftung und Link.
   Davor – Stand 1.25.0 (QR-Code-Grafiken je Station × Fahrzeug): Jede Fahrzeug-Zeile der
@@ -1357,6 +1366,37 @@ body {
 .qr-lightbox-cap .qr-lb-link a { color: #1a4f8a; text-decoration: none; }
 .qr-lightbox-cap .qr-lb-link a:hover { text-decoration: underline; }
 
+/* --- Druck / Export -----------------------------------------------------*/
+.de-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.de-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.de-row label { font-size: .8rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: .06em; }
+.de-row select { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius-sm); color: var(--text); font: inherit; font-size: .95rem; padding: 9px 12px; }
+.de-row select:focus { outline: none; border-color: var(--red); }
+.de-confirm { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--btn-warn); border-radius: var(--radius); background: rgba(224,163,46,.08); }
+.de-confirm-text { margin: 0 0 12px; font-size: .9rem; color: var(--text); line-height: 1.5; }
+.de-msg { margin: 10px 0 0; font-size: .88rem; min-height: 1.1em; }
+.de-msg.ok { color: var(--status-done); }
+.de-msg.warn { color: var(--status-prog); }
+
+/* --- QR-Druckkarten (A4, nur im Druck sichtbar) -------------------------*/
+#printArea { display: none; }
+@media print {
+  @page { size: A4; margin: 10mm; }
+  body > *:not(#printArea) { display: none !important; }
+  #printArea { display: block !important; }
+  .print-page { page-break-after: always; color: #000; }
+  .print-page:last-child { page-break-after: auto; }
+  .print-head { margin-bottom: 8mm; border-bottom: 1px solid #000; padding-bottom: 4mm; }
+  .print-title { font-size: 16pt; font-weight: 700; }
+  .print-sub { font-size: 11pt; margin-top: 1mm; }
+  .print-veh { font-size: 12pt; font-weight: 600; margin-top: 2mm; }
+  .print-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7mm; }
+  .print-card { border: 1px solid #000; border-radius: 2mm; padding: 5mm; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2.5mm; break-inside: avoid; }
+  .print-card-veh { font-size: 10pt; font-weight: 600; }
+  .print-card-st { font-size: 13pt; font-weight: 700; }
+  .print-qr { width: 42mm; height: 42mm; }
+}
+
 /* --- Lösungssatz ---------------------------------------------------------*/
 #sec-loesung > .panel { margin-top: 18px; }
 #sec-loesung > .panel:first-of-type { margin-top: 0; }
@@ -2212,7 +2252,7 @@ body {
       <!-- 2) QR-Code-Übersicht (Station × Fahrzeug) -->
       <div class="panel">
         <h3 class="subsection-title">QR-Code-Übersicht</h3>
-        <p class="field-hint" style="margin-bottom:14px">Je aktivem Fahrzeug und Station ein Link, sortiert nach Station. (Die QR-Grafiken folgen später – hier zunächst die fertigen Links.)</p>
+        <p class="field-hint" style="margin-bottom:14px">Je aktivem Fahrzeug und Station ein QR-Code mit Link, sortiert nach Station.</p>
         <div class="qr-actions" style="margin-top:0;margin-bottom:14px">
           <button type="button" class="btn btn-secondary" id="qrCopyAll">Alle Links kopieren</button>
           <span class="save-hint" id="qrCopyHint"></span>
@@ -2222,7 +2262,7 @@ body {
 
       <!-- 3) Hinweis: Druck/Export folgt -->
       <div class="panel">
-        <p class="qr-note">Hinweis: Die QR-Grafiken sowie der Export der Übungsdaten (<code>data/uebung.json</code>) und der komplette Planungsexport/-import folgen später im Bereich „Druck / Export".</p>
+        <p class="qr-note">Der Export der Übungsdaten (<code>data/uebung.json</code>) und der komplette Planungsexport/-import folgen im Bereich „Druck / Export".</p>
       </div>
     </section>
 
@@ -2231,13 +2271,45 @@ body {
     <section class="section" id="sec-druck">
       <div class="section-head">
         <h2>Druck / Export</h2>
-        <p>Aufbereitung der Planung für Ausdruck und Weitergabe.</p>
+        <p>Planung sichern und wieder laden, Stationsdaten für die QR-Seite exportieren und QR-Karten je Fahrzeug drucken.</p>
       </div>
-      <div class="placeholder">
-        <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg></div>
-        <h3>Druckansicht &amp; Export</h3>
-        <p>Hier entsteht später die Druck- und Exportansicht der gesamten Planung. Wird in eine eigene Datei (print/druckansicht.html) ausgelagert.</p>
-        <span class="ph-tag">In Vorbereitung</span>
+
+      <!-- 1) Planung (vollständiges Tool-JSON) -->
+      <div class="panel">
+        <h3 class="subsection-title">Planung</h3>
+        <div class="de-actions">
+          <button type="button" class="btn btn-secondary" id="planExportBtn">Planung exportieren</button>
+          <button type="button" class="btn btn-warning" id="planImportBtn">Planung importieren</button>
+          <input type="file" id="planImportFile" accept=".json,application/json" hidden>
+        </div>
+        <div class="de-confirm" id="planImportConfirm" hidden>
+          <p class="de-confirm-text" id="planImportConfirmText"></p>
+          <div class="de-actions">
+            <button type="button" class="btn btn-danger" id="planImportConfirmBtn">Import bestätigen – Planung überschreiben</button>
+            <button type="button" class="btn btn-secondary" id="planImportCancelBtn">Abbrechen</button>
+          </div>
+        </div>
+        <p class="de-msg" id="planMsg" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- 2) Stationsdaten (data/uebung.json für station.html) -->
+      <div class="panel">
+        <h3 class="subsection-title">Stationsdaten</h3>
+        <div class="de-actions">
+          <button type="button" class="btn btn-secondary" id="uebungExportBtn">data/uebung.json exportieren</button>
+        </div>
+        <p class="de-msg" id="uebungMsg" role="status" aria-live="polite"></p>
+      </div>
+
+      <!-- 3) QR-Code-Karten (Druck je Fahrzeug) -->
+      <div class="panel">
+        <h3 class="subsection-title">QR-Code-Karten</h3>
+        <div class="de-row">
+          <label for="printVehicleSel">Fahrzeug</label>
+          <select id="printVehicleSel"></select>
+          <button type="button" class="btn btn-primary" id="printQrBtn">QR-Karten drucken</button>
+        </div>
+        <p class="de-msg" id="printMsg" role="status" aria-live="polite"></p>
       </div>
     </section>
 
@@ -2347,6 +2419,9 @@ body {
   <img class="img-lightbox-img" id="imgLightboxImg" alt="Lagebild-Vorschau">
 </div>
 
+<!-- Druckbereich für QR-Code-Karten (nur im Druck sichtbar, per JS gefüllt) -->
+<div id="printArea" aria-hidden="true"></div>
+
 <!-- =========================================================================
      FUSSZEILE
      ====================================================================== -->
@@ -2368,7 +2443,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.25.1"
+    version: "1.26.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2703,6 +2778,8 @@ body {
     /* QR-Übersicht beim Öffnen neu aufbauen (Fahrzeuge/Stationen können sich
        geändert haben). */
     if (id === "qr") renderQr();
+    /* Druck/Export beim Öffnen: Fahrzeugauswahl neu füllen, Status zurücksetzen. */
+    if (id === "druck") renderDruck();
   }
 
   /* --- Dashboard-Statuskarten ------------------------------------------*/
@@ -4924,6 +5001,130 @@ body {
   }
 
   /* ======================================================================
+     DRUCK / EXPORT
+     ----------------------------------------------------------------------
+     (1) Planung exportieren/importieren = vollständiges Tool-JSON (alle
+         funkuebung_*-Keys). (2) data/uebung.json für station.html (nur die von
+         station.html benötigten Felder, OHNE Lösungssatz-phrase; Base64-Wrapper
+         wie bisher). (3) QR-Druckkarten je Fahrzeug in Routenreihenfolge (A4).
+         Nutzt QRGEN/drawQrCanvas; keine externe Lib, kein CDN. ============== */
+  function deAllLocalFunkKeys(){ var ks=[]; try{ for(var i=0;i<localStorage.length;i++){ var k=localStorage.key(i); if(k && k.indexOf("funkuebung_")===0) ks.push(k); } }catch(e){} return ks; }
+  function deDownload(name, text){ try{ var blob=new Blob([text],{type:"application/json"}); var url=URL.createObjectURL(blob); var a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function(){URL.revokeObjectURL(url);},0); return true; }catch(e){ return false; } }
+  function deTimestamp(){ var d=new Date(); function p(n){return (n<10?"0":"")+n;} return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes()); }
+  function deB64Utf8(str){ return btoa(unescape(encodeURIComponent(str))); }
+  function deMsg(id,text,kind){ var el=document.getElementById(id); if(!el) return; el.textContent=text||""; el.className="de-msg"+(kind?(" "+kind):""); }
+  function deFmtDate(d){ var s=String(d==null?"":d).trim(); var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s); return m?(m[3]+"."+m[2]+"."+m[1]):s; }
+
+  /* (1) Planung exportieren – vollständiges Tool-JSON */
+  function exportFullPlanning(){
+    var data={};
+    deAllLocalFunkKeys().forEach(function(k){ var raw; try{raw=localStorage.getItem(k);}catch(e){raw=null;} if(raw==null) return; var v; try{v=JSON.parse(raw);}catch(e){v=raw;} data[k]=v; });
+    var obj={ app:"EA-Funkuebung-Planungstool", kind:"planung", version:APP_INFO.version, exportedAt:new Date().toISOString(), data:data };
+    if(deDownload("funkuebung-planung-"+deTimestamp()+".json", JSON.stringify(obj,null,2))) deMsg("planMsg","Planung exportiert.","ok");
+    else deMsg("planMsg","Export nicht möglich.","warn");
+  }
+
+  /* (1) Planung importieren – Datei lesen → prüfen → bestätigen → überschreiben → reload */
+  var dePendingImport=null;
+  function deReadPlanFile(input){ var f=input&&input.files&&input.files[0]; if(input) input.value=""; if(!f) return; var rd=new FileReader(); rd.onload=function(){ deStageImport(rd.result); }; rd.onerror=function(){ deMsg("planMsg","Datei konnte nicht gelesen werden.","warn"); }; rd.readAsText(f); }
+  function deStageImport(text){
+    var obj; try{obj=JSON.parse(text);}catch(e){ deMsg("planMsg","Ungültige Datei: kein gültiges JSON.","warn"); return; }
+    if(!obj || obj.app!=="EA-Funkuebung-Planungstool" || obj.kind!=="planung" || typeof obj.data!=="object" || obj.data===null){ deMsg("planMsg","Ungültige Datei: keine Planungs-Exportdatei dieses Tools.","warn"); return; }
+    if(Object.keys(obj.data).filter(function(k){return k.indexOf("funkuebung_")===0;}).length===0){ deMsg("planMsg","Ungültige Datei: keine Planungsdaten enthalten.","warn"); return; }
+    dePendingImport=obj;
+    var when=""; try{ if(obj.exportedAt) when=new Date(obj.exportedAt).toLocaleString("de-DE"); }catch(e){}
+    var t=document.getElementById("planImportConfirmText"); if(t) t.textContent="Importdatei erkannt (Version "+(obj.version||"?")+(when?", "+when:"")+"). Beim Import wird der aktuelle Planungsstand auf diesem Gerät vollständig überschrieben.";
+    var c=document.getElementById("planImportConfirm"); if(c) c.hidden=false;
+    deMsg("planMsg","");
+  }
+  function deConfirmImport(){
+    if(!dePendingImport){ var c0=document.getElementById("planImportConfirm"); if(c0) c0.hidden=true; return; }
+    try{
+      var data=dePendingImport.data;
+      deAllLocalFunkKeys().forEach(function(k){ try{localStorage.removeItem(k);}catch(e){} });
+      Object.keys(data).forEach(function(k){ if(k.indexOf("funkuebung_")!==0) return; var v=data[k]; try{ localStorage.setItem(k,(typeof v==="string")? v : JSON.stringify(v)); }catch(e){} });
+      deMsg("planMsg","Planung importiert. Die Seite wird neu geladen …","ok");
+      setTimeout(function(){ location.reload(); }, 500);
+    }catch(e){ deMsg("planMsg","Import fehlgeschlagen – es wurde nichts überschrieben.","warn"); }
+  }
+  function deCancelImport(){ dePendingImport=null; var c=document.getElementById("planImportConfirm"); if(c) c.hidden=true; deMsg("planMsg","Import abgebrochen.",""); }
+
+  /* (2) data/uebung.json für station.html – nur benötigte Felder, ohne phrase */
+  function exportUebungJson(){
+    var stations=loadStations(); var active=loadVehicles().filter(function(v){return v.active;});
+    if(active.length===0){ deMsg("uebungMsg","Keine aktiven Fahrzeuge – nichts zu exportieren.","warn"); return; }
+    if(stations.length===0){ deMsg("uebungMsg","Keine Stationen – nichts zu exportieren.","warn"); return; }
+    var grund=loadData(); var plan=computeLoesungPlan(); var sc=plan.stationCount;
+    var assignments={};
+    plan.vehicleAssignments.forEach(function(a, vi){
+      assignments[a.vehicle.id]={};
+      a.rows.forEach(function(r, j){ var pos=vi*sc+j; assignments[a.vehicle.id][String(r.stationIndex+1)]={ char:r.char, code:(r.char!=="" ? ("W1P"+(pos+1)) : "") }; });
+    });
+    var inner={
+      app:"EA-Funkuebung-Planungstool", version:APP_INFO.version, generatedAt:new Date().toISOString(),
+      meta:{ name:grund.name||"", date:grund.date||"", time:grund.time||"" },
+      vehicles: active.map(function(v){ return { id:v.id, type:v.type, callsign:v.callsign }; }),
+      stations: stations.map(function(st,idx){ return { nr:idx+1, id:st.id, title:st.title||"", task:st.task||"", images:(Array.isArray(st.images)?st.images:[]).map(function(im){ return { url:im.url||"", title:im.title||"", vehicleIds:(Array.isArray(im.vehicleIds)?im.vehicleIds.slice():[]) }; }) }; }),
+      assignments: assignments
+    };
+    var wrapper={ app:"EA-Funkuebung-Planungstool", format:"b64", payload:deB64Utf8(JSON.stringify(inner)) };
+    if(deDownload("uebung.json", JSON.stringify(wrapper,null,2))) deMsg("uebungMsg","data/uebung.json exportiert – im Repo unter data/ ablegen.","ok");
+    else deMsg("uebungMsg","Export nicht möglich.","warn");
+  }
+
+  /* (3) QR-Druckkarten je Fahrzeug (Routenreihenfolge, A4) */
+  function populatePrintVehicleSel(){
+    var sel=document.getElementById("printVehicleSel"); if(!sel) return; var prev=sel.value;
+    var active=loadVehicles().filter(function(v){return v.active;});
+    sel.innerHTML="";
+    var all=document.createElement("option"); all.value="__all__"; all.textContent="Alle aktiven Fahrzeuge"; sel.appendChild(all);
+    active.forEach(function(v){ var o=document.createElement("option"); o.value=v.id; o.textContent=v.type+" · "+v.callsign; sel.appendChild(o); });
+    if(prev){ sel.value=prev; if(sel.value!==prev) sel.value="__all__"; }
+  }
+  function buildPrintPages(selId){
+    var area=document.getElementById("printArea"); if(!area) return 0; area.innerHTML="";
+    var stations=loadStations(); var active=loadVehicles().filter(function(v){return v.active;});
+    var grund=loadData(); var base=loadQrSettings().baseUrl;
+    var title=grund.name||"Funkübung"; var sub=[deFmtDate(grund.date), grund.time?grund.time+" Uhr":""].filter(Boolean).join(" · ");
+    var count=0;
+    active.forEach(function(v, idx){
+      if(selId!=="__all__" && v.id!==selId) return;
+      var route=buildAutoRouteForVehicle(idx, stations);
+      var cards=route.map(function(st){ var nr=indexOfId(stations, st.id)+1; var link=qrBuildLink(base, nr, v.id);
+        return '<div class="print-card"><div class="print-card-veh">'+escapeHTML(v.type)+' · '+escapeHTML(v.callsign)+'</div><div class="print-card-st">Station '+nr+'</div><canvas class="print-qr" data-link="'+escapeAttr(link)+'"></canvas></div>';
+      }).join("");
+      var page=document.createElement("div"); page.className="print-page";
+      page.innerHTML='<div class="print-head"><div class="print-title">'+escapeHTML(title)+'</div>'+(sub?'<div class="print-sub">'+escapeHTML(sub)+'</div>':'')+'<div class="print-veh">'+escapeHTML(v.type)+' · '+escapeHTML(v.callsign)+'</div></div><div class="print-grid">'+cards+'</div>';
+      area.appendChild(page); count++;
+    });
+    area.querySelectorAll(".print-qr").forEach(function(cv){ drawQrCanvas(cv, cv.getAttribute("data-link"), 300); });
+    return count;
+  }
+  function printQrCards(){
+    var stations=loadStations(); var active=loadVehicles().filter(function(v){return v.active;});
+    if(active.length===0){ deMsg("printMsg","Keine aktiven Fahrzeuge.","warn"); return; }
+    if(stations.length===0){ deMsg("printMsg","Keine Stationen.","warn"); return; }
+    if(!qrNormalizeBase(loadQrSettings().baseUrl)){ deMsg("printMsg","Kein GitHub-Basislink gesetzt – die QR-Codes wären beim Scannen nicht aufrufbar. Bitte zuerst im QR-Code-Bereich den Basislink setzen.","warn"); return; }
+    var sel=document.getElementById("printVehicleSel"); var which=sel?sel.value:"__all__";
+    if(buildPrintPages(which)===0){ deMsg("printMsg","Kein Fahrzeug ausgewählt.","warn"); return; }
+    deMsg("printMsg","");
+    window.print();
+  }
+
+  function renderDruck(){ populatePrintVehicleSel(); var c=document.getElementById("planImportConfirm"); if(c) c.hidden=true; dePendingImport=null; deMsg("planMsg",""); deMsg("uebungMsg",""); deMsg("printMsg",""); }
+  function initDruck(){
+    var ex=document.getElementById("planExportBtn"); if(ex) ex.addEventListener("click", exportFullPlanning);
+    var imp=document.getElementById("planImportBtn"); var impFile=document.getElementById("planImportFile");
+    if(imp&&impFile) imp.addEventListener("click", function(){ impFile.click(); });
+    if(impFile) impFile.addEventListener("change", function(){ deReadPlanFile(impFile); });
+    var ok=document.getElementById("planImportConfirmBtn"); if(ok) ok.addEventListener("click", deConfirmImport);
+    var ca=document.getElementById("planImportCancelBtn"); if(ca) ca.addEventListener("click", deCancelImport);
+    var ue=document.getElementById("uebungExportBtn"); if(ue) ue.addEventListener("click", exportUebungJson);
+    var pr=document.getElementById("printQrBtn"); if(pr) pr.addEventListener("click", printQrCards);
+    populatePrintVehicleSel();
+  }
+
+  /* ======================================================================
      HANDBUCH (Overlay)
      ----------------------------------------------------------------------
      Kapitelgerüst je Planungsbereich. Inhalte werden Schritt für Schritt
@@ -5052,6 +5253,7 @@ body {
     initLoesung();
     initSatzsammlung();
     initQr();
+    initDruck();
     initManual();
     initImageLightbox();
     updateStatus();
