@@ -13,9 +13,12 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.26.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.26.2)
   ============================================================================
-  Stand 1.26.1 (QR-Druckkarten schlanker): Auf den einzelnen QR-Druckkarten
+  Stand 1.26.2 (Druck/Export optisch als Karten): Die drei Blöcke (Planung,
+  Stationsdaten, QR-Code-Karten) haben jetzt roten Seitenakzent + Icon-Chip neben
+  dem Titel (Stil wie QR-/Routenkarten). Nur Optik, keine Logikänderung.
+  Davor – Stand 1.26.1 (QR-Druckkarten schlanker): Auf den einzelnen QR-Druckkarten
   entfällt die Fahrzeug-/Funkrufname-Zeile (steht bereits im Seitenkopf) – Karte
   zeigt nur noch „Station N" + QR. Nur Druck-Layout, keine Logikänderung.
   Davor – Stand 1.26.0 (Druck / Export aufgebaut): Neuer Funktionsblock „Druck / Export":
@@ -1380,6 +1383,11 @@ body {
 .de-msg { margin: 10px 0 0; font-size: .88rem; min-height: 1.1em; }
 .de-msg.ok { color: var(--status-done); }
 .de-msg.warn { color: var(--status-prog); }
+.de-card { border-left: 3px solid var(--red); }
+.de-card-head { display: flex; align-items: center; gap: 11px; margin-bottom: 14px; }
+.de-card-head .subsection-title { margin: 0; }
+.de-ico { width: 34px; height: 34px; flex: 0 0 auto; border-radius: 9px; background: var(--red-soft); border: 1px solid rgba(134,22,25,.4); display: grid; place-items: center; color: var(--red-strong); }
+.de-ico svg { width: 18px; height: 18px; }
 
 /* --- QR-Druckkarten (A4, nur im Druck sichtbar) -------------------------*/
 #printArea { display: none; }
@@ -2277,8 +2285,8 @@ body {
       </div>
 
       <!-- 1) Planung (vollständiges Tool-JSON) -->
-      <div class="panel">
-        <h3 class="subsection-title">Planung</h3>
+      <div class="panel de-card">
+        <div class="de-card-head"><span class="de-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg></span><h3 class="subsection-title">Planung</h3></div>
         <div class="de-actions">
           <button type="button" class="btn btn-secondary" id="planExportBtn">Planung exportieren</button>
           <button type="button" class="btn btn-warning" id="planImportBtn">Planung importieren</button>
@@ -2295,8 +2303,8 @@ body {
       </div>
 
       <!-- 2) Stationsdaten (data/uebung.json für station.html) -->
-      <div class="panel">
-        <h3 class="subsection-title">Stationsdaten</h3>
+      <div class="panel de-card">
+        <div class="de-card-head"><span class="de-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><h3 class="subsection-title">Stationsdaten</h3></div>
         <div class="de-actions">
           <button type="button" class="btn btn-secondary" id="uebungExportBtn">data/uebung.json exportieren</button>
         </div>
@@ -2304,8 +2312,8 @@ body {
       </div>
 
       <!-- 3) QR-Code-Karten (Druck je Fahrzeug) -->
-      <div class="panel">
-        <h3 class="subsection-title">QR-Code-Karten</h3>
+      <div class="panel de-card">
+        <div class="de-card-head"><span class="de-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg></span><h3 class="subsection-title">QR-Code-Karten</h3></div>
         <div class="de-row">
           <label for="printVehicleSel">Fahrzeug</label>
           <select id="printVehicleSel"></select>
@@ -2445,7 +2453,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.26.1"
+    version: "1.26.2"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
