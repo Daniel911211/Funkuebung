@@ -13,9 +13,14 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.24.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.24.1)
   ============================================================================
-  Stand 1.24.0 (QR-Code-Plan – Link-Übersicht Station × Fahrzeug): Der QR-Bereich
+  Stand 1.24.1 (QR-Bereich entschlackt): In den Zeilen der QR-Übersicht entfällt
+  die dezente FHZ-ID-Spalte (war doppelt zum Fahrzeugtyp und steht ohnehin im Link).
+  Zusätzlich wurde der Grundlagen-Info-Block (GitHub-Basislink/Stationsseite/
+  Beispiel-Link/Format-Anzeige) entfernt; das Eingabefeld „GitHub-Basislink" bleibt.
+  Nur Anzeige, keine Logikänderung.
+  Davor – Stand 1.24.0 (QR-Code-Plan – Link-Übersicht Station × Fahrzeug): Der QR-Bereich
   ist kein Platzhalter mehr. Grundlagen-Panel mit GitHub-Basislink (Eingabefeld,
   auto-gespeichert in funkuebung_qr_settings_v1; „Aus aktueller Adresse übernehmen";
   Stationsseite/Beispiel-Link/Format als Hinweis) und eine Übersicht für ALLE
@@ -1312,10 +1317,6 @@ body {
 #sec-qr > .panel { margin-top: 18px; }
 #sec-qr > .panel:first-of-type { margin-top: 0; }
 .qr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
-.qr-info { margin-top: 14px; font-size: .88rem; color: var(--text-muted); line-height: 1.7; }
-.qr-info .k { color: var(--text-faint); }
-.qr-info code { font-family: var(--font-mono); color: var(--text); background: var(--bg-1); padding: 1px 5px; border-radius: 4px; word-break: break-all; }
-.qr-info .qr-warn { color: var(--status-prog); }
 .qr-note { margin: 0; font-size: .85rem; color: var(--text-faint); line-height: 1.5; }
 .qr-note code { font-family: var(--font-mono); color: var(--text-muted); }
 .qr-empty { margin: 0; font-size: .9rem; color: var(--text-faint); font-style: italic; }
@@ -1326,7 +1327,6 @@ body {
 .qr-row:first-of-type { border-top: none; }
 .qr-veh { font-weight: 600; color: var(--text); min-width: 52px; }
 .qr-call { color: var(--text-muted); font-size: .9rem; }
-.qr-id { color: var(--text-faint); font-family: var(--font-mono); font-size: .82rem; }
 .qr-link { flex-basis: 100%; font-size: .82rem; font-family: var(--font-mono); }
 .qr-link a { color: #6fa8e0; text-decoration: none; word-break: break-all; }
 .qr-link a:hover { text-decoration: underline; }
@@ -2181,7 +2181,6 @@ body {
           <button type="button" class="btn btn-secondary" id="qrUseCurrent">Aus aktueller Adresse übernehmen</button>
           <span class="save-hint" id="qrSaveHint">Automatische Speicherung aktiv</span>
         </div>
-        <div class="qr-info" id="qrInfo"><!-- Stationsseite, Beispiel-Link, Hinweis (per JS) --></div>
       </div>
 
       <!-- 2) QR-Code-Übersicht (Station × Fahrzeug) -->
@@ -2335,7 +2334,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.24.0"
+    version: "1.24.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -4664,19 +4663,6 @@ body {
     return nb ? (nb + "/" + rel) : rel;
   }
 
-  function renderQrInfo(base) {
-    var el = document.getElementById("qrInfo");
-    if (!el) return;
-    var nb = qrNormalizeBase(base);
-    var example = qrBuildLink(base, 1, "elw");
-    var html =
-      '<div><span class="k">GitHub-Basislink:</span> ' + (nb ? '<code>' + escapeHTML(nb) + '</code>' : '<span class="qr-warn">nicht gesetzt – es werden relative Links angezeigt</span>') + '</div>' +
-      '<div><span class="k">Stationsseite:</span> <code>station.html</code></div>' +
-      '<div><span class="k">Beispiel-Link:</span> <code>' + escapeHTML(example) + '</code></div>' +
-      '<div><span class="k">Format:</span> <code>' + escapeHTML((nb ? nb + "/" : "") + "station.html?s=STATION&fhz=FAHRZEUG_ID") + '</code></div>';
-    el.innerHTML = html;
-  }
-
   /* Sammelt aktive Fahrzeuge × Stationen (sortiert nach Station). */
   function qrCollect(base) {
     var stations = loadStations();
@@ -4705,7 +4691,6 @@ body {
         return '<div class="qr-row">' +
                  '<span class="qr-veh">' + escapeHTML(r.vType || r.vId) + '</span>' +
                  '<span class="qr-call">' + escapeHTML(r.vCall || "") + '</span>' +
-                 '<span class="qr-id">' + escapeHTML(r.vId) + '</span>' +
                  '<span class="qr-link"><a href="' + escapeAttr(r.link) + '" target="_blank" rel="noopener">' + escapeHTML(r.link) + '</a></span>' +
                '</div>';
       }).join("");
@@ -4716,7 +4701,6 @@ body {
   function renderQrViews() {
     var inp = document.getElementById("qrBaseUrl");
     var base = inp ? inp.value : loadQrSettings().baseUrl;
-    renderQrInfo(base);
     renderQrOverview(base);
   }
   /* Voller Render beim Öffnen: Eingabefeld aus Speicher füllen, dann Ansichten. */
