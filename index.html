@@ -13,9 +13,12 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.13.3)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.13.4)
   ============================================================================
-  Stand 1.13.3 (Streckenübersicht – Aufräumen): Die Grundroute-Zeile (Station 1 → …)
+  Stand 1.13.4 (Fahrzeugrouten – Aufräumen): Die Kopfzeile „Start: … · N Stationen"
+  je Fahrzeugkarte wurde entfernt; die Reihenfolge steht ohnehin in der nummerierten
+  Liste darunter. Reine Anzeige-/CSS-Bereinigung, keine Logikänderung.
+  Davor (1.13.3, Streckenübersicht – Aufräumen): Die Grundroute-Zeile (Station 1 → …)
   wurde aus der Streckenübersicht entfernt; die Stationsanzahl ist über „Stationen
   gesetzt: X von Y" ablesbar. Reine Anzeige-/CSS-Bereinigung, keine Logikänderung.
   Davor (1.13.2, Layout – Vollbreite + Kartenbereich): Alle Bereiche nutzen die volle
@@ -1052,7 +1055,6 @@ body {
 .route-veh-head { margin-bottom: 12px; }
 .route-veh-title { font-size: 1rem; font-weight: 600; color: var(--text); }
 .route-veh-sub { font-size: .82rem; color: var(--text-muted); }
-.route-veh-count { font-size: .76rem; color: var(--text-faint); margin-top: 4px; font-variant-numeric: tabular-nums; }
 .route-list { list-style: none; margin: 0; padding: 0; }
 .route-item {
   display: flex; align-items: center; gap: 10px;
@@ -1816,7 +1818,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.13.3"
+    version: "1.13.4"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3382,7 +3384,6 @@ body {
 
     active.forEach(function (v, idx) {
       var route = buildAutoRouteForVehicle(idx, stations);
-      var start = route[0];
       var card = document.createElement("div");
       card.className = "route-veh";
 
@@ -3397,7 +3398,6 @@ body {
         '<div class="route-veh-head">' +
           '<div class="route-veh-title">' + escapeAttr(v.type) + '</div>' +
           '<div class="route-veh-sub">' + escapeAttr(v.callsign) + '</div>' +
-          '<div class="route-veh-count">Start: ' + escapeAttr(start.title) + ' · ' + stations.length + ' Station' + (stations.length === 1 ? '' : 'en') + '</div>' +
         '</div>' +
         '<ol class="route-list">' + itemsHtml + '</ol>';
 
