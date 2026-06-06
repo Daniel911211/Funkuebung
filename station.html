@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Station – Funkübung</title>
+<!--
+  ============================================================================
+  FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)
+  ============================================================================
+  Eigenständige Anzeige für eine Station + ein Fahrzeug, geöffnet per QR-Code:
+      station.html?s=<Stationsnummer>&fhz=<Fahrzeug-ID>
+  z. B. station.html?s=1&fhz=elw
+
+  Liest die generierten Übungsdaten aus data/uebung.json. Die eigentlichen
+  Daten stecken Base64-verschleiert im Feld "payload" (format:"b64"). Das ist
+  KEINE echte Verschlüsselung – nur Schutz gegen zufälliges Mitlesen der rohen
+  JSON-URL; der Decoder ist clientseitig sichtbar.
+
+  Diese Seite enthält KEINE Planungslogik und KEINEN localStorage-Zugriff – sie
+  zeigt nur die fertig generierten Daten (Aufgabe, Lagebild je FHZ, Buchstabe
+  für FHZ × Station). Generiert wird data/uebung.json später im Planungstool
+  (index.html, QR-Bereich). index.html wird durch diese Datei nicht berührt.
+  ============================================================================
+-->
+<style>
+  :root {
+    --bg-0: #101216; --bg-1: #14161a; --bg-2: #1b1e23;
+    --line: #2c313a; --line-soft: #242931;
+    --text: #e7ebf0; --text-muted: #99a0aa; --text-faint: #6b727c;
+    --red: #861619; --red-strong: #a11f27; --red-soft: rgba(134,22,25,.18);
+    --ok: #3fae6b;
+    --radius: 12px; --radius-sm: 8px;
+    --font: "Segoe UI","Roboto","Helvetica Neue",system-ui,-apple-system,sans-serif;
+    --font-mono: "Consolas","SF Mono","Roboto Mono",ui-monospace,monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg-0); color: var(--text);
+    font-family: var(--font); line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 18px 16px 48px; }
+  .topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; background: var(--bg-2);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    position: relative; overflow: hidden;
+  }
+  .topbar::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--red); }
+  .topbar .badge {
+    flex: 0 0 auto; width: 44px; height: 44px; border-radius: 10px;
+    background: var(--red-soft); border: 1px solid rgba(134,22,25,.4);
+    display: grid; place-items: center; color: var(--red-strong);
+  }
+  .topbar .badge svg { width: 24px; height: 24px; }
+  .topbar h1 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+  .topbar .sub { font-size: .8rem; color: var(--text-faint); }
+
+  .card {
+    margin-top: 16px; background: var(--bg-2);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 1.25rem; font-weight: 700; }
+  .card .veh { font-size: .92rem; color: var(--text-muted); }
+  .card .veh b { color: var(--text); font-weight: 600; }
+
+  .label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 6px; }
+  .task { font-size: 1.05rem; color: var(--text); }
+
+  .imgs { display: flex; flex-direction: column; gap: 12px; }
+  .imgfig { margin: 0; }
+  .imgfig img { display: block; width: 100%; height: auto; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--bg-1); }
+  .imgfig figcaption { margin-top: 6px; font-size: .82rem; color: var(--text-faint); }
+  .img-none { font-size: .9rem; color: var(--text-faint); font-style: italic; }
+
+  .letterbox { display: flex; align-items: center; gap: 16px; }
+  .letter {
+    flex: 0 0 auto; width: 96px; height: 96px; border-radius: var(--radius);
+    display: grid; place-items: center;
+    background: var(--bg-1); border: 2px solid var(--red);
+    font-family: var(--font-mono); font-weight: 800; font-size: 3.2rem; color: var(--text);
+  }
+  .letter.space, .letter.empty { color: var(--text-faint); border-color: var(--line); font-weight: 400; }
+  .letter-note { font-size: .9rem; color: var(--text-muted); }
+  .letter-note b { color: var(--text); }
+
+  .error {
+    margin-top: 16px; background: var(--red-soft); border: 1px solid var(--red);
+    border-radius: var(--radius); padding: 16px 18px; color: var(--text);
+  }
+  .error h2 { margin: 0 0 6px; font-size: 1.05rem; color: var(--red-strong); }
+  .error p { margin: 0; font-size: .9rem; color: var(--text-muted); }
+  .error code { font-family: var(--font-mono); color: var(--text); background: var(--bg-1); padding: 1px 5px; border-radius: 4px; }
+
+  .foot { margin-top: 22px; text-align: center; font-size: .76rem; color: var(--text-faint); }
+</style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <div class="topbar">
+      <span class="badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg>
+      </span>
+      <div>
+        <h1 id="exTitle">Funkübung</h1>
+        <div class="sub" id="exSub">Stationsoberfläche</div>
+      </div>
+    </div>
+    <div id="content"><p class="img-none" style="margin-top:16px">Lade Stationsdaten …</p></div>
+    <div class="foot">EA-Funkübung · Stationsoberfläche</div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  function escapeHTML(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function escapeAttr(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function nonEmpty(v) { return v != null && String(v).trim() !== ""; }
+
+  function getParam(name) {
+    try { return new URLSearchParams(window.location.search).get(name); }
+    catch (e) { return null; }
+  }
+
+  /* UTF-8-sicheres Base64-Dekodieren. */
+  function decodeBase64Utf8(b64) {
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+
+  function showError(title, detail) {
+    document.getElementById("content").innerHTML =
+      '<div class="error"><h2>' + escapeHTML(title) + '</h2><p>' + detail + '</p></div>';
+  }
+
+  function render(data, s, fhz) {
+    var stations = Array.isArray(data.stations) ? data.stations : [];
+    var vehicles = Array.isArray(data.vehicles) ? data.vehicles : [];
+    var sNum = parseInt(s, 10);
+
+    var station = stations.filter(function (st) { return Number(st.nr) === sNum; })[0];
+    var vehicle = vehicles.filter(function (v) { return v.id === fhz; })[0];
+
+    if (!station) { showError("Station nicht gefunden", "Für <code>s=" + escapeHTML(String(s)) + "</code> gibt es keine Station in den Übungsdaten."); return; }
+    if (!vehicle) { showError("Fahrzeug nicht gefunden", "Für <code>fhz=" + escapeHTML(String(fhz)) + "</code> gibt es kein Fahrzeug in den Übungsdaten."); return; }
+
+    /* Kopf / Übungsname */
+    var meta = data.meta || {};
+    document.getElementById("exTitle").textContent = nonEmpty(meta.name) ? meta.name : "Funkübung";
+    var subBits = [];
+    if (nonEmpty(meta.date)) subBits.push(meta.date);
+    if (nonEmpty(meta.time)) subBits.push(meta.time + " Uhr");
+    document.getElementById("exSub").textContent = subBits.length ? subBits.join(" · ") : "Stationsoberfläche";
+
+    /* Lagebild-Auswahl: <=1 Bild → für alle; ab 2 Bildern → nur Bilder mit diesem FHZ. */
+    var images = Array.isArray(station.images) ? station.images : [];
+    var shown;
+    if (images.length <= 1) shown = images;
+    else shown = images.filter(function (im) { return Array.isArray(im.vehicleIds) && im.vehicleIds.indexOf(fhz) !== -1; });
+
+    var imgsHtml;
+    if (!shown.length) {
+      imgsHtml = '<p class="img-none">Für dieses Fahrzeug ist kein Lagebild hinterlegt.</p>';
+    } else {
+      imgsHtml = '<div class="imgs">' + shown.map(function (im) {
+        var cap = nonEmpty(im.title) ? '<figcaption>' + escapeHTML(im.title) + '</figcaption>' : '';
+        return '<figure class="imgfig"><img src="' + escapeAttr(im.url) + '" alt="' + escapeAttr(im.title || "Lagebild") + '" loading="lazy">' + cap + '</figure>';
+      }).join("") + '</div>';
+    }
+
+    /* Lösungszeichen für (FHZ, Station) */
+    var assign = (data.assignments && data.assignments[fhz]) ? data.assignments[fhz][String(sNum)] : null;
+    var ch = assign && typeof assign.char === "string" ? assign.char : "";
+    var letterCls = "letter", letterText;
+    if (ch === "") { letterCls += " empty"; letterText = "–"; }
+    else if (ch === " ") { letterCls += " space"; letterText = "␣"; }
+    else letterText = ch;
+
+    var taskHtml = nonEmpty(station.task)
+      ? '<div class="task">' + escapeHTML(station.task) + '</div>'
+      : '<p class="img-none">Keine Aufgabe hinterlegt.</p>';
+
+    document.getElementById("content").innerHTML =
+      '<div class="card">' +
+        '<h2>Station ' + escapeHTML(String(station.nr)) + (nonEmpty(station.title) ? ' – ' + escapeHTML(station.title) : '') + '</h2>' +
+        '<div class="veh">Fahrzeug: <b>' + escapeHTML(vehicle.type || vehicle.id) + '</b>' + (nonEmpty(vehicle.callsign) ? ' · ' + escapeHTML(vehicle.callsign) : '') + '</div>' +
+      '</div>' +
+      '<div class="card"><div class="label">Aufgabe</div>' + taskHtml + '</div>' +
+      '<div class="card"><div class="label">Lagebild</div>' + imgsHtml + '</div>' +
+      '<div class="card"><div class="label">Lösungszeichen für dieses Fahrzeug</div>' +
+        '<div class="letterbox">' +
+          '<div class="' + letterCls + '">' + escapeHTML(letterText) + '</div>' +
+          '<div class="letter-note">Notieren Sie dieses Zeichen für <b>' + escapeHTML(vehicle.type || vehicle.id) + '</b> an <b>Station ' + escapeHTML(String(station.nr)) + '</b>.</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function start() {
+    var s = getParam("s"), fhz = getParam("fhz");
+    if (!nonEmpty(s) || !nonEmpty(fhz)) {
+      showError("Aufruf unvollständig", "Diese Seite wird über einen QR-Code geöffnet und benötigt die Parameter <code>s</code> (Stationsnummer) und <code>fhz</code> (Fahrzeug). Beispiel: <code>station.html?s=1&amp;fhz=elw</code>");
+      return;
+    }
+    if (typeof fetch === "undefined") { showError("Nicht unterstützt", "Dieser Browser kann die Übungsdaten nicht laden."); return; }
+
+    fetch("data/uebung.json", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function (wrapper) {
+        var jsonText;
+        if (wrapper && wrapper.format === "b64" && typeof wrapper.payload === "string") {
+          jsonText = decodeBase64Utf8(wrapper.payload);
+        } else if (wrapper && wrapper.data) {
+          jsonText = JSON.stringify(wrapper.data); /* Klartext-Fallback */
+        } else {
+          throw new Error("format");
+        }
+        var data = JSON.parse(jsonText);
+        if (!data || !Array.isArray(data.stations)) throw new Error("structure");
+        render(data, s, fhz);
+      })
+      .catch(function () {
+        showError("Übungsdaten konnten nicht geladen werden", "Die Datei <code>data/uebung.json</code> fehlt, ist ungültig oder noch nicht generiert. Bitte die Übung im Planungstool exportieren und ablegen.");
+      });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
+})();
+</script>
+</body>
+</html>
