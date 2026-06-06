@@ -13,9 +13,19 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.20.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.20.1)
   ============================================================================
-  Stand 1.20.0 (Lösungssatz-Logik entfernt – Rahmen bleibt, Neuaufbau folgt): Die
+  Stand 1.20.1 (Stationsplanung: Bezeichnung optional, Nummer = Identität): Der
+  Tabellenkopf der Stationsplanung heißt jetzt „Station" (Zellen zeigen weiterhin
+  nur die Nummer 1, 2, 3 …). Die Bezeichnung (title) ist fachlich OPTIONAL und darf
+  leer bleiben – sie ist KEINE Pflicht für die Vollständigkeit (isStationComplete
+  unverändert: Aufgabe + Lagebild-URLs + Fzg-Zuordnung ab 2 Bildern). Leere
+  Bezeichnung: in der Stationsplanungs-Tabelle dezent „–", sonst (Auswahlfelder,
+  Routen, Karte) Fallback „Station X" (X = Stationsnummer) via stationDisplayName().
+  normalizeStation füllt leere Titel nicht mehr automatisch auf; neue/geseedete
+  Stationen starten ohne Bezeichnung. Bestehende Titel bleiben unverändert (keine
+  Bereinigung). Detail-Label „Bezeichnung (optional)". Storage-Struktur unverändert.
+  Davor – Stand 1.20.0 (Lösungssatz-Logik entfernt – Rahmen bleibt, Neuaufbau folgt): Die
   gesamte Lösungssatz-LOGIK (Verteilung, Status, Tabelle, Übungsleitung, CSS, JS)
   wurde entfernt. Der Bereich bleibt als RAHMEN bestehen: Nav-Button, Dashboard-
   Karte (Status „Offen") und Handbuch-Kapitel über den SECTIONS-Eintrag, dazu eine
@@ -609,6 +619,11 @@ body {
   font-size: .76rem;
   color: var(--text-faint);
   line-height: 1.35;
+}
+/* "(optional)"-Zusatz an Feld-Labels: dezent, geringeres Gewicht */
+.label-optional {
+  font-weight: 400;
+  color: var(--text-faint);
 }
 
 /* dezenter Pflicht-Stern (passt zum roten Akzent) */
@@ -1724,7 +1739,7 @@ body {
             </colgroup>
             <thead>
               <tr>
-                <th class="col-no">Nr.</th>
+                <th class="col-no">Station</th>
                 <th>Bezeichnung</th>
                 <th>Aufgabe kurz</th>
                 <th class="col-imgs">Lagebilder</th>
@@ -1945,7 +1960,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.20.0"
+    version: "1.20.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2076,6 +2091,16 @@ body {
   function num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
   function nonEmpty(v) { return v != null && String(v).trim() !== ""; }
 
+  /* Anzeigename einer Station. Die StationsNUMMER ist die Pflicht-Identität;
+     die Bezeichnung (title) ist optional und darf leer sein. Für Anzeigen
+     AUSSERHALB der Stationsplanungs-Tabelle (Auswahlfelder, Routen, Karte,
+     spätere Bereiche) wird bei leerer Bezeichnung "Station X" als Fallback
+     genutzt – X ist die Stationsnummer (kanonischer Index in loadStations + 1).
+     In der Stationsplanungs-Tabelle selbst wird stattdessen dezent „–" gezeigt. */
+  function stationDisplayName(s, canonicalIdx) {
+    return nonEmpty(s && s.title) ? s.title : ("Station " + (canonicalIdx + 1));
+  }
+
   /* Personenwert prüfen: liefert die Zahl oder null (leer/ungültig). */
   function personValue(x) {
     if (x === "" || x == null) return null;
@@ -2130,7 +2155,7 @@ body {
   function defaultStations() {
     var list = [];
     for (var i = 1; i <= STATION_SEED_COUNT; i++) {
-      list.push({ id: "station_" + i, title: "Station " + i, task: "", description: "", images: [], position: { address: "", lat: "", lng: "" } });
+      list.push({ id: "station_" + i, title: "", task: "", description: "", images: [], position: { address: "", lat: "", lng: "" } });
     }
     return list;
   }
@@ -2139,9 +2164,12 @@ body {
      Migration altes Format: label → title; location/number entfallen. */
   function normalizeStation(s, idx) {
     s = s || {};
+    /* Bezeichnung ist optional: leerer/fehlender Titel bleibt leer (kein
+       automatisches Auffüllen mit "Station X" mehr). Bestehende Titel und die
+       alte label→title-Migration bleiben unverändert erhalten. */
     var title = (s.title != null && s.title !== "") ? s.title
               : (s.label != null && s.label !== "") ? s.label
-              : ("Station " + (idx + 1));
+              : "";
     var images = Array.isArray(s.images) ? s.images.map(function (im) {
       im = im || {};
       return {
@@ -2675,7 +2703,7 @@ body {
         : String(s.images.length);
       tr.innerHTML =
         '<td class="col-no"><span class="station-no">' + (idx + 1) + '</span></td>' +
-        '<td class="station-cell-title">' + escapeAttr(s.title) + '</td>' +
+        '<td class="station-cell-title">' + (nonEmpty(s.title) ? escapeAttr(s.title) : '<span class="cell-muted">–</span>') + '</td>' +
         '<td class="station-cell-task">' + taskCell + '</td>' +
         '<td class="col-imgs">' + imgCell + '</td>' +
         '<td class="col-actions">' + stationActionsHtml(idx, list.length) + '</td>';
@@ -2733,7 +2761,7 @@ body {
 
   function addStation() {
     var list = loadStations();
-    var st = { id: newStationId(), title: "Station " + (list.length + 1), task: "", description: "", images: [], position: { address: "", lat: "", lng: "" } };
+    var st = { id: newStationId(), title: "", task: "", description: "", images: [], position: { address: "", lat: "", lng: "" } };
     list.push(st);
     saveStations(list);
     selectedStationId = st.id;
@@ -2759,8 +2787,8 @@ body {
     wrap.innerHTML =
       '<div class="detail-head">Station ' + (idx + 1) + ' bearbeiten</div>' +
       '<div class="detail-field">' +
-        '<label for="detTitle">Bezeichnung</label>' +
-        '<input type="text" id="detTitle" value="' + escapeAttr(s.title) + '" placeholder="z. B. Station 1">' +
+        '<label for="detTitle">Bezeichnung <span class="label-optional">(optional)</span></label>' +
+        '<input type="text" id="detTitle" value="' + escapeAttr(s.title) + '" placeholder="optional – z. B. Lageerkundung Wohnhaus">' +
       '</div>' +
       '<div class="detail-field">' +
         '<label for="detTask">Aufgabe der Station</label>' +
@@ -3301,7 +3329,7 @@ body {
       } else {
         mapMarkers[s.id] = window.L.marker([ll.lat, ll.lng], { icon: stationMarkerIcon(idx + 1) }).addTo(mapInstance);
       }
-      mapMarkers[s.id].bindTooltip(s.title);
+      mapMarkers[s.id].bindTooltip(stationDisplayName(s, idx));
       if (mapCircles[s.id]) {
         mapCircles[s.id].setLatLng([ll.lat, ll.lng]); mapCircles[s.id].setRadius(radius);
       } else {
@@ -3400,7 +3428,7 @@ body {
     list.forEach(function (s, idx) {
       var o = document.createElement("option");
       var num = (idx + 1 < 10 ? "0" : "") + (idx + 1);
-      o.value = s.id; o.textContent = num + " – " + s.title;
+      o.value = s.id; o.textContent = num + " – " + stationDisplayName(s, idx);
       sel.appendChild(o);
     });
     if (prev && indexOfId(list, prev) >= 0) sel.value = prev;
@@ -3505,7 +3533,7 @@ body {
       var tr = document.createElement("tr");
       tr.innerHTML =
         '<td class="col-no"><span class="station-no">' + (idx + 1) + '</span></td>' +
-        '<td class="rpos-name">' + escapeAttr(s.title) + '</td>' +
+        '<td class="rpos-name">' + escapeAttr(stationDisplayName(s, idx)) + '</td>' +
         '<td><input type="text" class="rpos-addr" value="' + escapeAttr(p.address) + '" placeholder="Adresse"></td>' +
         '<td class="' + coordCls + '">' + coordTxt + '</td>' +
         '<td class="rpos-status"></td>';
@@ -3554,7 +3582,7 @@ body {
       var itemsHtml = route.map(function (s, i) {
         return '<li class="route-item">' +
                  '<span class="route-pos">' + (i + 1) + '.</span>' +
-                 '<span class="route-name">' + escapeAttr(s.title) + '</span>' +
+                 '<span class="route-name">' + escapeAttr(stationDisplayName(s, indexOfId(stations, s.id))) + '</span>' +
                '</li>';
       }).join("");
 
