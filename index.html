@@ -13,9 +13,20 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.15.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.16.0)
   ============================================================================
-  Stand 1.15.1 (Lösungssatz – Text): Standard-Lösungssatz endet jetzt mit „!"
+  Stand 1.16.0 (Lösungssatz – fahrzeugbezogen): Die Verteilung ist nicht mehr
+  stationsbezogen, sondern verteilt den Satz BLOCKWEISE und gleichmäßig auf die
+  AKTIVEN FAHRZEUGE (Reihenfolge aus dem Bereich Fahrzeuge; Satzteile hinter-
+  einander = Originalsatz). Panel „Verteilung auf Fahrzeuge" (Tabelle: Fahrzeug,
+  Funkrufname, Satzteil, Zeichen) ersetzt „Verteilung auf Stationen"; neue
+  Kontrollübersicht (Gesamt-/verteilte Zeichen, aktive Fahrzeuge, Status). Storage
+  funkuebung_loesungssatz_v1 jetzt { phrase, mode:"vehicles" } (alt "stations" wird
+  toleriert/normalisiert). Statuslogik: open=kein Satz, prog=Satz ohne aktive
+  Fahrzeuge, done=Satz + ≥1 aktives Fahrzeug. Sichtbarer Inhalt wird per escapeHTML
+  escaped. Zukunftshinweis: stationsweise Freigabe mit Positionscode W1P3 folgt im
+  Bereich ELW-Koordination (hier NICHT umgesetzt). Übrige Logik unverändert.
+  Davor (1.15.1, Lösungssatz – Text): Standard-Lösungssatz endet jetzt mit „!"
   („ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!"). Reine Textänderung.
   Davor (1.15.0, Neuer Bereich „Lösungssatz"): Zwischen Routenplanung und QR-Code-Plan
   ergänzt. Ein globaler Lösungssatz (Storage funkuebung_loesungssatz_v1, { phrase, mode:
@@ -1011,12 +1022,14 @@ body {
 #sec-loesung > .panel { margin-top: 18px; }
 #sec-loesung > .panel:first-of-type { margin-top: 0; }
 .loes-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.loes-note { margin: 12px 0 0; font-size: .82rem; color: var(--text-faint); line-height: 1.5; }
 .loes-table { table-layout: fixed; }
-.loes-table .lcol-no      { width: 7%; }
-.loes-table .lcol-station { width: 30%; }
-.loes-table .lcol-chars   { width: 43%; }
-.loes-table .lcol-hint    { width: 20%; }
-.loes-table .loes-station { font-size: .92rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loes-table .lcol-veh   { width: 14%; }
+.loes-table .lcol-call  { width: 28%; }
+.loes-table .lcol-chars { width: 48%; }
+.loes-table .lcol-count { width: 10%; }
+.loes-table .loes-veh  { font-weight: 600; color: var(--text); white-space: nowrap; }
+.loes-table .loes-call { font-size: .92rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .loes-chars { display: flex; flex-wrap: wrap; gap: 4px; }
 .loes-char {
   min-width: 1.5em; padding: 2px 6px;
@@ -1025,8 +1038,14 @@ body {
   font-family: var(--font-mono); font-size: .85rem; text-align: center;
 }
 .loes-char.space { color: var(--text-faint); border-style: dashed; }
-.loes-hint { font-family: var(--font-mono); font-size: .82rem; color: var(--text-muted); white-space: nowrap; }
-.loes-hint .loes-count { font-family: var(--font); color: var(--text-faint); }
+.loes-count { font-family: var(--font-mono); font-size: .85rem; color: var(--text-muted); text-align: center; }
+.loes-summary {
+  display: flex; flex-wrap: wrap; gap: 8px 22px;
+  margin-top: 16px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); font-size: .85rem; color: var(--text-muted);
+}
+.loes-summary .loes-summary-item b { color: var(--text); font-weight: 600; }
 
 /* Kartensteuerung */
 .route-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
@@ -1795,7 +1814,7 @@ body {
     <section class="section" id="sec-loesung">
       <div class="section-head">
         <h2>Lösungssatz</h2>
-        <p>Globaler Lösungssatz der Übung. Er wird automatisch und blockweise auf die vorhandenen Stationen verteilt – stationsbezogen, sodass alle Fahrzeuge an derselben Station dieselben Lösungszeichen erhalten.</p>
+        <p>Globaler Lösungssatz der Übung. Er wird automatisch und blockweise auf die aktiven Fahrzeuge verteilt – fahrzeugbezogen, sodass die Satzteile aller Fahrzeuge hintereinander gelesen wieder den vollständigen Lösungssatz ergeben.</p>
       </div>
 
       <!-- 1) Lösungssatz erfassen -->
@@ -1810,27 +1829,29 @@ body {
           <button type="button" class="btn btn-secondary" id="loesDefault">Standard einsetzen</button>
           <button type="button" class="btn btn-secondary" id="loesClear">Feld leeren</button>
         </div>
+        <p class="loes-note">Der Lösungssatz wird auf die aktiven Fahrzeuge verteilt. Die stationsweise Freigabe mit Positionscodes (Format W1P3) erfolgt später im Bereich ELW-Koordination.</p>
       </div>
 
-      <!-- 2) Verteilung auf Stationen -->
+      <!-- 2) Verteilung auf Fahrzeuge -->
       <div class="panel">
-        <h3 class="subsection-title">Verteilung auf Stationen</h3>
+        <h3 class="subsection-title">Verteilung auf Fahrzeuge</h3>
         <div class="station-table-wrap">
           <table class="station-table loes-table">
             <colgroup>
-              <col class="lcol-no"><col class="lcol-station"><col class="lcol-chars"><col class="lcol-hint">
+              <col class="lcol-veh"><col class="lcol-call"><col class="lcol-chars"><col class="lcol-count">
             </colgroup>
             <thead>
               <tr>
-                <th class="col-no">Nr.</th>
-                <th>Station</th>
-                <th>Lösungszeichen</th>
-                <th>Hinweis / Darstellung</th>
+                <th>Fahrzeug</th>
+                <th>Funkrufname</th>
+                <th>Satzteil</th>
+                <th class="col-no">Zeichen</th>
               </tr>
             </thead>
             <tbody id="loesDistBody"><!-- per JS gefüllt --></tbody>
           </table>
         </div>
+        <div class="loes-summary" id="loesSummary"><!-- Kontrollübersicht, per JS gefüllt --></div>
       </div>
     </section>
 
@@ -1943,7 +1964,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.15.1"
+    version: "1.16.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2509,6 +2530,11 @@ body {
   /* --- Fahrzeuge: Tabelle rendern & bearbeiten -------------------------*/
   function escapeAttr(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  /* HTML-Escape für sichtbaren Element-Inhalt (Textknoten), der per innerHTML
+     gesetzt wird. Schützt vor ungewollter Interpretation von Nutzereingaben. */
+  function escapeHTML(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function initVehicles() {
@@ -3573,61 +3599,71 @@ body {
      LÖSUNGSSATZ
      ----------------------------------------------------------------------
      Zweck: Ein globaler Lösungssatz der gesamten Übung wird erfasst und
-     automatisch auf die vorhandenen Stationen verteilt. Die Verteilung ist
-     STATIONSBEZOGEN (nicht fahrzeugbezogen) – alle Fahrzeuge sehen an
-     derselben Station dieselben Zeichen. Die spätere QR-/Stationsansicht kann
-     die Stations-Lösungszeichen weiterverwenden.
+     vollständig auf die AKTIVEN FAHRZEUGE verteilt. Die Verteilung ist
+     FAHRZEUGBEZOGEN (nicht stationsbezogen): jedes aktive Fahrzeug erhält
+     einen zusammenhängenden Satzteil; die Satzteile aller Fahrzeuge in
+     bestehender aktiver Reihenfolge hintereinander gelesen ergeben wieder den
+     vollständigen Lösungssatz. Dieser Bereich dient nur der Planung/Grob-
+     verteilung.
 
-     Storage-Key: funkuebung_loesungssatz_v1  →  { phrase: "...", mode: "stations" }
-     (eigener Key; bestehende Keys bleiben unangetastet).
+     ZUKUNFTSHINWEIS: Die spätere stationsweise Freigabe je Position mit
+     Positionscode im Format W1P3 (Wort 1, Position 3), Rückmeldung und
+     Dokumentation gehört NICHT hierher, sondern in den Bereich
+     ELW-Koordination. Hier wird dazu KEINE Logik umgesetzt.
+
+     Storage-Key: funkuebung_loesungssatz_v1  →  { phrase: "...", mode: "vehicles" }
+     (eigener Key; bestehende Keys bleiben unangetastet). Ältere Einträge mit
+     mode:"stations" werden toleriert und beim Speichern auf "vehicles" gesetzt.
 
      Verteilungslogik (BLOCKWEISE, gleichmäßig): Der Satz wird in
-     zusammenhängende Abschnitte zerlegt. Bei L Zeichen und N Stationen erhält
-     jede Station base = floor(L/N) Zeichen; die ersten r = L mod N Stationen
-     bekommen ein Zeichen mehr. Reihenfolge bleibt erhalten → Station 1..N
-     hintereinander gelesen ergibt wieder den Originalsatz. Leerzeichen sind
-     normale Zeichen und werden als „␣" dargestellt.
+     zusammenhängende Abschnitte zerlegt. Bei L Zeichen und N aktiven Fahrzeugen
+     erhält jedes Fahrzeug base = floor(L/N) Zeichen; die ersten r = L mod N
+     Fahrzeuge bekommen ein Zeichen mehr. Reihenfolge bleibt erhalten → Fahrzeug
+     1..N hintereinander gelesen ergibt wieder den Originalsatz. Kein Zeichen
+     geht verloren. Leerzeichen sind normale Zeichen und werden als „␣"
+     dargestellt.
 
-     Statuslogik (Dashboard, auf Basis des GESPEICHERTEN Satzes):
+     Statuslogik (Dashboard, auf Basis des GESPEICHERTEN Satzes + aktiver Fzg.):
        open : kein Lösungssatz gespeichert
-       prog : Lösungssatz vorhanden, aber keine Stationen vorhanden
-       done : Lösungssatz vorhanden UND mindestens eine Station vorhanden
+       prog : Lösungssatz vorhanden, aber keine aktiven Fahrzeuge vorhanden
+       done : Lösungssatz vorhanden UND mindestens ein aktives Fahrzeug
      ====================================================================== */
   var LOESUNG_STORAGE_KEY = "funkuebung_loesungssatz_v1";
   var LOESUNG_DEFAULT = "ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!";
   var LOESUNG_SPACE = "␣";
 
-  /* Lädt den Lösungssatz; liefert IMMER { phrase, mode:"stations" } sauber. */
+  /* Lädt den Lösungssatz; liefert IMMER { phrase, mode:"vehicles" } sauber.
+     Ältere Einträge (z. B. mode:"stations") werden toleriert/normalisiert. */
   function loadLoesung() {
     var raw = {};
     try { raw = JSON.parse(localStorage.getItem(LOESUNG_STORAGE_KEY)) || {}; }
     catch (e) { raw = {}; }
     return {
       phrase: typeof raw.phrase === "string" ? raw.phrase : "",
-      mode: "stations"
+      mode: "vehicles"
     };
   }
   function saveLoesung(obj) {
     try {
       localStorage.setItem(LOESUNG_STORAGE_KEY, JSON.stringify({
         phrase: (obj && typeof obj.phrase === "string") ? obj.phrase : "",
-        mode: "stations"
+        mode: "vehicles"
       }));
       return true;
     } catch (e) { return false; }
   }
 
-  /* Blockweise, gleichmäßige Verteilung des Satzes auf stationCount Stationen.
-     Gibt ein Array von Strings zurück (je Station ein zusammenhängender Block).
-     Reihenfolge bleibt erhalten; Leerzeichen werden mitverteilt. */
-  function distributeLoesung(phrase, stationCount) {
-    if (stationCount <= 0) return [];
+  /* Blockweise, gleichmäßige Verteilung des Satzes auf count Empfänger.
+     Gibt ein Array von Strings zurück (je Empfänger ein zusammenhängender
+     Block). Reihenfolge bleibt erhalten; Leerzeichen werden mitverteilt. */
+  function distributeLoesung(phrase, count) {
+    if (count <= 0) return [];
     var chars = String(phrase).split("");
     var L = chars.length;
-    var base = Math.floor(L / stationCount);
-    var rem = L % stationCount;
+    var base = Math.floor(L / count);
+    var rem = L % count;
     var out = [], idx = 0;
-    for (var i = 0; i < stationCount; i++) {
+    for (var i = 0; i < count; i++) {
       var take = base + (i < rem ? 1 : 0);
       out.push(chars.slice(idx, idx + take).join(""));
       idx += take;
@@ -3635,13 +3671,23 @@ body {
     return out;
   }
 
-  /* Route-Status der Lösungssatz-Karte – basiert auf dem GESPEICHERTEN Satz. */
+  /* Fahrzeugbezogene Verteilung: mappt die blockweisen Satzteile auf die aktiven
+     Fahrzeuge in ihrer bestehenden Reihenfolge. Liefert [{ vehicle, part }]. */
+  function distributeLoesungToVehicles(phrase, activeVehicles) {
+    var parts = distributeLoesung(phrase, activeVehicles.length);
+    return activeVehicles.map(function (v, i) {
+      return { vehicle: v, part: parts[i] || "" };
+    });
+  }
+
+  /* Route-Status der Lösungssatz-Karte – basiert auf dem GESPEICHERTEN Satz und
+     den aktiven Fahrzeugen (Stationen sind hier nicht mehr maßgeblich). */
   function computeLoesungStatus() {
     var phrase = loadLoesung().phrase;
     var hasPhrase = nonEmpty(phrase);
-    var hasStations = loadStations().length > 0;
+    var hasVehicles = loadVehicles().filter(function (v) { return v.active; }).length > 0;
     if (!hasPhrase) return "open";
-    return hasStations ? "done" : "prog";
+    return hasVehicles ? "done" : "prog";
   }
 
   /* Voller Render beim Öffnen des Bereichs: Textarea aus gespeichertem Satz
@@ -3653,48 +3699,66 @@ body {
   }
 
   /* Verteilungstabelle als LIVE-Vorschau: nutzt den AKTUELLEN Textarea-Wert
-     (gespeichert wird erst über „Speichern"). */
+     (gespeichert wird erst über „Speichern"). Verteilt fahrzeugbezogen auf die
+     aktiven Fahrzeuge. Sichtbarer Inhalt wird konsequent HTML-escaped. */
   function renderLoesungDist() {
     var body = document.getElementById("loesDistBody");
     if (!body) return;
+    var summary = document.getElementById("loesSummary");
     var ta = document.getElementById("loesPhrase");
     var phrase = ta ? ta.value : loadLoesung().phrase;
-    var stations = loadStations();
+    var activeVehicles = loadVehicles().filter(function (v) { return v.active; });
     body.innerHTML = "";
 
-    if (stations.length === 0) {
+    /* Kontrollübersicht-Helfer (sichtbare Werte sind Zahlen/Status → unkritisch,
+       aber einheitlich über escapeHTML gerendert). */
+    function renderSummary(total, distributed) {
+      if (!summary) return;
+      var statusLabel = !nonEmpty(phrase)
+        ? "Offen"
+        : (activeVehicles.length === 0 ? "In Bearbeitung" : "Vollständig");
+      summary.innerHTML =
+        '<span class="loes-summary-item">Gesamtzeichen: <b>' + escapeHTML(String(total)) + '</b></span>' +
+        '<span class="loes-summary-item">Aktive Fahrzeuge: <b>' + escapeHTML(String(activeVehicles.length)) + '</b></span>' +
+        '<span class="loes-summary-item">Verteilte Zeichen: <b>' + escapeHTML(String(distributed)) + '</b> von <b>' + escapeHTML(String(total)) + '</b></span>' +
+        '<span class="loes-summary-item">Status: <b>' + escapeHTML(statusLabel) + '</b></span>';
+    }
+
+    if (!nonEmpty(phrase)) {
       var r1 = document.createElement("tr");
-      r1.innerHTML = '<td colspan="4" class="station-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</td>';
+      r1.innerHTML = '<td colspan="4" class="station-empty">Noch kein Lösungssatz eingetragen.</td>';
       body.appendChild(r1);
+      renderSummary(0, 0);
       return;
     }
-    if (!nonEmpty(phrase)) {
+    if (activeVehicles.length === 0) {
       var r2 = document.createElement("tr");
-      r2.innerHTML = '<td colspan="4" class="station-empty">Noch kein Lösungssatz eingetragen.</td>';
+      r2.innerHTML = '<td colspan="4" class="station-empty">Keine aktiven Fahrzeuge vorhanden. Fahrzeuge werden im Bereich Fahrzeuge aktiviert.</td>';
       body.appendChild(r2);
+      renderSummary(phrase.length, 0);
       return;
     }
 
-    var parts = distributeLoesung(phrase, stations.length);
-    stations.forEach(function (s, idx) {
-      var chunk = parts[idx] || "";
-      /* Lösungszeichen als einzelne Boxen; Leerzeichen sichtbar als „␣". */
+    var assignments = distributeLoesungToVehicles(phrase, activeVehicles);
+    var distributed = 0;
+    assignments.forEach(function (a) {
+      var chunk = a.part;
+      distributed += chunk.length;
+      /* Satzteil als einzelne Boxen; Leerzeichen sichtbar als „␣". */
       var boxes = chunk.split("").map(function (ch) {
         var isSpace = (ch === " ");
-        var shown = isSpace ? LOESUNG_SPACE : escapeAttr(ch);
+        var shown = isSpace ? LOESUNG_SPACE : escapeHTML(ch);
         return '<span class="loes-char' + (isSpace ? " space" : "") + '">' + shown + '</span>';
       }).join("");
-      /* Hinweis/Darstellung: Klartext-Fragment (Leerzeichen als „␣") + Anzahl. */
-      var plain = escapeAttr(chunk.replace(/ /g, LOESUNG_SPACE));
-      var count = chunk.length;
       var tr = document.createElement("tr");
       tr.innerHTML =
-        '<td class="col-no"><span class="station-no">' + (idx + 1) + '</span></td>' +
-        '<td class="loes-station">' + escapeAttr(s.title) + '</td>' +
+        '<td class="loes-veh">' + escapeHTML(a.vehicle.type) + '</td>' +
+        '<td class="loes-call">' + escapeHTML(a.vehicle.callsign) + '</td>' +
         '<td><div class="loes-chars">' + boxes + '</div></td>' +
-        '<td class="loes-hint">' + plain + ' <span class="loes-count">· ' + count + ' Zeichen</span></td>';
+        '<td class="loes-count">' + escapeHTML(String(chunk.length)) + '</td>';
       body.appendChild(tr);
     });
+    renderSummary(phrase.length, distributed);
   }
 
   /* Init: Buttons verdrahten + Live-Vorschau beim Tippen + Erst-Render. */
@@ -3705,7 +3769,7 @@ body {
     var clearBtn = document.getElementById("loesClear");
     if (ta) ta.addEventListener("input", renderLoesungDist);
     if (saveBtn) saveBtn.addEventListener("click", function () {
-      saveLoesung({ phrase: ta ? ta.value : "", mode: "stations" });
+      saveLoesung({ phrase: ta ? ta.value : "", mode: "vehicles" });
       renderLoesungDist();
       updateStatus();
     });
