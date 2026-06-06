@@ -13,9 +13,18 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.22.5)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.23.0)
   ============================================================================
-  Stand 1.22.5 (Button-Farben an die Regel angeglichen): „+ Lagebild hinzufügen"
+  Stand 1.23.0 (Routenplanung – Adress-/Straßensuche in der Karte): Die Karte hat
+  jetzt ein Leaflet-Such-Control oben links (unter den Zoom-Buttons): Eingabefeld
+  „Straße oder Adresse suchen" + Lupen-Button. Gesucht wird NUR auf Klick/Enter
+  (kein Autocomplete) über Nominatim (format=jsonv2, countrycodes=de, limit=5,
+  Query um „…, Neuhof, Landkreis Fulda, Hessen, Deutschland" ergänzt). Ein Treffer
+  zentriert die Karte und setzt einen temporären blauen Such-Marker; mehrere
+  Treffer erscheinen als kleine Auswahlliste; „kein Treffer"/Fehler werden als
+  Hinweis angezeigt. Such-Marker ist separat – Stations-/Marker-/Routenlogik
+  unverändert. Eingaben im Control werden nicht an die Karte weitergereicht.
+  Davor – Stand 1.22.5 (Button-Farben an die Regel angeglichen): „+ Lagebild hinzufügen"
   von secondary auf primary (Hinzufügen = rot); „Felder leeren" (Grunddaten) von
   secondary auf danger (destruktiv = rot, wie „Feld leeren" im Lösungssatz).
   „Aktuellen Lösungssatz speichern" bleibt bewusst secondary (sekundäres Speichern).
@@ -1164,6 +1173,47 @@ body {
 }
 .route-map-fallback { display: flex; align-items: center; justify-content: center; min-height: 320px; height: 100%; padding: 24px; text-align: center; color: var(--text-faint); font-size: .9rem; }
 
+/* Adress-/Straßensuche als Leaflet-Control (oben links, unter den Zoom-Buttons) */
+.map-search-ctrl {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 10px rgba(0,0,0,.45);
+  padding: 6px;
+  width: 250px; max-width: calc(100vw - 90px);
+}
+.map-search-ctrl .ms-row { display: flex; gap: 6px; }
+.map-search-ctrl input {
+  flex: 1 1 auto; min-width: 0;
+  background: var(--bg-1); border: 1px solid var(--line); border-radius: 6px;
+  color: var(--text); font: inherit; font-size: .85rem; padding: 7px 9px;
+}
+.map-search-ctrl input::placeholder { color: var(--text-faint); }
+.map-search-ctrl input:focus { outline: none; border-color: var(--red); }
+.map-search-ctrl button {
+  flex: 0 0 auto; display: grid; place-items: center; width: 34px;
+  background: var(--btn-neutral); border: 1px solid var(--line); border-radius: 6px;
+  color: var(--text); cursor: pointer; transition: background .14s, border-color .14s;
+}
+.map-search-ctrl button:hover { background: var(--btn-neutral-h); border-color: #3d444e; }
+.map-search-ctrl button svg { width: 17px; height: 17px; }
+.map-search-ctrl .ms-result { margin-top: 6px; max-height: 168px; overflow-y: auto; font-size: .8rem; }
+.map-search-ctrl .ms-result[hidden] { display: none; }
+.map-search-ctrl .ms-hint { color: var(--text-muted); line-height: 1.4; padding: 2px 2px 4px; }
+.map-search-ctrl .ms-item {
+  display: block; width: 100%; text-align: left;
+  background: none; border: none; border-top: 1px solid var(--line-soft);
+  color: var(--text); font: inherit; font-size: .8rem; line-height: 1.35;
+  padding: 7px 4px; cursor: pointer;
+}
+.map-search-ctrl .ms-item:hover { background: var(--bg-1); }
+/* Temporärer Such-Marker (blau, deutlich anders als rote Stationsmarker) */
+.search-marker { background: transparent; border: 0; }
+.search-marker-dot {
+  display: block; width: 16px; height: 16px; border-radius: 50%;
+  background: #3d6fb0; border: 2px solid #fff; box-shadow: 0 0 0 2px rgba(61,111,176,.45);
+}
+
 /* Nummerierte Stationsmarker (passend zum Feuerwehr-Design) */
 .route-marker { background: transparent; border: 0; }
 .route-marker-pin {
@@ -1991,7 +2041,7 @@ body {
           </div>
         </div>
 
-        <!-- rechts: Karte -->
+        <!-- rechts: Karte (Adresssuche wird als Leaflet-Control in der Karte ergänzt) -->
         <div class="panel route-map-panel">
           <div id="routeMap"></div>
         </div>
@@ -2222,7 +2272,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.22.5"
+    version: "1.23.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3466,6 +3516,7 @@ body {
   /* Karten-/Routing-Zustand (im IIFE gehalten). */
   var mapInstance = null, mapReady = false;
   var mapMarkers = {}, mapCircles = {}, mapRouteLine = null;
+  var mapSearchMarker = null, mapSearchControlAdded = false;  // temporärer Such-Marker + Such-Control (separat von Stations-Markern)
   var lastRouteResult = null;      // { distanceKm, durationMin, mode:"osrm"|"air", geometry }
   var routeCalcToken = 0, routeRecalcTimer = null, mapHintTimer = null;
 
@@ -3540,7 +3591,115 @@ body {
       if (!id) { flashMapHint("Bitte zuerst oben eine Station auswählen."); return; }
       setStationCoords(id, e.latlng.lat, e.latlng.lng);
     });
+    addMapSearchControl();
     mapReady = true;
+  }
+
+  /* ----- Adress-/Straßensuche (Nominatim) als Leaflet-Control -------------
+     Oben links in der Karte, unterhalb der Zoom-Buttons (Position "topleft",
+     nach der Zoom-Control hinzugefügt). Sucht NUR auf Klick/Enter (kein
+     Autocomplete). Setzt einen separaten temporären Such-Marker und rührt die
+     Stations-/Marker-/Routenlogik nicht an. */
+  var NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search";
+  var NOMINATIM_CONTEXT = "Neuhof, Landkreis Fulda, Hessen, Deutschland";
+
+  function searchMarkerIcon() {
+    return window.L.divIcon({
+      className: "search-marker",
+      html: '<span class="search-marker-dot"></span>',
+      iconSize: [18, 18], iconAnchor: [9, 9]
+    });
+  }
+
+  function addMapSearchControl() {
+    if (!mapInstance || mapSearchControlAdded || !leafletAvailable()) return;
+    var ctrl = window.L.control({ position: "topleft" });
+    ctrl.onAdd = function () {
+      var wrap = window.L.DomUtil.create("div", "leaflet-control map-search-ctrl");
+      wrap.innerHTML =
+        '<div class="ms-row">' +
+          '<input type="text" id="mapSearchInput" placeholder="Straße oder Adresse suchen" autocomplete="off">' +
+          '<button type="button" id="mapSearchBtn" title="Suchen" aria-label="Suchen">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<div class="ms-result" id="mapSearchResult" hidden></div>';
+      /* Eingaben/Klicks im Control nicht an die Karte weiterreichen (kein Pan/Zoom). */
+      window.L.DomEvent.disableClickPropagation(wrap);
+      window.L.DomEvent.disableScrollPropagation(wrap);
+      var inp = wrap.querySelector("#mapSearchInput");
+      var btn = wrap.querySelector("#mapSearchBtn");
+      if (btn) btn.addEventListener("click", doMapSearch);
+      if (inp) inp.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); doMapSearch(); }
+      });
+      return wrap;
+    };
+    ctrl.addTo(mapInstance);
+    mapSearchControlAdded = true;
+  }
+
+  function setMapSearchResult(html) {
+    var el = document.getElementById("mapSearchResult");
+    if (!el) return;
+    el.innerHTML = html;
+    el.hidden = !html;
+  }
+  function mapSearchHint(text) {
+    setMapSearchResult('<div class="ms-hint">' + escapeHTML(text) + '</div>');
+  }
+
+  /* Setzt/ersetzt den temporären Such-Marker (separate Variable). */
+  function setSearchMarker(lat, lon, name) {
+    if (!mapInstance) return;
+    if (mapSearchMarker) { mapInstance.removeLayer(mapSearchMarker); mapSearchMarker = null; }
+    mapSearchMarker = window.L.marker([lat, lon], { icon: searchMarkerIcon(), keyboard: false }).addTo(mapInstance);
+    mapSearchMarker.bindTooltip(escapeHTML(String(name || "Suchtreffer")));
+  }
+
+  function gotoSearchResult(item) {
+    var lat = parseFloat(item && item.lat), lon = parseFloat(item && item.lon);
+    if (isNaN(lat) || isNaN(lon)) { mapSearchHint("Treffer ohne Koordinaten."); return; }
+    mapInstance.setView([lat, lon], 16);
+    setSearchMarker(lat, lon, item.display_name);
+    mapSearchHint("Gefunden: " + (item.display_name || (lat.toFixed(5) + ", " + lon.toFixed(5))));
+  }
+
+  function renderSearchResultList(data) {
+    var html = '<div class="ms-hint">' + data.length + ' Treffer – bitte auswählen:</div>' +
+      data.map(function (item, i) {
+        return '<button type="button" class="ms-item" data-i="' + i + '">' + escapeHTML(item.display_name || "Treffer " + (i + 1)) + '</button>';
+      }).join("");
+    setMapSearchResult(html);
+    var el = document.getElementById("mapSearchResult");
+    if (!el) return;
+    el.querySelectorAll(".ms-item").forEach(function (b) {
+      b.addEventListener("click", function () { gotoSearchResult(data[parseInt(b.dataset.i, 10)]); });
+    });
+  }
+
+  function doMapSearch() {
+    var inp = document.getElementById("mapSearchInput");
+    var q = (inp ? inp.value : "").trim();
+    if (!q) { mapSearchHint("Bitte eine Straße, Adresse oder einen Ort eingeben."); return; }
+    if (!mapInstance) { mapSearchHint("Karte nicht verfügbar."); return; }
+    if (typeof fetch === "undefined") { mapSearchHint("Suche wird vom Browser nicht unterstützt."); return; }
+    var full = q + ", " + NOMINATIM_CONTEXT;
+    var url = NOMINATIM_SEARCH_URL + "?format=jsonv2&countrycodes=de&limit=5&q=" + encodeURIComponent(full);
+    mapSearchHint("Suche läuft …");
+    fetch(url, { headers: { "Accept": "application/json" } })
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function (data) {
+        if (!Array.isArray(data) || data.length === 0) {
+          mapSearchHint("Kein Treffer für „" + q + "\". Bitte Eingabe anpassen.");
+          return;
+        }
+        if (data.length === 1) gotoSearchResult(data[0]);
+        else renderSearchResultList(data);
+      })
+      .catch(function () {
+        mapSearchHint("Suche fehlgeschlagen (Netzwerk- oder Dienstfehler). Bitte später erneut versuchen.");
+      });
   }
 
   /* Marker setzen/verschieben (durch Kartenklick). */
