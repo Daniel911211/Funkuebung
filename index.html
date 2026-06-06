@@ -13,9 +13,21 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.17.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.18.0)
   ============================================================================
-  Stand 1.17.1 (Lösungssatz – Status zählerbasiert): Der Status in der Kontroll-
+  Stand 1.18.0 (Lösungssatz – Ampel & Soll-Längenprüfung): Kontrollübersicht
+  umgebaut. Neue Konstante LOESUNG_TARGET_LENGTH (= LOESUNG_DEFAULT.length); der
+  Satz wird gegen diese Soll-Länge geprüft. Zentrale Funktion
+  computeLoesungDistributionInfo() berechnet Soll-/Ist-Zeichen, aktive Fahrzeuge,
+  Stationen, Zeichen je Fahrzeug (min–max) und Verteilungshinweis. Ampel NUR
+  Gelb/Grün (kein Rot): Grün = Länge exakt + ≥1 aktives Fahrzeug + ≥1 Station;
+  sonst Gelb (kein Satz / zu kurz / zu lang / keine Fahrzeuge / keine Stationen,
+  Voraussetzungen vor Längenabweichung gemeldet). Mehrere Zeichen pro Station/
+  Fahrzeug sind erlaubt und nur Planungshinweis (kein Gelb-Auslöser). Dashboard-
+  Pill: open=kein Satz, done=Grün, prog=sonst. Dashboard-Text auf „aktive
+  Fahrzeuge" korrigiert. Verteilung unverändert (vollständig, blockweise, ohne
+  Verlust). Positionscode W1P3 bleibt ELW-Koordination vorbehalten.
+  Davor (1.17.1, Lösungssatz – Status zählerbasiert): Der Status in der Kontroll-
   übersicht wird jetzt aus dem Vergleich „verteilte Zeichen (X) gegenüber gesamt
   benötigten Zeichen (Y)" abgeleitet (X==Y → Vollständig, 0≤X<Y → In Bearbeitung,
   Y==0 → Offen) statt aus der Anzahl aktiver Fahrzeuge. Ergebnisse identisch,
@@ -1052,12 +1064,27 @@ body {
 .loes-char.space { color: var(--text-faint); border-style: dashed; }
 .loes-count { font-family: var(--font-mono); font-size: .85rem; color: var(--text-muted); text-align: center; }
 .loes-summary {
-  display: flex; flex-wrap: wrap; gap: 8px 22px;
   margin-top: 16px; padding: 12px 14px;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--surface-2); font-size: .85rem; color: var(--text-muted);
 }
+.loes-metrics { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-bottom: 12px; }
 .loes-summary .loes-summary-item b { color: var(--text); font-weight: 600; }
+/* Ampel-Statusbox (nur Gelb/Grün, gedeckt) */
+.loes-status-box {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--surface);
+}
+.loes-status-box.green  { border-color: rgba(63,174,107,.4); }
+.loes-status-box.yellow { border-color: rgba(224,163,46,.4); }
+.loes-ampel { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; }
+.loes-ampel.green  { background: var(--status-done); }
+.loes-ampel.yellow { background: var(--status-prog); }
+.loes-status-text { font-size: .9rem; color: var(--text); }
+.loes-status-box.green  .loes-status-text b { color: var(--status-done); }
+.loes-status-box.yellow .loes-status-text b { color: var(--status-prog); }
+.loes-disthint { margin-top: 10px; font-size: .82rem; color: var(--text-muted); }
 
 /* Kartensteuerung */
 .route-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
@@ -1977,7 +2004,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.17.1"
+    version: "1.18.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -1988,7 +2015,7 @@ body {
     { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung." },
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Inhalte der Stationen, Aufgaben, Hinweise und Lagebilder festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
-    { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf die Stationen verteilen." },
+    { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf die aktiven Fahrzeuge verteilen." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
@@ -3628,22 +3655,40 @@ body {
      (eigener Key; bestehende Keys bleiben unangetastet). Ältere Einträge mit
      mode:"stations" werden toleriert und beim Speichern auf "vehicles" gesetzt.
 
-     Verteilungslogik (BLOCKWEISE, gleichmäßig): Der Satz wird in
+     Verteilungslogik (BLOCKWEISE, gleichmäßig): Der EINGEGEBENE Satz wird in
      zusammenhängende Abschnitte zerlegt. Bei L Zeichen und N aktiven Fahrzeugen
      erhält jedes Fahrzeug base = floor(L/N) Zeichen; die ersten r = L mod N
      Fahrzeuge bekommen ein Zeichen mehr. Reihenfolge bleibt erhalten → Fahrzeug
      1..N hintereinander gelesen ergibt wieder den Originalsatz. Kein Zeichen
-     geht verloren. Leerzeichen sind normale Zeichen und werden als „␣"
-     dargestellt.
+     geht verloren, nichts wird abgeschnitten. Leerzeichen sind normale Zeichen
+     und werden als „␣" dargestellt. Verteilt wird IMMER der eingegebene Text –
+     auch wenn er kürzer/länger als die Soll-Länge ist.
 
-     Statuslogik (Dashboard, auf Basis des GESPEICHERTEN Satzes + aktiver Fzg.):
-       open : kein Lösungssatz gespeichert
-       prog : Lösungssatz vorhanden, aber keine aktiven Fahrzeuge vorhanden
-       done : Lösungssatz vorhanden UND mindestens ein aktives Fahrzeug
+     Soll-Länge & Ampel (Kontrollübersicht zeigt optisch NUR Gelb/Grün):
+     Der Satz wird gegen LOESUNG_TARGET_LENGTH (= LOESUNG_DEFAULT.length) geprüft.
+       GELB: kein Satz / zu kurz / zu lang / keine aktiven Fahrzeuge / keine
+             Stationen.
+       GRÜN: Satzlänge passt EXAKT (currentChars === Soll) UND mindestens ein
+             aktives Fahrzeug UND mindestens eine Station vorhanden.
+     Weniger aktive Fahrzeuge → mehr Zeichen je Fahrzeug; sind dadurch mehrere
+     Zeichen pro Station/Fahrzeug nötig (maxZeichen/Fahrzeug > Stationen), ist das
+     ausdrücklich erlaubt und NUR ein Planungshinweis – er setzt den Status NICHT
+     auf Gelb, wenn die Länge sonst exakt passt. Kein Rot in diesem Bereich.
+
+     Statuslogik (Dashboard, auf Basis des GESPEICHERTEN Satzes; fachlich passend
+     zur Gelb/Grün-Logik):
+       open : kein gespeicherter Lösungssatz
+       done : Satzlänge exakt Soll UND ≥1 aktives Fahrzeug UND ≥1 Station (= Grün)
+       prog : alle anderen Fälle (= Gelb mit vorhandenem Satz)
+
+     ZUKUNFTSTHEMA: Positionscode W1P3 (Wort 1, Position 3) und die stationsweise
+     Detail-/Rückmeldelogik bleiben dem Bereich ELW-Koordination vorbehalten.
      ====================================================================== */
   var LOESUNG_STORAGE_KEY = "funkuebung_loesungssatz_v1";
   var LOESUNG_DEFAULT = "ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!";
   var LOESUNG_SPACE = "␣";
+  /* Soll-Zeichenanzahl ergibt sich automatisch aus dem Standard-Lösungssatz. */
+  var LOESUNG_TARGET_LENGTH = LOESUNG_DEFAULT.length;
 
   /* Lädt den Lösungssatz; liefert IMMER { phrase, mode:"vehicles" } sauber.
      Ältere Einträge (z. B. mode:"stations") werden toleriert/normalisiert. */
@@ -3693,14 +3738,87 @@ body {
     });
   }
 
-  /* Route-Status der Lösungssatz-Karte – basiert auf dem GESPEICHERTEN Satz und
-     den aktiven Fahrzeugen (Stationen sind hier nicht mehr maßgeblich). */
+  /* Zentrale Auswertung für den Lösungssatz (Kontrollübersicht + Ampel + Dashboard).
+     Bewertet den ÜBERGEBENEN Satz gegen die Soll-Länge und die Voraussetzungen
+     (aktive Fahrzeuge, Stationen). Division durch 0 wird vermieden. */
+  function computeLoesungDistributionInfo(phrase) {
+    var p = (typeof phrase === "string") ? phrase : "";
+    var hasPhrase = nonEmpty(p);
+    var currentChars = p.length;
+    var targetChars = LOESUNG_TARGET_LENGTH;
+
+    var activeVehicles = loadVehicles().filter(function (v) { return v.active; });
+    var activeVehicleCount = activeVehicles.length;
+    var stationCount = loadStations().length;
+    var hasVehicles = activeVehicleCount > 0;
+    var hasStations = stationCount > 0;
+
+    /* Blockweise Verteilung des eingegebenen Satzes (nur wenn Fahrzeuge da sind). */
+    var assignments = hasVehicles ? distributeLoesungToVehicles(p, activeVehicles) : [];
+    var lens = assignments.map(function (a) { return a.part.length; });
+    var minCharsPerVehicle = lens.length ? Math.min.apply(null, lens) : 0;
+    var maxCharsPerVehicle = lens.length ? Math.max.apply(null, lens) : 0;
+    var avgCharsPerStationPerVehicle = hasStations ? (maxCharsPerVehicle / stationCount) : 0;
+    /* Mehrere Zeichen je Station/Fahrzeug nötig, wenn ein Fahrzeug mehr Zeichen
+       hält als es Stationen gibt. Nur ein Planungshinweis (kein Gelb-Auslöser). */
+    var multiCharsPerStationRequired = (hasVehicles && hasStations && maxCharsPerVehicle > stationCount);
+
+    /* Ampel: Grün nur bei exakter Soll-Länge UND ≥1 Fahrzeug UND ≥1 Station. */
+    var lengthExact = hasPhrase && (currentChars === targetChars);
+    var isGreen = lengthExact && hasVehicles && hasStations;
+
+    /* Status-Text: Voraussetzungen (Fahrzeuge/Stationen) werden vor der
+       Längenabweichung gemeldet; "kein Satz" ist der Einstiegszustand. */
+    var statusLabel, statusHint = "";
+    if (!hasPhrase) {
+      statusLabel = "Noch kein Lösungssatz vorhanden.";
+    } else if (!hasVehicles) {
+      statusLabel = "Keine aktiven Fahrzeuge vorhanden.";
+    } else if (!hasStations) {
+      statusLabel = "Keine Stationen vorhanden.";
+    } else if (currentChars < targetChars) {
+      statusLabel = "Lösungssatz zu kurz.";
+      statusHint = "Es fehlen noch " + (targetChars - currentChars) + " Zeichen.";
+    } else if (currentChars > targetChars) {
+      statusLabel = "Lösungssatz zu lang.";
+      statusHint = (currentChars - targetChars) + " Zeichen zu viel.";
+    } else {
+      statusLabel = "Lösungssatz passt genau.";
+    }
+
+    /* Verteilungshinweis nur sinnvoll, wenn Fahrzeuge UND Stationen vorhanden. */
+    var distributionHint = "";
+    if (hasVehicles && hasStations) {
+      distributionHint = multiCharsPerStationRequired
+        ? "Mehrere Zeichen pro Station/Fahrzeug erforderlich."
+        : "1 Zeichen je Station/Fahrzeug reicht rechnerisch aus.";
+    }
+
+    return {
+      targetChars: targetChars,
+      currentChars: currentChars,
+      hasPhrase: hasPhrase,
+      activeVehicleCount: activeVehicleCount,
+      stationCount: stationCount,
+      assignments: assignments,
+      minCharsPerVehicle: minCharsPerVehicle,
+      maxCharsPerVehicle: maxCharsPerVehicle,
+      avgCharsPerStationPerVehicle: avgCharsPerStationPerVehicle,
+      multiCharsPerStationRequired: multiCharsPerStationRequired,
+      statusColor: isGreen ? "green" : "yellow",
+      statusLabel: statusLabel,
+      statusHint: statusHint,
+      distributionHint: distributionHint
+    };
+  }
+
+  /* Dashboard-Pill: open/prog/done passend zur Gelb/Grün-Logik.
+     open = kein gespeicherter Satz, done = Grün (exakte Länge + Fzg + Station),
+     prog = sonst. Basis ist der GESPEICHERTE Satz. */
   function computeLoesungStatus() {
-    var phrase = loadLoesung().phrase;
-    var hasPhrase = nonEmpty(phrase);
-    var hasVehicles = loadVehicles().filter(function (v) { return v.active; }).length > 0;
-    if (!hasPhrase) return "open";
-    return hasVehicles ? "done" : "prog";
+    var saved = loadLoesung().phrase;
+    if (!nonEmpty(saved)) return "open";
+    return computeLoesungDistributionInfo(saved).statusColor === "green" ? "done" : "prog";
   }
 
   /* Voller Render beim Öffnen des Bereichs: Textarea aus gespeichertem Satz
@@ -3711,68 +3829,90 @@ body {
     renderLoesungDist();
   }
 
+  /* Leerzeilen-Helfer für die Fahrzeug-Tabelle (fixer Text → textContent). */
+  function loesEmptyRow(text) {
+    var tr = document.createElement("tr");
+    var td = document.createElement("td");
+    td.colSpan = 4;
+    td.className = "station-empty";
+    td.textContent = text;
+    tr.appendChild(td);
+    return tr;
+  }
+
   /* Verteilungstabelle + Kontrollübersicht: nutzt den AKTUELLEN Textarea-Wert
      (wird per Auto-Speichern ohnehin sofort persistiert). Verteilt fahrzeug-
      bezogen auf die aktiven Fahrzeuge. Sichtbarer Inhalt wird HTML-escaped. */
   function renderLoesungDist() {
     var body = document.getElementById("loesDistBody");
     if (!body) return;
-    var summary = document.getElementById("loesSummary");
     var ta = document.getElementById("loesPhrase");
     var phrase = ta ? ta.value : loadLoesung().phrase;
-    var activeVehicles = loadVehicles().filter(function (v) { return v.active; });
+    var info = computeLoesungDistributionInfo(phrase);
     body.innerHTML = "";
 
-    /* Kontrollübersicht-Helfer (sichtbare Werte sind Zahlen/Status → unkritisch,
-       aber einheitlich über escapeHTML gerendert). Status dieser Zeile = Vergleich
-       verteilte Zeichen (X) gegenüber gesamt benötigten Zeichen (Y). */
-    function renderSummary(total, distributed) {
-      if (!summary) return;
-      var statusLabel;
-      if (!nonEmpty(phrase) || total === 0) statusLabel = "Offen";
-      else if (distributed >= total)        statusLabel = "Vollständig";
-      else                                  statusLabel = "In Bearbeitung";
-      summary.innerHTML =
-        '<span class="loes-summary-item">Verteilte Zeichen: <b>' + escapeHTML(String(distributed)) + '</b> von <b>' + escapeHTML(String(total)) + '</b></span>' +
-        '<span class="loes-summary-item">Aktive Fahrzeuge: <b>' + escapeHTML(String(activeVehicles.length)) + '</b></span>' +
-        '<span class="loes-summary-item">Status: <b>' + escapeHTML(statusLabel) + '</b></span>';
+    if (!info.hasPhrase) {
+      body.appendChild(loesEmptyRow("Noch kein Lösungssatz eingetragen."));
+    } else if (info.activeVehicleCount === 0) {
+      body.appendChild(loesEmptyRow("Keine aktiven Fahrzeuge vorhanden. Fahrzeuge werden im Bereich Fahrzeuge aktiviert."));
+    } else {
+      info.assignments.forEach(function (a) {
+        var chunk = a.part;
+        /* Satzteil als einzelne Boxen; Leerzeichen sichtbar als „␣". */
+        var boxes = chunk.split("").map(function (ch) {
+          var isSpace = (ch === " ");
+          var shown = isSpace ? LOESUNG_SPACE : escapeHTML(ch);
+          return '<span class="loes-char' + (isSpace ? " space" : "") + '">' + shown + '</span>';
+        }).join("");
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+          '<td class="loes-veh">' + escapeHTML(a.vehicle.type) + '</td>' +
+          '<td class="loes-call">' + escapeHTML(a.vehicle.callsign) + '</td>' +
+          '<td><div class="loes-chars">' + boxes + '</div></td>' +
+          '<td class="loes-count">' + escapeHTML(String(chunk.length)) + '</td>';
+        body.appendChild(tr);
+      });
     }
 
-    if (!nonEmpty(phrase)) {
-      var r1 = document.createElement("tr");
-      r1.innerHTML = '<td colspan="4" class="station-empty">Noch kein Lösungssatz eingetragen.</td>';
-      body.appendChild(r1);
-      renderSummary(0, 0);
-      return;
-    }
-    if (activeVehicles.length === 0) {
-      var r2 = document.createElement("tr");
-      r2.innerHTML = '<td colspan="4" class="station-empty">Keine aktiven Fahrzeuge vorhanden. Fahrzeuge werden im Bereich Fahrzeuge aktiviert.</td>';
-      body.appendChild(r2);
-      renderSummary(phrase.length, 0);
-      return;
+    renderLoesungSummary(info);
+  }
+
+  /* Kontrollübersicht unter der Tabelle: Kern-Kennzahlen + Ampel (nur Gelb/Grün)
+     + Verteilungshinweis (nur im Grün-Fall). Alle sichtbaren Werte HTML-escaped. */
+  function renderLoesungSummary(info) {
+    var summary = document.getElementById("loesSummary");
+    if (!summary) return;
+    var ampel = (info.statusColor === "green") ? "green" : "yellow";
+    var ampelWord = (info.statusColor === "green") ? "Grün" : "Gelb";
+    var statusText = info.statusLabel + (info.statusHint ? " " + info.statusHint : "");
+
+    /* Zeichen je Fahrzeug: exakt oder min–max; nur wenn berechenbar. */
+    var charsPerVehicle = "–";
+    if (info.activeVehicleCount > 0 && info.hasPhrase) {
+      charsPerVehicle = (info.minCharsPerVehicle === info.maxCharsPerVehicle)
+        ? String(info.minCharsPerVehicle)
+        : (info.minCharsPerVehicle + "–" + info.maxCharsPerVehicle);
     }
 
-    var assignments = distributeLoesungToVehicles(phrase, activeVehicles);
-    var distributed = 0;
-    assignments.forEach(function (a) {
-      var chunk = a.part;
-      distributed += chunk.length;
-      /* Satzteil als einzelne Boxen; Leerzeichen sichtbar als „␣". */
-      var boxes = chunk.split("").map(function (ch) {
-        var isSpace = (ch === " ");
-        var shown = isSpace ? LOESUNG_SPACE : escapeHTML(ch);
-        return '<span class="loes-char' + (isSpace ? " space" : "") + '">' + shown + '</span>';
-      }).join("");
-      var tr = document.createElement("tr");
-      tr.innerHTML =
-        '<td class="loes-veh">' + escapeHTML(a.vehicle.type) + '</td>' +
-        '<td class="loes-call">' + escapeHTML(a.vehicle.callsign) + '</td>' +
-        '<td><div class="loes-chars">' + boxes + '</div></td>' +
-        '<td class="loes-count">' + escapeHTML(String(chunk.length)) + '</td>';
-      body.appendChild(tr);
-    });
-    renderSummary(phrase.length, distributed);
+    var metrics =
+      '<span class="loes-summary-item">Soll-Zeichen: <b>' + escapeHTML(String(info.targetChars)) + '</b></span>' +
+      '<span class="loes-summary-item">Aktuelle Zeichen: <b>' + escapeHTML(String(info.currentChars)) + '</b></span>' +
+      '<span class="loes-summary-item">Aktive Fahrzeuge: <b>' + escapeHTML(String(info.activeVehicleCount)) + '</b></span>' +
+      '<span class="loes-summary-item">Stationen: <b>' + escapeHTML(String(info.stationCount)) + '</b></span>' +
+      '<span class="loes-summary-item">Zeichen je Fahrzeug: <b>' + escapeHTML(charsPerVehicle) + '</b></span>';
+
+    var statusBox =
+      '<div class="loes-status-box ' + ampel + '">' +
+        '<span class="loes-ampel ' + ampel + '"></span>' +
+        '<span class="loes-status-text"><b>' + escapeHTML(ampelWord) + '</b> – ' + escapeHTML(statusText) + '</span>' +
+      '</div>';
+
+    var distHtml = "";
+    if (info.statusColor === "green" && info.distributionHint) {
+      distHtml = '<div class="loes-disthint">Verteilungshinweis: ' + escapeHTML(info.distributionHint) + '</div>';
+    }
+
+    summary.innerHTML = '<div class="loes-metrics">' + metrics + '</div>' + statusBox + distHtml;
   }
 
   /* Persistiert den aktuellen Textarea-Wert sofort (Auto-Speichern), rendert die
