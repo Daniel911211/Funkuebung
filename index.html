@@ -13,9 +13,19 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.23.2)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.24.0)
   ============================================================================
-  Stand 1.23.2 (Lösungssatz – Hinweisbox größere Schrift): Titel und Text der
+  Stand 1.24.0 (QR-Code-Plan – Link-Übersicht Station × Fahrzeug): Der QR-Bereich
+  ist kein Platzhalter mehr. Grundlagen-Panel mit GitHub-Basislink (Eingabefeld,
+  auto-gespeichert in funkuebung_qr_settings_v1; „Aus aktueller Adresse übernehmen";
+  Stationsseite/Beispiel-Link/Format als Hinweis) und eine Übersicht für ALLE
+  aktiven Fahrzeuge × ALLE Stationen, sortiert nach Station, je Eintrag Fahrzeugtyp,
+  Funkrufname, FHZ-ID und fertiger Link <Basislink>/station.html?s=<Nr>&fhz=<ID>
+  (ohne doppelte Slashes; leerer Basislink → relative Links). „Alle Links kopieren".
+  Noch keine QR-Grafiken; Export von data/uebung.json folgt unter Druck/Export.
+  station.html, data/uebung.json sowie Lösungssatz-/Routen-/Fahrzeug-/Stationslogik
+  unverändert.
+  Davor – Stand 1.23.2 (Lösungssatz – Hinweisbox größere Schrift): Titel und Text der
   Zeichenstatus-Hinweisbox sind etwas größer (1.05rem / .95rem) für bessere
   Lesbarkeit. Nur CSS, keine Logikänderung.
   Davor – Stand 1.23.1 (Karten-Suche oben rechts): Das Adress-/Straßensuche-Control sitzt
@@ -1298,6 +1308,29 @@ body {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .route-name-empty { color: var(--text-faint); font-style: italic; }
 
+/* --- QR-Code-Plan -------------------------------------------------------*/
+#sec-qr > .panel { margin-top: 18px; }
+#sec-qr > .panel:first-of-type { margin-top: 0; }
+.qr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+.qr-info { margin-top: 14px; font-size: .88rem; color: var(--text-muted); line-height: 1.7; }
+.qr-info .k { color: var(--text-faint); }
+.qr-info code { font-family: var(--font-mono); color: var(--text); background: var(--bg-1); padding: 1px 5px; border-radius: 4px; word-break: break-all; }
+.qr-info .qr-warn { color: var(--status-prog); }
+.qr-note { margin: 0; font-size: .85rem; color: var(--text-faint); line-height: 1.5; }
+.qr-note code { font-family: var(--font-mono); color: var(--text-muted); }
+.qr-empty { margin: 0; font-size: .9rem; color: var(--text-faint); font-style: italic; }
+.qr-station { margin-top: 16px; }
+.qr-station:first-child { margin-top: 0; }
+.qr-station-title { margin: 0 0 6px; font-size: .95rem; font-weight: 600; color: var(--text); padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.qr-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+.qr-row:first-of-type { border-top: none; }
+.qr-veh { font-weight: 600; color: var(--text); min-width: 52px; }
+.qr-call { color: var(--text-muted); font-size: .9rem; }
+.qr-id { color: var(--text-faint); font-family: var(--font-mono); font-size: .82rem; }
+.qr-link { flex-basis: 100%; font-size: .82rem; font-family: var(--font-mono); }
+.qr-link a { color: #6fa8e0; text-decoration: none; word-break: break-all; }
+.qr-link a:hover { text-decoration: underline; }
+
 /* --- Lösungssatz ---------------------------------------------------------*/
 #sec-loesung > .panel { margin-top: 18px; }
 #sec-loesung > .panel:first-of-type { margin-top: 0; }
@@ -2134,13 +2167,37 @@ body {
     <section class="section" id="sec-qr">
       <div class="section-head">
         <h2>QR-Code-Plan</h2>
-        <p>Übersicht der QR-Codes für die Stationen der Funkübung.</p>
+        <p>QR-Codes verlinken je Kombination aus <b>Station und Fahrzeug</b> auf die Stationsoberfläche (station.html). Diese Übersicht erzeugt die fertigen Links.</p>
       </div>
-      <div class="placeholder">
-        <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg></div>
-        <h3>QR-Codes verwalten</h3>
-        <p>Hier wird später der QR-Code-Plan erstellt. Die eigentliche QR-Code-Erzeugung folgt in einem späteren Schritt und wird in eine eigene Datei (qr/qr-codes.html) ausgelagert.</p>
-        <span class="ph-tag">In Vorbereitung</span>
+
+      <!-- 1) Grundlagen -->
+      <div class="panel">
+        <h3 class="subsection-title">Grundlagen</h3>
+        <div class="field full">
+          <label for="qrBaseUrl">GitHub-Basislink</label>
+          <input type="text" id="qrBaseUrl" placeholder="z. B. https://daniel911211.github.io/Funkuebung" autocomplete="off">
+        </div>
+        <div class="qr-actions">
+          <button type="button" class="btn btn-secondary" id="qrUseCurrent">Aus aktueller Adresse übernehmen</button>
+          <span class="save-hint" id="qrSaveHint">Automatische Speicherung aktiv</span>
+        </div>
+        <div class="qr-info" id="qrInfo"><!-- Stationsseite, Beispiel-Link, Hinweis (per JS) --></div>
+      </div>
+
+      <!-- 2) QR-Code-Übersicht (Station × Fahrzeug) -->
+      <div class="panel">
+        <h3 class="subsection-title">QR-Code-Übersicht</h3>
+        <p class="field-hint" style="margin-bottom:14px">Je aktivem Fahrzeug und Station ein Link, sortiert nach Station. (Die QR-Grafiken folgen später – hier zunächst die fertigen Links.)</p>
+        <div class="qr-actions" style="margin-top:0;margin-bottom:14px">
+          <button type="button" class="btn btn-secondary" id="qrCopyAll">Alle Links kopieren</button>
+          <span class="save-hint" id="qrCopyHint"></span>
+        </div>
+        <div id="qrOverview"><!-- per JS gefüllt --></div>
+      </div>
+
+      <!-- 3) Hinweis: Druck/Export folgt -->
+      <div class="panel">
+        <p class="qr-note">Hinweis: Die QR-Grafiken sowie der Export der Übungsdaten (<code>data/uebung.json</code>) und der komplette Planungsexport/-import folgen später im Bereich „Druck / Export".</p>
       </div>
     </section>
 
@@ -2278,7 +2335,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.23.2"
+    version: "1.24.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2610,6 +2667,9 @@ body {
     /* Lösungssatz beim Öffnen neu aufbauen (Fahrzeuge/Stationen können sich
        geändert haben → SOLL/Zuordnung neu berechnen). */
     if (id === "loesung") renderLoesung();
+    /* QR-Übersicht beim Öffnen neu aufbauen (Fahrzeuge/Stationen können sich
+       geändert haben). */
+    if (id === "qr") renderQr();
   }
 
   /* --- Dashboard-Statuskarten ------------------------------------------*/
@@ -4567,6 +4627,145 @@ body {
   }
 
   /* ======================================================================
+     QR-CODE-PLAN
+     ----------------------------------------------------------------------
+     Erzeugt je Kombination aus Station und aktivem Fahrzeug einen Link auf die
+     Stationsoberfläche: <Basislink>/station.html?s=<Stationsnummer>&fhz=<FHZ-ID>.
+     Der GitHub-Basislink wird im eigenen Storage-Key gehalten; ist er leer,
+     werden relative Links angezeigt. Keine QR-Grafik in diesem Schritt, keine
+     Änderung an station.html/data/uebung.json oder anderer Logik. ============ */
+  var QR_SETTINGS_KEY = "funkuebung_qr_settings_v1";
+
+  function loadQrSettings() {
+    var o = {};
+    try { o = JSON.parse(localStorage.getItem(QR_SETTINGS_KEY)) || {}; } catch (e) { o = {}; }
+    return { baseUrl: typeof o.baseUrl === "string" ? o.baseUrl : "" };
+  }
+  function saveQrSettings(s) {
+    try { localStorage.setItem(QR_SETTINGS_KEY, JSON.stringify({ baseUrl: (s && s.baseUrl) || "" })); return true; }
+    catch (e) { return false; }
+  }
+  /* Basislink ohne Datei/Query/Hash, ohne abschließende Slashes. */
+  function qrNormalizeBase(b) {
+    return String(b == null ? "" : b).trim()
+      .replace(/[?#].*$/, "")        /* Query/Hash entfernen */
+      .replace(/\/+$/, "")           /* abschließende Slashes */
+      .replace(/\/[^\/]*\.html?$/i, ""); /* versehentlich angehängter Dateiname (…/index.html) */
+  }
+  /* Vorschlag aus der aktuellen Adresse: Verzeichnis ohne Dateiname. */
+  function qrCurrentBaseSuggestion() {
+    try { var u = location.href.split(/[?#]/)[0].replace(/\/[^\/]*$/, ""); return u.replace(/\/+$/, ""); }
+    catch (e) { return ""; }
+  }
+  /* Baut den Stationslink; vermeidet doppelte Slashes. Leerer Basislink → relativ. */
+  function qrBuildLink(base, stationNr, fhzId) {
+    var rel = "station.html?s=" + encodeURIComponent(stationNr) + "&fhz=" + encodeURIComponent(fhzId);
+    var nb = qrNormalizeBase(base);
+    return nb ? (nb + "/" + rel) : rel;
+  }
+
+  function renderQrInfo(base) {
+    var el = document.getElementById("qrInfo");
+    if (!el) return;
+    var nb = qrNormalizeBase(base);
+    var example = qrBuildLink(base, 1, "elw");
+    var html =
+      '<div><span class="k">GitHub-Basislink:</span> ' + (nb ? '<code>' + escapeHTML(nb) + '</code>' : '<span class="qr-warn">nicht gesetzt – es werden relative Links angezeigt</span>') + '</div>' +
+      '<div><span class="k">Stationsseite:</span> <code>station.html</code></div>' +
+      '<div><span class="k">Beispiel-Link:</span> <code>' + escapeHTML(example) + '</code></div>' +
+      '<div><span class="k">Format:</span> <code>' + escapeHTML((nb ? nb + "/" : "") + "station.html?s=STATION&fhz=FAHRZEUG_ID") + '</code></div>';
+    el.innerHTML = html;
+  }
+
+  /* Sammelt aktive Fahrzeuge × Stationen (sortiert nach Station). */
+  function qrCollect(base) {
+    var stations = loadStations();
+    var vehicles = loadVehicles().filter(function (v) { return v.active; });
+    var groups = stations.map(function (st, idx) {
+      var nr = idx + 1;
+      return {
+        nr: nr, title: st.title,
+        rows: vehicles.map(function (v) {
+          return { vType: v.type, vCall: v.callsign, vId: v.id, link: qrBuildLink(base, nr, v.id) };
+        })
+      };
+    });
+    return { stationCount: stations.length, vehicleCount: vehicles.length, groups: groups };
+  }
+
+  function renderQrOverview(base) {
+    var host = document.getElementById("qrOverview");
+    if (!host) return;
+    var data = qrCollect(base);
+    if (data.vehicleCount === 0) { host.innerHTML = '<p class="qr-empty">Keine aktiven Fahrzeuge. Fahrzeuge werden im Bereich „Fahrzeuge" aktiviert.</p>'; return; }
+    if (data.stationCount === 0) { host.innerHTML = '<p class="qr-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</p>'; return; }
+    host.innerHTML = data.groups.map(function (g) {
+      var title = 'Station ' + g.nr + (nonEmpty(g.title) ? ' – ' + escapeHTML(g.title) : '');
+      var rows = g.rows.map(function (r) {
+        return '<div class="qr-row">' +
+                 '<span class="qr-veh">' + escapeHTML(r.vType || r.vId) + '</span>' +
+                 '<span class="qr-call">' + escapeHTML(r.vCall || "") + '</span>' +
+                 '<span class="qr-id">' + escapeHTML(r.vId) + '</span>' +
+                 '<span class="qr-link"><a href="' + escapeAttr(r.link) + '" target="_blank" rel="noopener">' + escapeHTML(r.link) + '</a></span>' +
+               '</div>';
+      }).join("");
+      return '<div class="qr-station"><h4 class="qr-station-title">' + title + '</h4>' + rows + '</div>';
+    }).join("");
+  }
+
+  function renderQrViews() {
+    var inp = document.getElementById("qrBaseUrl");
+    var base = inp ? inp.value : loadQrSettings().baseUrl;
+    renderQrInfo(base);
+    renderQrOverview(base);
+  }
+  /* Voller Render beim Öffnen: Eingabefeld aus Speicher füllen, dann Ansichten. */
+  function renderQr() {
+    var inp = document.getElementById("qrBaseUrl");
+    if (inp) inp.value = loadQrSettings().baseUrl;
+    renderQrViews();
+  }
+
+  function qrCopyAllLinks() {
+    var inp = document.getElementById("qrBaseUrl");
+    var data = qrCollect(inp ? inp.value : loadQrSettings().baseUrl);
+    var hint = document.getElementById("qrCopyHint");
+    function setHint(t) { if (hint) hint.textContent = t || ""; }
+    if (data.vehicleCount === 0 || data.stationCount === 0) { setHint("Keine Links vorhanden."); return; }
+    var lines = [];
+    data.groups.forEach(function (g) {
+      g.rows.forEach(function (r) {
+        lines.push("Station " + g.nr + " / " + (r.vType || r.vId) + " (" + r.vId + "): " + r.link);
+      });
+    });
+    var text = lines.join("\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { setHint(lines.length + " Links kopiert."); })
+        .catch(function () { setHint("Kopieren nicht möglich."); });
+    } else { setHint("Kopieren wird vom Browser nicht unterstützt."); }
+  }
+
+  function initQr() {
+    var inp = document.getElementById("qrBaseUrl");
+    var useCur = document.getElementById("qrUseCurrent");
+    var copyAll = document.getElementById("qrCopyAll");
+    if (inp) inp.addEventListener("input", function () {
+      saveQrSettings({ baseUrl: inp.value });
+      renderQrViews();
+      var h = document.getElementById("qrSaveHint"); if (h) flashHint(h, "Gespeichert");
+    });
+    if (useCur) useCur.addEventListener("click", function () {
+      if (!inp) return;
+      inp.value = qrCurrentBaseSuggestion();
+      saveQrSettings({ baseUrl: inp.value });
+      renderQrViews();
+      var h = document.getElementById("qrSaveHint"); if (h) flashHint(h, "Übernommen");
+    });
+    if (copyAll) copyAll.addEventListener("click", qrCopyAllLinks);
+    renderQr();
+  }
+
+  /* ======================================================================
      HANDBUCH (Overlay)
      ----------------------------------------------------------------------
      Kapitelgerüst je Planungsbereich. Inhalte werden Schritt für Schritt
@@ -4694,6 +4893,7 @@ body {
     initRoutes();
     initLoesung();
     initSatzsammlung();
+    initQr();
     initManual();
     initImageLightbox();
     updateStatus();
