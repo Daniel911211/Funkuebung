@@ -13,9 +13,12 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.25.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.25.1)
   ============================================================================
-  Stand 1.25.0 (QR-Code-Grafiken je Station × Fahrzeug): Jede Fahrzeug-Zeile der
+  Stand 1.25.1 (QR-Code-Großvorschau im Overlay): Klick/Enter auf einen QR-Code in
+  der Übersicht öffnet ihn groß in einem Overlay (analog zur Lagebild-Vorschau,
+  Schließen per X/Backdrop/Escape) – mit Stations-/Fahrzeug-Beschriftung und Link.
+  Davor – Stand 1.25.0 (QR-Code-Grafiken je Station × Fahrzeug): Jede Fahrzeug-Zeile der
   QR-Übersicht zeigt nun eine echte QR-Code-Grafik (Canvas) zum jeweiligen Link.
   Eigener, abhängigkeitsfreier QR-Encoder (QRGEN, Byte-Modus, EC-Level M, v1..10,
   4-Modul-Ruhezone) – komplett lokal, KEIN CDN/Fremdskript; bit-identisch gegen die
@@ -1336,7 +1339,8 @@ body {
 .qr-card-title { margin: 0 0 8px; font-size: 1rem; font-weight: 600; color: var(--text); padding-bottom: 8px; border-bottom: 1px solid var(--line); }
 .qr-row { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
 .qr-row:first-of-type { border-top: none; }
-.qr-canvas { flex: 0 0 auto; max-width: 132px; height: auto; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+.qr-canvas { flex: 0 0 auto; max-width: 132px; height: auto; background: #fff; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; transition: border-color .14s, box-shadow .14s; }
+.qr-canvas:hover, .qr-canvas:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 2px var(--red-soft); }
 .qr-row-info { flex: 1 1 auto; min-width: 0; }
 .qr-veh-line { margin-bottom: 4px; }
 .qr-veh { font-weight: 600; color: var(--text); }
@@ -1344,6 +1348,14 @@ body {
 .qr-link { font-size: .82rem; font-family: var(--font-mono); }
 .qr-link a { color: #6fa8e0; text-decoration: none; word-break: break-all; }
 .qr-link a:hover { text-decoration: underline; }
+/* QR-Vorschau-Overlay (groß) */
+.qr-lightbox-box { background: #fff; border-radius: var(--radius); padding: 18px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column; align-items: center; gap: 12px; overflow: auto; }
+.qr-lightbox-canvas { image-rendering: pixelated; width: min(78vw, 64vh); max-width: 560px; height: auto; }
+.qr-lightbox-cap { text-align: center; max-width: min(78vw, 560px); }
+.qr-lightbox-cap .qr-lb-label { color: #111; font-weight: 600; font-size: .95rem; margin-bottom: 4px; }
+.qr-lightbox-cap .qr-lb-link { font-family: var(--font-mono); font-size: .82rem; word-break: break-all; }
+.qr-lightbox-cap .qr-lb-link a { color: #1a4f8a; text-decoration: none; }
+.qr-lightbox-cap .qr-lb-link a:hover { text-decoration: underline; }
 
 /* --- Lösungssatz ---------------------------------------------------------*/
 #sec-loesung > .panel { margin-top: 18px; }
@@ -2322,6 +2334,14 @@ body {
   </div>
 </div>
 
+<div class="img-lightbox" id="qrLightbox" hidden aria-hidden="true" role="dialog" aria-label="QR-Code-Vorschau">
+  <button type="button" class="img-lightbox-close" id="qrLightboxClose" aria-label="Schließen">&times;</button>
+  <div class="qr-lightbox-box">
+    <canvas id="qrLightboxCanvas" class="qr-lightbox-canvas"></canvas>
+    <div class="qr-lightbox-cap" id="qrLightboxCap"></div>
+  </div>
+</div>
+
 <div class="img-lightbox" id="imgLightbox" hidden aria-hidden="true" role="dialog" aria-label="Lagebild-Vorschau">
   <button type="button" class="img-lightbox-close" id="imgLightboxClose" aria-label="Schließen">&times;</button>
   <img class="img-lightbox-img" id="imgLightboxImg" alt="Lagebild-Vorschau">
@@ -2348,7 +2368,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.25.0"
+    version: "1.25.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -4780,11 +4800,12 @@ body {
     return { stationCount: stations.length, vehicleCount: vehicles.length, groups: groups };
   }
 
-  /* Zeichnet den QR-Code für einen Link in ein Canvas (mit 4-Modul-Ruhezone). */
-  function drawQrCanvas(canvas, link) {
+  /* Zeichnet den QR-Code für einen Link in ein Canvas (mit 4-Modul-Ruhezone).
+     target = ungefähre Zielkantenlänge in px (Standard 140; Overlay größer). */
+  function drawQrCanvas(canvas, link, target) {
     try {
       var qr = QRGEN.build(link);
-      var n = qr.size, quiet = 4, scale = Math.max(3, Math.round(140 / (n + quiet * 2)));
+      var n = qr.size, quiet = 4, scale = Math.max(3, Math.round((target || 140) / (n + quiet * 2)));
       var dim = (n + quiet * 2) * scale;
       canvas.width = dim; canvas.height = dim;
       var ctx = canvas.getContext("2d");
@@ -4805,8 +4826,9 @@ body {
     host.innerHTML = data.groups.map(function (g) {
       var title = 'Station ' + g.nr + (nonEmpty(g.title) ? ' – ' + escapeHTML(g.title) : '');
       var rows = g.rows.map(function (r) {
+        var label = 'Station ' + g.nr + ' · ' + (r.vType || r.vId) + (nonEmpty(r.vCall) ? ' · ' + r.vCall : '');
         return '<div class="qr-row">' +
-                 '<canvas class="qr-canvas" data-link="' + escapeAttr(r.link) + '"></canvas>' +
+                 '<canvas class="qr-canvas" data-link="' + escapeAttr(r.link) + '" data-label="' + escapeAttr(label) + '" role="button" tabindex="0" title="QR-Code vergrößern"></canvas>' +
                  '<div class="qr-row-info">' +
                    '<div class="qr-veh-line"><span class="qr-veh">' + escapeHTML(r.vType || r.vId) + '</span>' + (nonEmpty(r.vCall) ? ' <span class="qr-call">' + escapeHTML(r.vCall) + '</span>' : '') + '</div>' +
                    '<div class="qr-link"><a href="' + escapeAttr(r.link) + '" target="_blank" rel="noopener">' + escapeHTML(r.link) + '</a></div>' +
@@ -4815,8 +4837,37 @@ body {
       }).join("");
       return '<div class="qr-card"><h4 class="qr-card-title">' + title + '</h4>' + rows + '</div>';
     }).join("");
-    /* QR-Grafiken nach dem Einfügen zeichnen */
-    host.querySelectorAll(".qr-canvas").forEach(function (cv) { drawQrCanvas(cv, cv.getAttribute("data-link")); });
+    /* QR-Grafiken zeichnen + Klick/Enter öffnet die große Vorschau im Overlay */
+    host.querySelectorAll(".qr-canvas").forEach(function (cv) {
+      drawQrCanvas(cv, cv.getAttribute("data-link"));
+      cv.addEventListener("click", function () { openQrLightbox(cv.getAttribute("data-link"), cv.getAttribute("data-label")); });
+      cv.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openQrLightbox(cv.getAttribute("data-link"), cv.getAttribute("data-label")); } });
+    });
+  }
+
+  /* QR-Vorschau im Overlay (groß), analog zur Lagebild-Vorschau. */
+  var qrLightboxLastFocus = null;
+  function openQrLightbox(link, label) {
+    var ov = document.getElementById("qrLightbox"); if (!ov) return;
+    qrLightboxLastFocus = document.activeElement;
+    drawQrCanvas(document.getElementById("qrLightboxCanvas"), link, 600);
+    var cap = document.getElementById("qrLightboxCap");
+    if (cap) cap.innerHTML = '<div class="qr-lb-label">' + escapeHTML(label || "") + '</div>' +
+      '<div class="qr-lb-link"><a href="' + escapeAttr(link) + '" target="_blank" rel="noopener">' + escapeHTML(link) + '</a></div>';
+    ov.hidden = false; ov.setAttribute("aria-hidden", "false"); document.body.style.overflow = "hidden";
+    var c = document.getElementById("qrLightboxClose"); if (c) c.focus();
+  }
+  function closeQrLightbox() {
+    var ov = document.getElementById("qrLightbox"); if (!ov) return;
+    ov.hidden = true; ov.setAttribute("aria-hidden", "true"); document.body.style.overflow = "";
+    if (qrLightboxLastFocus && qrLightboxLastFocus.focus) qrLightboxLastFocus.focus();
+  }
+  function initQrLightbox() {
+    var ov = document.getElementById("qrLightbox");
+    var cb = document.getElementById("qrLightboxClose");
+    if (cb) cb.addEventListener("click", closeQrLightbox);
+    if (ov) ov.addEventListener("click", function (e) { if (e.target === ov) closeQrLightbox(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && ov && !ov.hidden) closeQrLightbox(); });
   }
 
   function renderQrViews() {
@@ -4868,6 +4919,7 @@ body {
       var h = document.getElementById("qrSaveHint"); if (h) flashHint(h, "Übernommen");
     });
     if (copyAll) copyAll.addEventListener("click", qrCopyAllLinks);
+    initQrLightbox();
     renderQr();
   }
 
