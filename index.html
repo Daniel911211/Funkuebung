@@ -7,9 +7,12 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.11.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.11.1)
   ============================================================================
-  Stand 1.11.0 (Routenplanung – automatische Routen): Fachliche Korrektur des
+  Stand 1.11.1 (Text): SECTIONS-Beschreibung der Dashboard-Karte „Routenplanung"
+  präzisiert („Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten
+  anzeigen."). Reine Textänderung, keine Logik/Layout.
+  Davor (1.11.0, Routenplanung – automatische Routen): Fachliche Korrektur des
   Routenmodells. Statt manueller Routenpflege fahren jetzt ALLE aktiven Fahrzeuge
   ALLE Stationen an; nur der Startpunkt ist je Fahrzeug zyklisch versetzt
   (Fahrzeugindex i ⇒ Stationsliste um i gedreht, Modulo bei mehr Fahrzeugen als
@@ -1670,7 +1673,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.11.0"
+    version: "1.11.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -1680,7 +1683,7 @@ body {
     { id: "grunddaten", label: "Grunddaten",      icon: "doc",     nav: true,  card: true,  desc: "Übungstitel, Datum, Uhrzeit, Übungsleitung sowie Funkkanäle (TMO/DMO)." },
     { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung." },
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Inhalte der Stationen, Aufgaben, Hinweise und Lagebilder festlegen." },
-    { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Reihenfolge und Wege der Fahrzeuge durch die Stationen planen." },
+    { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
