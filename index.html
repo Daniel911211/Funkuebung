@@ -13,9 +13,21 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.20.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.21.0)
   ============================================================================
-  Stand 1.20.1 (Stationsplanung: Bezeichnung optional, Nummer = Identität): Der
+  Stand 1.21.0 (Lösungssatz – Neuaufbau in 3 Kartenbereichen): Der Bereich
+  „Lösungssatz" wurde komplett neu aufgebaut. (1) ERFASSEN: Textarea mit Auto-
+  Speicherung, Buttons „Feld leeren" + „Satzsammlung" (kleine Satzliste).
+  (2) ZEICHENSTATUS: SOLL (=aktive Fahrzeuge×Stationen) / IST (Zeichen) / STATUS
+  (Vollständig | Fehlen: X | Zu viel: X) mit Hinweisbox + „Vorgabewörter für die
+  Übungsleitung" (Resttext bei 6/5/4 Einheiten). (3) ZUORDNUNG: je aktivem
+  Fahrzeug eine Karte mit Stationsreihenfolge (bestehende Routenlogik) und
+  automatisch zugeordnetem Zeichen – Prinzip 8.9: max. 1 Zeichen je Fahrzeug/
+  Station, Rest → Übungsleitung. Zentrale Funktion computeLoesungPlan(). Dashboard-
+  Pill: done nur bei IST=SOLL, sonst In Bearbeitung. Storage unverändert
+  (funkuebung_loesungssatz_v1 = { phrase, mode:"vehicles" }). Routen-/Fahrzeug-/
+  Stations-/QR-Logik unverändert. Einmal-Bereinigung des Storage-Keys entfernt.
+  Davor – Stand 1.20.1 (Stationsplanung: Bezeichnung optional, Nummer = Identität): Der
   Tabellenkopf der Stationsplanung heißt jetzt „Station" (Zellen zeigen weiterhin
   nur die Nummer 1, 2, 3 …). Die Bezeichnung (title) ist fachlich OPTIONAL und darf
   leer bleiben – sie ist KEINE Pflicht für die Vollständigkeit (isStationComplete
@@ -1189,6 +1201,100 @@ body {
 .route-name { flex: 1 1 auto; min-width: 0; font-size: .9rem; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* --- Lösungssatz ---------------------------------------------------------*/
+#sec-loesung > .panel { margin-top: 18px; }
+#sec-loesung > .panel:first-of-type { margin-top: 0; }
+.field textarea {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: .98rem;
+  line-height: 1.5;
+  padding: 12px 14px;
+  resize: vertical;
+  transition: border-color .14s, background .14s;
+}
+.field textarea::placeholder { color: var(--text-faint); }
+.field textarea:focus { outline: none; border-color: var(--red); background: #1d2026; }
+.loes-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.loes-note { margin: 12px 0 0; font-size: .82rem; color: var(--text-faint); line-height: 1.5; }
+.loes-mono { font-family: var(--font-mono); color: var(--text-muted); }
+.loes-collection {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  padding: 6px;
+}
+.loes-collection-item {
+  display: block; width: 100%; text-align: left;
+  background: none; border: none; color: var(--text);
+  font: inherit; font-size: .9rem; padding: 8px 8px; cursor: pointer;
+  border-radius: 6px; border-top: 1px solid var(--line-soft);
+}
+.loes-collection-item:first-child { border-top: none; }
+.loes-collection-item:hover { background: var(--bg-1); }
+
+/* SOLL / IST / STATUS – drei Kennzahl-Boxen */
+.loes-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
+.loes-stat {
+  flex: 1 1 160px; text-align: center;
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.loes-stat-label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-faint); }
+.loes-stat-value { margin-top: 4px; font-size: 1.55rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.loes-stat-status .loes-stat-value { font-size: 1.2rem; }
+/* Zustandsfarben – an die drei Screenshots angelehnt, gedeckt */
+.loes-stats.is-complete .loes-stat { border-color: rgba(63,174,107,.4); }
+.loes-stats.is-complete .loes-stat-value { color: var(--status-done); }
+.loes-stats.is-missing .loes-stat-status { border-color: rgba(224,163,46,.45); }
+.loes-stats.is-missing .loes-stat-status .loes-stat-value { color: var(--status-prog); }
+.loes-stats.is-extra .loes-stat-ist,
+.loes-stats.is-extra .loes-stat-status { border-color: var(--red); }
+.loes-stats.is-extra .loes-stat-ist .loes-stat-value,
+.loes-stats.is-extra .loes-stat-status .loes-stat-value { color: var(--red-strong); }
+
+/* Hinweisbox + Vorgabewörter zweispaltig */
+.loes-cols { display: flex; flex-wrap: wrap; gap: 14px; }
+.loes-cols > * { flex: 1 1 280px; min-width: 0; }
+.loes-hintbox {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg-2); padding: 14px 16px;
+}
+.loes-hintbox.is-complete { border-color: rgba(63,174,107,.4); }
+.loes-hintbox.is-missing  { border-color: rgba(224,163,46,.4); }
+.loes-hintbox.is-extra    { border-color: var(--red); background: var(--red-soft); }
+.loes-hintbox-title { margin: 0 0 5px; font-size: .92rem; font-weight: 600; color: var(--text); }
+.loes-hintbox.is-complete .loes-hintbox-title { color: var(--status-done); }
+.loes-hintbox.is-missing  .loes-hintbox-title { color: var(--status-prog); }
+.loes-hintbox.is-extra    .loes-hintbox-title { color: var(--red-strong); }
+.loes-hintbox p { margin: 0; font-size: .85rem; color: var(--text-muted); line-height: 1.5; }
+.loes-hintbox-meta { margin-top: 7px !important; font-size: .78rem; color: var(--text-faint) !important; }
+.loes-leader-box {
+  border: 1px solid rgba(224,163,46,.4); border-radius: var(--radius);
+  background: rgba(224,163,46,.06); padding: 14px 16px;
+}
+.loes-leader-title { margin: 0 0 4px; font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; color: var(--status-prog); }
+.loes-leader-desc { margin: 0 0 10px; font-size: .8rem; color: var(--text-faint); font-style: italic; line-height: 1.5; }
+.loes-leader-row { margin: 0; padding: 3px 0; font-size: .9rem; color: var(--text); line-height: 1.5; }
+.loes-leader-row b { color: var(--status-prog); font-weight: 600; }
+.loes-leader-row .muted { color: var(--text-faint); font-style: italic; }
+
+/* Karte 3: Fahrzeugkarten (an „Automatische Fahrzeugrouten" angelehnt) */
+.loes-veh-list { display: grid; gap: 14px; }
+.loes-assign-item { gap: 10px; }
+.loes-assign-char {
+  flex: 0 0 auto; min-width: 30px; text-align: center;
+  font-family: var(--font-mono); font-weight: 700; font-size: 1rem; color: var(--text);
+  background: var(--bg-1); border: 1px solid var(--line);
+  border-radius: 6px; padding: 2px 8px;
+}
+.loes-assign-char.empty { color: var(--text-faint); font-weight: 400; border-style: dashed; }
+.loes-assign-char.space { color: var(--text-faint); }
+
 /* --- Einheitliches Button-System ----------------------------------------
    Farbsemantik (konsequent verwenden):
      .btn-primary    Rot       – Hauptaktion / Speichern / Hinzufügen
@@ -1837,17 +1943,50 @@ body {
     </section>
 
     <!-- ----- 6b) LÖSUNGSSATZ ------------------------------------------- -->
-    <!-- Logik wurde entfernt – Bereich wird komplett neu aufgebaut. -->
+    <!-- Drei Kartenbereiche: (1) erfassen, (2) Zeichenstatus + Vorgabewörter,
+         (3) Fahrzeug-/Stations-Zuordnung. Logik: max. 1 Zeichen je Fahrzeug
+         und Station (Prinzip 8.9). Alles in index.html. -->
     <section class="section" id="sec-loesung">
       <div class="section-head">
         <h2>Lösungssatz</h2>
-        <p>Erfassung und Verteilung des Lösungssatzes der Übung.</p>
+        <p>Lösungssatz der Übung erfassen und – nach dem Prinzip „max. 1 Zeichen je Fahrzeug und Station" – automatisch auf die aktiven Fahrzeuge und ihre Stationsreihenfolge verteilen. Überschüssige Zeichen werden der Übungsleitung / ELW zugewiesen.</p>
       </div>
-      <div class="placeholder">
-        <div class="ph-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13l9-9"/><path d="M16 4l3 3"/><path d="M19 7l2-2"/></svg></div>
-        <h3>Lösungssatz wird neu aufgebaut</h3>
-        <p>Die bisherige Lösungssatz-Logik wurde entfernt. Dieser Bereich wird im nächsten Schritt komplett neu aufgebaut.</p>
-        <span class="ph-tag">In Neuaufbau</span>
+
+      <!-- 1) Lösungssatz erfassen -->
+      <div class="panel">
+        <h3 class="subsection-title">Lösungssatz erfassen</h3>
+        <div class="field full">
+          <label for="loesPhrase">Lösungssatz</label>
+          <textarea id="loesPhrase" rows="3" placeholder="z. B. ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!"></textarea>
+        </div>
+        <div class="loes-actions">
+          <button type="button" class="btn btn-secondary" id="loesClear">Feld leeren</button>
+          <button type="button" class="btn btn-secondary" id="loesCollection" aria-expanded="false">Satzsammlung</button>
+          <span class="save-hint" id="loesSaveHint">Automatische Speicherung aktiv</span>
+        </div>
+        <div class="loes-collection" id="loesCollectionPanel" hidden><!-- per JS gefüllt --></div>
+        <p class="loes-note">Pro aktivem Fahrzeug und Station wird höchstens ein Zeichen vergeben. Restzeichen übernimmt die Übungsleitung. Standardsatz als Referenz: <span class="loes-mono">ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!</span></p>
+      </div>
+
+      <!-- 2) Zeichenstatus + Vorgabewörter für die Übungsleitung -->
+      <div class="panel">
+        <h3 class="subsection-title">Zeichenstatus</h3>
+        <div class="loes-stats" id="loesStats"><!-- SOLL / IST / STATUS per JS --></div>
+        <div class="loes-cols">
+          <div class="loes-hintbox" id="loesHintBox"><!-- Hinweis per JS --></div>
+          <div class="loes-leader-box">
+            <h4 class="loes-leader-title">Vorgabewörter für die Übungsleitung</h4>
+            <p class="loes-leader-desc">Diese Wörter müssen durch die Übungsleitung vorgegeben werden, wenn weniger als die volle Fahrzeugzahl genutzt wird.</p>
+            <div id="loesLeaderList"><!-- per JS gefüllt --></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3) Fahrzeug-/Stations-Zuordnung -->
+      <div class="panel">
+        <h3 class="subsection-title">Zeichen-Zuordnung je Fahrzeug</h3>
+        <p class="field-hint" style="margin-bottom:14px">Je aktivem Fahrzeug die Stationsreihenfolge (wie in der Routenplanung) mit dem automatisch zugeordneten Lösungszeichen. „–" = keine Zuordnung (Satz zu kurz), „␣" = Leerzeichen.</p>
+        <div class="loes-veh-list" id="loesVehicleList"><!-- per JS gefüllt --></div>
       </div>
     </section>
 
@@ -1960,7 +2099,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.20.1"
+    version: "1.21.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -1971,7 +2110,7 @@ body {
     { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung." },
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Inhalte der Stationen, Aufgaben, Hinweise und Lagebilder festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
-    { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Wird neu aufgebaut." },
+    { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf aktive Fahrzeuge und Stationen verteilen (max. 1 Zeichen je Fahrzeug/Station)." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
@@ -2289,6 +2428,9 @@ body {
       renderRoutes();
       if (mapInstance) setTimeout(function () { mapInstance.invalidateSize(); }, 60);
     }
+    /* Lösungssatz beim Öffnen neu aufbauen (Fahrzeuge/Stationen können sich
+       geändert haben → SOLL/Zuordnung neu berechnen). */
+    if (id === "loesung") renderLoesung();
   }
 
   /* --- Dashboard-Statuskarten ------------------------------------------*/
@@ -2367,11 +2509,16 @@ body {
     setPill("routen", routeStatus,
       routeStatus === "done" ? "Vollständig" : (routeStatus === "prog" ? "In Bearbeitung" : "Offen"));
 
+    /* Lösungssatz-Statuskarte */
+    var loesStatus = computeLoesungStatus();
+    setPill("loesung", loesStatus,
+      loesStatus === "done" ? "Vollständig" : (loesStatus === "prog" ? "In Bearbeitung" : "Offen"));
+
     /* Fortschrittsleiste: Anzahl vollständiger Karten-Bereiche.
-       Bewertet werden Grunddaten, Fahrzeuge, Stationen und Routenplanung.
+       Bewertet werden Grunddaten, Fahrzeuge, Stationen, Routenplanung und Lösungssatz.
        (QR-Code-Plan bleibt vorerst Platzhalter und zählt nicht als vollständig.) */
     var cardSections = SECTIONS.filter(function (s) { return s.card; });
-    var doneCount = (complete ? 1 : 0) + (vehStatus === "done" ? 1 : 0) + (staStatus === "done" ? 1 : 0) + (routeStatus === "done" ? 1 : 0);
+    var doneCount = (complete ? 1 : 0) + (vehStatus === "done" ? 1 : 0) + (staStatus === "done" ? 1 : 0) + (routeStatus === "done" ? 1 : 0) + (loesStatus === "done" ? 1 : 0);
     document.getElementById("progressDone").textContent  = doneCount;
     document.getElementById("progressTotal").textContent = cardSections.length;
     document.getElementById("progressFill").style.width  = (doneCount / cardSections.length * 100) + "%";
@@ -3598,6 +3745,315 @@ body {
   }
 
   /* ======================================================================
+     LÖSUNGSSATZ
+     ----------------------------------------------------------------------
+     Prinzip 8.9: pro aktivem Fahrzeug und Station MAX. 1 Zeichen.
+     Kapazität (SOLL) = aktive Fahrzeuge × Stationen. Die ersten (Kapazität)
+     Zeichen werden in festen Blöcken von je stationCount Zeichen der Reihe
+     nach auf die Fahrzeuge verteilt (Fahrzeug i → Zeichen i*S … (i+1)*S-1),
+     innerhalb eines Fahrzeugs auf dessen Stationen in ROUTENreihenfolge
+     (bestehende Routenlogik, wird nicht verändert). Restzeichen oberhalb der
+     Kapazität gehen an die Übungsleitung / ELW. Storage unverändert:
+     funkuebung_loesungssatz_v1 = { phrase, mode:"vehicles" }.
+     ====================================================================== */
+  var LOESUNG_STORAGE_KEY = "funkuebung_loesungssatz_v1";
+  var LOESUNG_DEFAULT = "ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!";
+  var LOESUNG_SPACE = "␣";
+  /* Kleine, einfache Satzsammlung (Standardsatz + Beispiele). Bewusst klein
+     gehalten – keine komplexe Wörterbuch-Logik. */
+  var LOESUNG_COLLECTION = [
+    "ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!",
+    "RUHIGE FUNKDISZIPLIN SICHERT DEN UEBERBLICK IM EINSATZ!",
+    "KLARE MELDUNGEN SCHAFFEN ZEIT UND RETTEN LEBEN HEUTE!"
+  ];
+
+  /* Lädt den Lösungssatz; liefert IMMER { phrase, mode:"vehicles" }.
+     mode bleibt unverändert (reine Metadaten, funktional nicht ausgewertet). */
+  function loadLoesung() {
+    var raw = {};
+    try { raw = JSON.parse(localStorage.getItem(LOESUNG_STORAGE_KEY)) || {}; }
+    catch (e) { raw = {}; }
+    return { phrase: typeof raw.phrase === "string" ? raw.phrase : "", mode: "vehicles" };
+  }
+  function saveLoesung(obj) {
+    try {
+      localStorage.setItem(LOESUNG_STORAGE_KEY, JSON.stringify({
+        phrase: (obj && typeof obj.phrase === "string") ? obj.phrase : "",
+        mode: "vehicles"
+      }));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* Zentrale Berechnung: liefert alle Kennzahlen + die Fahrzeug-Zuordnung.
+     Division durch 0 wird vermieden (capacity 0 → keine Zuordnung). */
+  function computeLoesungPlan(phraseOverride) {
+    var phrase = (typeof phraseOverride === "string") ? phraseOverride : loadLoesung().phrase;
+    var currentChars = phrase.length;
+
+    var activeVehicles = loadVehicles().filter(function (v) { return v.active; });
+    var activeVehicleCount = activeVehicles.length;
+    var stations = loadStations();
+    var stationCount = stations.length;
+
+    var capacity = activeVehicleCount * stationCount;
+    var assignedChars = phrase.slice(0, capacity);
+    var leaderChars = phrase.slice(capacity);
+    var missingChars = Math.max(capacity - currentChars, 0);
+    var extraChars = Math.max(currentChars - capacity, 0);
+
+    var status;
+    if (currentChars < capacity) status = "missing";
+    else if (currentChars > capacity) status = "extra";
+    else status = "complete";
+
+    /* Zuordnung je Fahrzeug: feste Blöcke à stationCount, Stationen in Routen-
+       reihenfolge. Zeichen-Index = vIdx*stationCount + routeIndex. Fehlt das
+       Zeichen (Satz zu kurz), bleibt char leer ("" → Anzeige „–"). */
+    var vehicleAssignments = (activeVehicleCount > 0 && stationCount > 0)
+      ? activeVehicles.map(function (v, vIdx) {
+          var route = buildAutoRouteForVehicle(vIdx, stations);
+          var base = vIdx * stationCount;
+          var rows = route.map(function (st, routeIndex) {
+            var charIdx = base + routeIndex;
+            return {
+              station: st,
+              stationIndex: indexOfId(stations, st.id),
+              routeIndex: routeIndex,
+              char: charIdx < assignedChars.length ? assignedChars.charAt(charIdx) : ""
+            };
+          });
+          return { vehicle: v, rows: rows };
+        })
+      : [];
+
+    return {
+      phrase: phrase,
+      currentChars: currentChars,
+      activeVehicles: activeVehicles,
+      stations: stations,
+      stationCount: stationCount,
+      activeVehicleCount: activeVehicleCount,
+      capacity: capacity,
+      assignedChars: assignedChars,
+      leaderChars: leaderChars,
+      missingChars: missingChars,
+      extraChars: extraChars,
+      status: status,
+      vehicleAssignments: vehicleAssignments
+    };
+  }
+
+  /* Dashboard-Pill: open=kein gespeicherter Satz; done=IST=SOLL (mit Fahrzeugen
+     UND Stationen); sonst prog (auch IST>SOLL → „In Bearbeitung"). */
+  function computeLoesungStatus() {
+    var saved = loadLoesung().phrase;
+    if (!nonEmpty(saved)) return "open";
+    var plan = computeLoesungPlan(saved);
+    if (plan.activeVehicleCount === 0 || plan.stationCount === 0) return "prog";
+    return (plan.status === "complete") ? "done" : "prog";
+  }
+
+  /* Voller Render beim Öffnen: Textarea aus gespeichertem Satz füllen. */
+  function renderLoesung() {
+    var ta = document.getElementById("loesPhrase");
+    if (ta) ta.value = loadLoesung().phrase;
+    renderLoesungAll();
+  }
+  /* Alle drei Kartenbereiche aus dem AKTUELLEN Textarea-Wert neu rendern. */
+  function renderLoesungAll() {
+    var ta = document.getElementById("loesPhrase");
+    var phrase = ta ? ta.value : loadLoesung().phrase;
+    var plan = computeLoesungPlan(phrase);
+    renderLoesungStats(plan);
+    renderLoesungLeader(plan);
+    renderLoesungVehicles(plan);
+  }
+
+  function loesStatBox(key, label, value) {
+    return '<div class="loes-stat loes-stat-' + key + '">' +
+             '<div class="loes-stat-label">' + label + '</div>' +
+             '<div class="loes-stat-value">' + value + '</div>' +
+           '</div>';
+  }
+
+  /* Karte 2: SOLL/IST/STATUS-Boxen + Hinweisbox. Berücksichtigt fehlende
+     Fahrzeuge/Stationen (keine Division durch 0, eigener Hinweis). */
+  function renderLoesungStats(plan) {
+    var stats = document.getElementById("loesStats");
+    var hintBox = document.getElementById("loesHintBox");
+    if (!stats || !hintBox) return;
+
+    var computable = plan.activeVehicleCount > 0 && plan.stationCount > 0;
+    var cls, statusValue, hintTitle, hintText;
+
+    if (!computable) {
+      cls = "is-neutral";
+      statusValue = "—";
+      if (plan.activeVehicleCount === 0 && plan.stationCount === 0) {
+        hintTitle = "Planung nicht möglich.";
+        hintText = "Es sind keine aktiven Fahrzeuge und keine Stationen vorhanden. Bitte Fahrzeuge aktivieren und Stationen anlegen.";
+      } else if (plan.activeVehicleCount === 0) {
+        hintTitle = "Keine aktiven Fahrzeuge.";
+        hintText = "Ohne aktive Fahrzeuge können keine Zeichen verteilt werden. Fahrzeuge werden im Bereich „Fahrzeuge“ aktiviert.";
+      } else {
+        hintTitle = "Keine Stationen.";
+        hintText = "Ohne Stationen können keine Zeichen verteilt werden. Stationen werden in der Stationsplanung angelegt.";
+      }
+    } else if (plan.status === "missing") {
+      cls = "is-missing";
+      statusValue = "Fehlen: " + plan.missingChars;
+      hintTitle = "Hinweis: Der Lösungssatz ist zu kurz.";
+      hintText = "Es fehlen noch " + plan.missingChars + " Zeichen, damit alle Fahrzeug-/Stationsfelder belegt sind.";
+    } else if (plan.status === "extra") {
+      cls = "is-extra";
+      statusValue = "Zu viel: " + plan.extraChars;
+      hintTitle = "Hinweis: Der Lösungssatz ist länger als die Fahrzeug-/Stationskapazität.";
+      hintText = "Die übrigen " + plan.extraChars + " Zeichen werden durch die Übungsleitung / ELW ergänzt (siehe Vorgabewörter).";
+    } else {
+      cls = "is-complete";
+      statusValue = "Vollständig";
+      hintTitle = "Vollständig: Alle Fahrzeug-/Stationsfelder sind belegt.";
+      hintText = "Der Lösungssatz passt exakt auf alle verfügbaren Felder.";
+    }
+
+    stats.className = "loes-stats " + cls;
+    stats.innerHTML =
+      loesStatBox("soll", "Soll", escapeHTML(String(plan.capacity))) +
+      loesStatBox("ist", "Ist", escapeHTML(String(plan.currentChars))) +
+      loesStatBox("status", "Status", escapeHTML(statusValue));
+
+    hintBox.className = "loes-hintbox " + cls;
+    hintBox.innerHTML =
+      '<p class="loes-hintbox-title">' + escapeHTML(hintTitle) + '</p>' +
+      '<p>' + escapeHTML(hintText) + '</p>' +
+      '<p class="loes-hintbox-meta">SOLL: ' + escapeHTML(String(plan.capacity)) + ' Zeichen · IST: ' + escapeHTML(String(plan.currentChars)) + ' Zeichen' +
+        (plan.missingChars > 0 ? ' · Fehlen: ' + escapeHTML(String(plan.missingChars)) : '') +
+        (plan.extraChars > 0 ? ' · Zu viel: ' + escapeHTML(String(plan.extraChars)) : '') + '</p>';
+  }
+
+  /* Vorgabewörter für die Übungsleitung: für 6, 5 und 4 Einheiten den Resttext
+     oberhalb der jeweiligen Kapazität (N × Stationen). Führende Leerzeichen
+     werden getrimmt, innere bleiben erhalten. */
+  function renderLoesungLeader(plan) {
+    var list = document.getElementById("loesLeaderList");
+    if (!list) return;
+    if (plan.stationCount === 0) {
+      list.innerHTML = '<p class="loes-leader-row"><span class="muted">Keine Stationen vorhanden – keine Berechnung möglich.</span></p>';
+      return;
+    }
+    var phrase = plan.phrase;
+    list.innerHTML = [6, 5, 4].map(function (n) {
+      var cap = n * plan.stationCount;
+      var rest = phrase.slice(cap).replace(/^\s+/, "");
+      var label = "Bei " + n + " Einheiten vorgeben: ";
+      if (!nonEmpty(rest)) {
+        return '<p class="loes-leader-row">' + escapeHTML(label) + '<span class="muted">Keine Vorgabe erforderlich.</span></p>';
+      }
+      return '<p class="loes-leader-row">' + escapeHTML(label) + '<b>' + escapeHTML(rest) + '</b></p>';
+    }).join("");
+  }
+
+  /* Anzeigename einer Station in der Zuordnung: „Station N – Bezeichnung"
+     (Bezeichnung optional → bei leer nur „Station N"). */
+  function loesStationLabel(station, stationIndex) {
+    var num = "Station " + (stationIndex + 1);
+    return nonEmpty(station.title) ? (num + " – " + station.title) : num;
+  }
+  /* Ein Zeichen-Chip rechts in der Fahrzeugkarte. */
+  function loesCharChip(ch) {
+    if (ch === "") return '<span class="loes-assign-char empty">–</span>';
+    if (ch === " ") return '<span class="loes-assign-char space">' + LOESUNG_SPACE + '</span>';
+    return '<span class="loes-assign-char">' + escapeHTML(ch) + '</span>';
+  }
+
+  /* Karte 3: je aktivem Fahrzeug eine Karte mit Stationsreihenfolge + Zeichen. */
+  function renderLoesungVehicles(plan) {
+    var host = document.getElementById("loesVehicleList");
+    if (!host) return;
+    host.innerHTML = "";
+    if (plan.activeVehicleCount === 0) {
+      host.innerHTML = '<p class="detail-empty">Keine aktiven Fahrzeuge. Fahrzeuge werden im Bereich „Fahrzeuge" aktiviert.</p>';
+      return;
+    }
+    if (plan.stationCount === 0) {
+      host.innerHTML = '<p class="detail-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</p>';
+      return;
+    }
+    plan.vehicleAssignments.forEach(function (a) {
+      var card = document.createElement("div");
+      card.className = "route-veh";
+      var rows = a.rows.map(function (r, i) {
+        return '<li class="route-item loes-assign-item">' +
+                 '<span class="route-pos">' + (i + 1) + '.</span>' +
+                 '<span class="route-name">' + escapeHTML(loesStationLabel(r.station, r.stationIndex)) + '</span>' +
+                 loesCharChip(r.char) +
+               '</li>';
+      }).join("");
+      card.innerHTML =
+        '<div class="route-veh-head">' +
+          '<div class="route-veh-title">' + escapeHTML(a.vehicle.type) + '</div>' +
+          '<div class="route-veh-sub">' + escapeHTML(a.vehicle.callsign) + '</div>' +
+        '</div>' +
+        '<ol class="route-list">' + rows + '</ol>';
+      host.appendChild(card);
+    });
+  }
+
+  /* Persistiert den Textarea-Wert sofort (Auto-Speichern), rendert neu und
+     aktualisiert das Dashboard. */
+  function persistLoesung(hintText) {
+    var ta = document.getElementById("loesPhrase");
+    saveLoesung({ phrase: ta ? ta.value : "", mode: "vehicles" });
+    renderLoesungAll();
+    updateStatus();
+    var hint = document.getElementById("loesSaveHint");
+    if (hint) flashHint(hint, hintText || "Gespeichert");
+  }
+
+  /* Satzsammlung: kleine Liste; Klick übernimmt den Satz ins Feld. */
+  function renderLoesungCollection() {
+    var panel = document.getElementById("loesCollectionPanel");
+    if (!panel) return;
+    panel.innerHTML = LOESUNG_COLLECTION.map(function (s, i) {
+      return '<button type="button" class="loes-collection-item" data-idx="' + i + '">' + escapeHTML(s) + '</button>';
+    }).join("");
+    panel.querySelectorAll(".loes-collection-item").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = parseInt(btn.dataset.idx, 10);
+        var ta = document.getElementById("loesPhrase");
+        if (ta) ta.value = LOESUNG_COLLECTION[idx] || "";
+        toggleLoesungCollection(false);
+        persistLoesung("Satz übernommen");
+      });
+    });
+  }
+  function toggleLoesungCollection(show) {
+    var panel = document.getElementById("loesCollectionPanel");
+    var btn = document.getElementById("loesCollection");
+    if (!panel) return;
+    var open = (typeof show === "boolean") ? show : panel.hidden;
+    if (open) renderLoesungCollection();
+    panel.hidden = !open;
+    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  /* Init: Auto-Speichern beim Tippen + Buttons + Erst-Render. */
+  function initLoesung() {
+    var ta = document.getElementById("loesPhrase");
+    var clearBtn = document.getElementById("loesClear");
+    var collBtn = document.getElementById("loesCollection");
+    if (ta) ta.addEventListener("input", function () { persistLoesung("Gespeichert"); });
+    if (clearBtn) clearBtn.addEventListener("click", function () {
+      if (ta) ta.value = "";
+      toggleLoesungCollection(false);
+      persistLoesung("Feld geleert");
+    });
+    if (collBtn) collBtn.addEventListener("click", function () { toggleLoesungCollection(); });
+    renderLoesung();
+  }
+
+  /* ======================================================================
      HANDBUCH (Overlay)
      ----------------------------------------------------------------------
      Kapitelgerüst je Planungsbereich. Inhalte werden Schritt für Schritt
@@ -3717,16 +4173,13 @@ body {
 
   /* --- Start ------------------------------------------------------------*/
   document.addEventListener("DOMContentLoaded", function () {
-    /* Einmalige Bereinigung: alter Lösungssatz-Storage entfernt (Bereich wird neu
-       aufgebaut). HINWEIS: Diese Zeile beim Neuaufbau des Lösungssatzes entfernen,
-       sonst würde der neu gespeicherte Satz bei jedem Laden gelöscht. */
-    try { localStorage.removeItem("funkuebung_loesungssatz_v1"); } catch (e) {}
     buildNav();
     buildCards();
     initForm();
     initVehicles();
     initStations();
     initRoutes();
+    initLoesung();
     initManual();
     initImageLightbox();
     updateStatus();
