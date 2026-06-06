@@ -13,20 +13,22 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.18.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.19.0)
   ============================================================================
-  Stand 1.18.0 (Lösungssatz – Ampel & Soll-Längenprüfung): Kontrollübersicht
-  umgebaut. Neue Konstante LOESUNG_TARGET_LENGTH (= LOESUNG_DEFAULT.length); der
-  Satz wird gegen diese Soll-Länge geprüft. Zentrale Funktion
-  computeLoesungDistributionInfo() berechnet Soll-/Ist-Zeichen, aktive Fahrzeuge,
-  Stationen, Zeichen je Fahrzeug (min–max) und Verteilungshinweis. Ampel NUR
-  Gelb/Grün (kein Rot): Grün = Länge exakt + ≥1 aktives Fahrzeug + ≥1 Station;
-  sonst Gelb (kein Satz / zu kurz / zu lang / keine Fahrzeuge / keine Stationen,
-  Voraussetzungen vor Längenabweichung gemeldet). Mehrere Zeichen pro Station/
-  Fahrzeug sind erlaubt und nur Planungshinweis (kein Gelb-Auslöser). Dashboard-
-  Pill: open=kein Satz, done=Grün, prog=sonst. Dashboard-Text auf „aktive
-  Fahrzeuge" korrigiert. Verteilung unverändert (vollständig, blockweise, ohne
-  Verlust). Positionscode W1P3 bleibt ELW-Koordination vorbehalten.
+  Stand 1.19.0 (Lösungssatz – Prinzip 8.9: max. 1 Zeichen je Fahrzeug/Station):
+  Verteilung fachlich umgebaut. Fahrzeug-Kapazität = aktive Fahrzeuge × Stationen;
+  die ersten (Kapazität) Zeichen gehen blockweise an die Fahrzeuge (je ≤ Stationen
+  → max. 1 Zeichen je Station, keine Mehrfachzeichen), ALLE restlichen Zeichen
+  werden als „Übungsleitung ergänzt" ausgewiesen (neuer Bereich unter der Tabelle:
+  Boxen + Anzahl + Hinweis). Tabelle jetzt Fahrzeug | Funkrufname | Verteilte
+  Zeichen | Stationen belegt (X von Y). Kontrollübersicht: Gesamtzeichen, aktive
+  Fahrzeuge, Stationen, Fahrzeug-Kapazität, über Fahrzeuge verteilt, Übungsleitung
+  ergänzt, Ampel. Ampel NUR Gelb/Grün (kein Rot): Grün = Satz + ≥1 Fahrzeug + ≥1
+  Station; Restzeichen sind KEIN Fehler. computeLoesungDistributionInfo() neu;
+  LOESUNG_TARGET_LENGTH/Soll-Längenprüfung entfernt. Dashboard-Pill open/prog/done.
+  Positionscode W1P3 bleibt ELW-Koordination vorbehalten.
+  Davor (1.18.0, Lösungssatz – Ampel & Soll-Längenprüfung): Kontrollübersicht
+  umgebaut, Soll-Längenprüfung gegen LOESUNG_TARGET_LENGTH (in 1.19.0 ersetzt).
   Davor (1.17.1, Lösungssatz – Status zählerbasiert): Der Status in der Kontroll-
   übersicht wird jetzt aus dem Vergleich „verteilte Zeichen (X) gegenüber gesamt
   benötigten Zeichen (Y)" abgeleitet (X==Y → Vollständig, 0≤X<Y → In Bearbeitung,
@@ -1048,12 +1050,13 @@ body {
 .loes-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .loes-note { margin: 12px 0 0; font-size: .82rem; color: var(--text-faint); line-height: 1.5; }
 .loes-table { table-layout: fixed; }
-.loes-table .lcol-veh   { width: 14%; }
-.loes-table .lcol-call  { width: 28%; }
-.loes-table .lcol-chars { width: 48%; }
-.loes-table .lcol-count { width: 10%; }
+.loes-table .lcol-veh      { width: 13%; }
+.loes-table .lcol-call     { width: 27%; }
+.loes-table .lcol-chars    { width: 44%; }
+.loes-table .lcol-stations { width: 16%; }
 .loes-table .loes-veh  { font-weight: 600; color: var(--text); white-space: nowrap; }
 .loes-table .loes-call { font-size: .92rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loes-table .loes-stations { font-family: var(--font-mono); font-size: .85rem; color: var(--text-muted); text-align: center; white-space: nowrap; }
 .loes-chars { display: flex; flex-wrap: wrap; gap: 4px; }
 .loes-char {
   min-width: 1.5em; padding: 2px 6px;
@@ -1062,7 +1065,17 @@ body {
   font-family: var(--font-mono); font-size: .85rem; text-align: center;
 }
 .loes-char.space { color: var(--text-faint); border-style: dashed; }
-.loes-count { font-family: var(--font-mono); font-size: .85rem; color: var(--text-muted); text-align: center; }
+/* „Übungsleitung ergänzt"-Bereich unter der Tabelle (im Gelb-Fall leer → ausgeblendet) */
+.loes-leader {
+  margin-top: 16px; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.loes-leader:empty { display: none; }
+.loes-leader-title { margin: 0 0 10px; font-size: .92rem; color: var(--text); }
+.loes-leader-count { font-weight: 400; color: var(--text-faint); }
+.loes-leader-note  { margin: 10px 0 0; font-size: .82rem; color: var(--text-muted); line-height: 1.5; }
+.loes-leader-empty { margin: 0; font-size: .85rem; color: var(--text-muted); }
 .loes-summary {
   margin-top: 16px; padding: 12px 14px;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -1084,7 +1097,6 @@ body {
 .loes-status-text { font-size: .9rem; color: var(--text); }
 .loes-status-box.green  .loes-status-text b { color: var(--status-done); }
 .loes-status-box.yellow .loes-status-text b { color: var(--status-prog); }
-.loes-disthint { margin-top: 10px; font-size: .82rem; color: var(--text-muted); }
 
 /* Kartensteuerung */
 .route-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
@@ -1878,19 +1890,20 @@ body {
         <div class="station-table-wrap">
           <table class="station-table loes-table">
             <colgroup>
-              <col class="lcol-veh"><col class="lcol-call"><col class="lcol-chars"><col class="lcol-count">
+              <col class="lcol-veh"><col class="lcol-call"><col class="lcol-chars"><col class="lcol-stations">
             </colgroup>
             <thead>
               <tr>
                 <th>Fahrzeug</th>
                 <th>Funkrufname</th>
-                <th>Satzteil</th>
-                <th class="col-no">Zeichen</th>
+                <th>Verteilte Zeichen</th>
+                <th>Stationen belegt</th>
               </tr>
             </thead>
             <tbody id="loesDistBody"><!-- per JS gefüllt --></tbody>
           </table>
         </div>
+        <div class="loes-leader" id="loesLeader"><!-- Übungsleitung ergänzt, per JS gefüllt --></div>
         <div class="loes-summary" id="loesSummary"><!-- Kontrollübersicht, per JS gefüllt --></div>
       </div>
     </section>
@@ -2004,7 +2017,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.18.0"
+    version: "1.19.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3638,57 +3651,45 @@ body {
   /* ======================================================================
      LÖSUNGSSATZ
      ----------------------------------------------------------------------
-     Zweck: Ein globaler Lösungssatz der gesamten Übung wird erfasst und
-     vollständig auf die AKTIVEN FAHRZEUGE verteilt. Die Verteilung ist
-     FAHRZEUGBEZOGEN (nicht stationsbezogen): jedes aktive Fahrzeug erhält
-     einen zusammenhängenden Satzteil; die Satzteile aller Fahrzeuge in
-     bestehender aktiver Reihenfolge hintereinander gelesen ergeben wieder den
-     vollständigen Lösungssatz. Dieser Bereich dient nur der Planung/Grob-
-     verteilung.
+     Zweck: Ein globaler Lösungssatz der gesamten Übung wird erfasst und – nach
+     dem Prinzip des alten Planungstools 8.9 – auf aktive Fahrzeuge UND Stationen
+     verteilt. Grundregel: PRO AKTIVEM FAHRZEUG UND STATION GENAU MAXIMAL EIN
+     Lösungszeichen. Keine Mehrfachzeichen pro Station.
 
-     ZUKUNFTSHINWEIS: Die spätere stationsweise Freigabe je Position mit
-     Positionscode im Format W1P3 (Wort 1, Position 3), Rückmeldung und
-     Dokumentation gehört NICHT hierher, sondern in den Bereich
-     ELW-Koordination. Hier wird dazu KEINE Logik umgesetzt.
+     Fahrzeug-Kapazität = aktive Fahrzeuge × Stationen. Der EINGEGEBENE Satz wird
+     vollständig betrachtet:
+       - vehicleChars = erste (Kapazität) Zeichen → blockweise/gleichmäßig auf die
+         aktiven Fahrzeuge verteilt. Da vehicleChars ≤ Kapazität, erhält jedes
+         Fahrzeug höchstens (Stationen) Zeichen → automatisch max. 1 Zeichen je
+         Station. Hat ein Fahrzeug weniger Zeichen als Stationen, bleiben spätere
+         Stationen ohne Lösungszeichen (kein Auffüllen).
+       - leaderChars = ALLE restlichen Zeichen oberhalb der Kapazität → werden als
+         „Übungsleitung ergänzt" ausgewiesen (durch Übungsleitung/ELW zu ergänzen).
+     Fahrzeug-Anteile + Übungsleitungs-Anteil ergeben zusammen exakt den
+     vollständigen Lösungssatz. Kein Zeichen geht verloren, nichts wird
+     abgeschnitten. Leerzeichen sind normale Zeichen und werden als „␣" gezeigt.
+     Restzeichen für die Übungsleitung sind KEIN Fehler.
 
-     Storage-Key: funkuebung_loesungssatz_v1  →  { phrase: "...", mode: "vehicles" }
-     (eigener Key; bestehende Keys bleiben unangetastet). Ältere Einträge mit
-     mode:"stations" werden toleriert und beim Speichern auf "vehicles" gesetzt.
+     Ampel (Kontrollübersicht zeigt optisch NUR Gelb/Grün, kein Rot):
+       GRÜN: Lösungssatz vorhanden UND ≥1 aktives Fahrzeug UND ≥1 Station
+             (Verteilung berechenbar). Zusatzhinweis je nach Rest:
+               Rest>0       → „Übungsleitung ergänzt X Zeichen."
+               Satz<Kapaz.  → „Nicht alle Fahrzeug-/Stationsplätze werden benötigt."
+               sonst        → „Alle Zeichen werden über Fahrzeuge/Stationen verteilt."
+       GELB: kein Satz / keine aktiven Fahrzeuge / keine Stationen.
 
-     Verteilungslogik (BLOCKWEISE, gleichmäßig): Der EINGEGEBENE Satz wird in
-     zusammenhängende Abschnitte zerlegt. Bei L Zeichen und N aktiven Fahrzeugen
-     erhält jedes Fahrzeug base = floor(L/N) Zeichen; die ersten r = L mod N
-     Fahrzeuge bekommen ein Zeichen mehr. Reihenfolge bleibt erhalten → Fahrzeug
-     1..N hintereinander gelesen ergibt wieder den Originalsatz. Kein Zeichen
-     geht verloren, nichts wird abgeschnitten. Leerzeichen sind normale Zeichen
-     und werden als „␣" dargestellt. Verteilt wird IMMER der eingegebene Text –
-     auch wenn er kürzer/länger als die Soll-Länge ist.
-
-     Soll-Länge & Ampel (Kontrollübersicht zeigt optisch NUR Gelb/Grün):
-     Der Satz wird gegen LOESUNG_TARGET_LENGTH (= LOESUNG_DEFAULT.length) geprüft.
-       GELB: kein Satz / zu kurz / zu lang / keine aktiven Fahrzeuge / keine
-             Stationen.
-       GRÜN: Satzlänge passt EXAKT (currentChars === Soll) UND mindestens ein
-             aktives Fahrzeug UND mindestens eine Station vorhanden.
-     Weniger aktive Fahrzeuge → mehr Zeichen je Fahrzeug; sind dadurch mehrere
-     Zeichen pro Station/Fahrzeug nötig (maxZeichen/Fahrzeug > Stationen), ist das
-     ausdrücklich erlaubt und NUR ein Planungshinweis – er setzt den Status NICHT
-     auf Gelb, wenn die Länge sonst exakt passt. Kein Rot in diesem Bereich.
-
-     Statuslogik (Dashboard, auf Basis des GESPEICHERTEN Satzes; fachlich passend
-     zur Gelb/Grün-Logik):
+     Statuslogik (Dashboard, auf Basis des GESPEICHERTEN Satzes):
        open : kein gespeicherter Lösungssatz
-       done : Satzlänge exakt Soll UND ≥1 aktives Fahrzeug UND ≥1 Station (= Grün)
+       done : Grün (Satz + ≥1 Fahrzeug + ≥1 Station)
        prog : alle anderen Fälle (= Gelb mit vorhandenem Satz)
 
      ZUKUNFTSTHEMA: Positionscode W1P3 (Wort 1, Position 3) und die stationsweise
-     Detail-/Rückmeldelogik bleiben dem Bereich ELW-Koordination vorbehalten.
+     Detail-/Rückmeldelogik bleiben dem Bereich ELW-Koordination vorbehalten –
+     hier NICHT umgesetzt, auch wenn der spätere Positionscode zur alten Logik passt.
      ====================================================================== */
   var LOESUNG_STORAGE_KEY = "funkuebung_loesungssatz_v1";
   var LOESUNG_DEFAULT = "ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!";
   var LOESUNG_SPACE = "␣";
-  /* Soll-Zeichenanzahl ergibt sich automatisch aus dem Standard-Lösungssatz. */
-  var LOESUNG_TARGET_LENGTH = LOESUNG_DEFAULT.length;
 
   /* Lädt den Lösungssatz; liefert IMMER { phrase, mode:"vehicles" } sauber.
      Ältere Einträge (z. B. mode:"stations") werden toleriert/normalisiert. */
@@ -3738,14 +3739,16 @@ body {
     });
   }
 
-  /* Zentrale Auswertung für den Lösungssatz (Kontrollübersicht + Ampel + Dashboard).
-     Bewertet den ÜBERGEBENEN Satz gegen die Soll-Länge und die Voraussetzungen
-     (aktive Fahrzeuge, Stationen). Division durch 0 wird vermieden. */
+  /* Zentrale Auswertung für den Lösungssatz (Tabelle + Kontrollübersicht + Dashboard).
+     Prinzip 8.9: pro aktivem Fahrzeug und Station MAX. 1 Zeichen.
+     Fahrzeug-Kapazität = aktive Fahrzeuge × Stationen. Die ersten (Kapazität)
+     Zeichen gehen blockweise an die Fahrzeuge (je ≤ Stationen Zeichen → max. 1 je
+     Station); ALLE restlichen Zeichen werden der Übungsleitung zugeordnet.
+     Division durch 0 wird vermieden. */
   function computeLoesungDistributionInfo(phrase) {
     var p = (typeof phrase === "string") ? phrase : "";
     var hasPhrase = nonEmpty(p);
-    var currentChars = p.length;
-    var targetChars = LOESUNG_TARGET_LENGTH;
+    var totalChars = p.length;
 
     var activeVehicles = loadVehicles().filter(function (v) { return v.active; });
     var activeVehicleCount = activeVehicles.length;
@@ -3753,68 +3756,54 @@ body {
     var hasVehicles = activeVehicleCount > 0;
     var hasStations = stationCount > 0;
 
-    /* Blockweise Verteilung des eingegebenen Satzes (nur wenn Fahrzeuge da sind). */
-    var assignments = hasVehicles ? distributeLoesungToVehicles(p, activeVehicles) : [];
-    var lens = assignments.map(function (a) { return a.part.length; });
-    var minCharsPerVehicle = lens.length ? Math.min.apply(null, lens) : 0;
-    var maxCharsPerVehicle = lens.length ? Math.max.apply(null, lens) : 0;
-    var avgCharsPerStationPerVehicle = hasStations ? (maxCharsPerVehicle / stationCount) : 0;
-    /* Mehrere Zeichen je Station/Fahrzeug nötig, wenn ein Fahrzeug mehr Zeichen
-       hält als es Stationen gibt. Nur ein Planungshinweis (kein Gelb-Auslöser). */
-    var multiCharsPerStationRequired = (hasVehicles && hasStations && maxCharsPerVehicle > stationCount);
+    var capacity = activeVehicleCount * stationCount;
+    /* Fahrzeug-Anteil = erste (Kapazität) Zeichen; Rest = Übungsleitung. */
+    var vehicleCharCount = Math.min(totalChars, capacity);
+    var vehicleChars = p.slice(0, vehicleCharCount);
+    var leaderChars = p.slice(vehicleCharCount);
+    var leaderCharCount = leaderChars.length;
 
-    /* Ampel: Grün nur bei exakter Soll-Länge UND ≥1 Fahrzeug UND ≥1 Station. */
-    var lengthExact = hasPhrase && (currentChars === targetChars);
-    var isGreen = lengthExact && hasVehicles && hasStations;
+    /* Blockweise auf die aktiven Fahrzeuge; jeder Anteil ≤ Stationen (garantiert,
+       da vehicleChars ≤ Kapazität) → automatisch max. 1 Zeichen je Station. */
+    var assignments = hasVehicles ? distributeLoesungToVehicles(vehicleChars, activeVehicles) : [];
 
-    /* Status-Text: Voraussetzungen (Fahrzeuge/Stationen) werden vor der
-       Längenabweichung gemeldet; "kein Satz" ist der Einstiegszustand. */
-    var statusLabel, statusHint = "";
-    if (!hasPhrase) {
-      statusLabel = "Noch kein Lösungssatz vorhanden.";
-    } else if (!hasVehicles) {
-      statusLabel = "Keine aktiven Fahrzeuge vorhanden.";
-    } else if (!hasStations) {
-      statusLabel = "Keine Stationen vorhanden.";
-    } else if (currentChars < targetChars) {
-      statusLabel = "Lösungssatz zu kurz.";
-      statusHint = "Es fehlen noch " + (targetChars - currentChars) + " Zeichen.";
-    } else if (currentChars > targetChars) {
-      statusLabel = "Lösungssatz zu lang.";
-      statusHint = (currentChars - targetChars) + " Zeichen zu viel.";
-    } else {
-      statusLabel = "Lösungssatz passt genau.";
-    }
+    /* Ampel einfach: Grün, wenn Satz + ≥1 Fahrzeug + ≥1 Station (berechenbar). */
+    var isGreen = hasPhrase && hasVehicles && hasStations;
 
-    /* Verteilungshinweis nur sinnvoll, wenn Fahrzeuge UND Stationen vorhanden. */
-    var distributionHint = "";
-    if (hasVehicles && hasStations) {
-      distributionHint = multiCharsPerStationRequired
-        ? "Mehrere Zeichen pro Station/Fahrzeug erforderlich."
-        : "1 Zeichen je Station/Fahrzeug reicht rechnerisch aus.";
+    /* Gelb-Grund (Voraussetzungen): kein Satz → keine Fahrzeuge → keine Stationen. */
+    var statusLabel;
+    if (!hasPhrase) statusLabel = "Noch kein Lösungssatz vorhanden.";
+    else if (!hasVehicles) statusLabel = "Keine aktiven Fahrzeuge vorhanden.";
+    else if (!hasStations) statusLabel = "Keine Stationen vorhanden.";
+    else statusLabel = "Lösungssatz wird verteilt.";
+
+    /* Grün-Zusatzhinweis: Rest>0 → Übungsleitung; Satz<Kapazität → nicht alle
+       Plätze nötig; sonst alle Zeichen über Fahrzeuge/Stationen verteilt. */
+    var statusHint = "";
+    if (isGreen) {
+      if (leaderCharCount > 0) statusHint = "Übungsleitung ergänzt " + leaderCharCount + " Zeichen.";
+      else if (totalChars < capacity) statusHint = "Nicht alle Fahrzeug-/Stationsplätze werden benötigt.";
+      else statusHint = "Alle Zeichen werden über Fahrzeuge und Stationen verteilt.";
     }
 
     return {
-      targetChars: targetChars,
-      currentChars: currentChars,
+      totalChars: totalChars,
       hasPhrase: hasPhrase,
       activeVehicleCount: activeVehicleCount,
       stationCount: stationCount,
+      capacity: capacity,
+      vehicleCharCount: vehicleCharCount,
+      leaderChars: leaderChars,
+      leaderCharCount: leaderCharCount,
       assignments: assignments,
-      minCharsPerVehicle: minCharsPerVehicle,
-      maxCharsPerVehicle: maxCharsPerVehicle,
-      avgCharsPerStationPerVehicle: avgCharsPerStationPerVehicle,
-      multiCharsPerStationRequired: multiCharsPerStationRequired,
       statusColor: isGreen ? "green" : "yellow",
       statusLabel: statusLabel,
-      statusHint: statusHint,
-      distributionHint: distributionHint
+      statusHint: statusHint
     };
   }
 
-  /* Dashboard-Pill: open/prog/done passend zur Gelb/Grün-Logik.
-     open = kein gespeicherter Satz, done = Grün (exakte Länge + Fzg + Station),
-     prog = sonst. Basis ist der GESPEICHERTE Satz. */
+  /* Dashboard-Pill: open=kein gespeicherter Satz, done=Grün, prog=sonst.
+     Basis ist der GESPEICHERTE Satz. */
   function computeLoesungStatus() {
     var saved = loadLoesung().phrase;
     if (!nonEmpty(saved)) return "open";
@@ -3840,9 +3829,18 @@ body {
     return tr;
   }
 
-  /* Verteilungstabelle + Kontrollübersicht: nutzt den AKTUELLEN Textarea-Wert
-     (wird per Auto-Speichern ohnehin sofort persistiert). Verteilt fahrzeug-
-     bezogen auf die aktiven Fahrzeuge. Sichtbarer Inhalt wird HTML-escaped. */
+  /* Zeichen als einzelne Boxen; Leerzeichen sichtbar als „␣"; HTML-escaped. */
+  function loesCharBoxes(str) {
+    return String(str).split("").map(function (ch) {
+      var isSpace = (ch === " ");
+      var shown = isSpace ? LOESUNG_SPACE : escapeHTML(ch);
+      return '<span class="loes-char' + (isSpace ? " space" : "") + '">' + shown + '</span>';
+    }).join("");
+  }
+
+  /* Verteilungstabelle, „Übungsleitung ergänzt"-Bereich und Kontrollübersicht:
+     nutzt den AKTUELLEN Textarea-Wert (per Auto-Speichern sofort persistiert).
+     Verteilungs-/Übungsleitungs-Boxen nur im Grün-Fall (berechenbar). */
   function renderLoesungDist() {
     var body = document.getElementById("loesDistBody");
     if (!body) return;
@@ -3855,51 +3853,58 @@ body {
       body.appendChild(loesEmptyRow("Noch kein Lösungssatz eingetragen."));
     } else if (info.activeVehicleCount === 0) {
       body.appendChild(loesEmptyRow("Keine aktiven Fahrzeuge vorhanden. Fahrzeuge werden im Bereich Fahrzeuge aktiviert."));
+    } else if (info.stationCount === 0) {
+      body.appendChild(loesEmptyRow("Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt."));
     } else {
       info.assignments.forEach(function (a) {
         var chunk = a.part;
-        /* Satzteil als einzelne Boxen; Leerzeichen sichtbar als „␣". */
-        var boxes = chunk.split("").map(function (ch) {
-          var isSpace = (ch === " ");
-          var shown = isSpace ? LOESUNG_SPACE : escapeHTML(ch);
-          return '<span class="loes-char' + (isSpace ? " space" : "") + '">' + shown + '</span>';
-        }).join("");
         var tr = document.createElement("tr");
         tr.innerHTML =
           '<td class="loes-veh">' + escapeHTML(a.vehicle.type) + '</td>' +
           '<td class="loes-call">' + escapeHTML(a.vehicle.callsign) + '</td>' +
-          '<td><div class="loes-chars">' + boxes + '</div></td>' +
-          '<td class="loes-count">' + escapeHTML(String(chunk.length)) + '</td>';
+          '<td><div class="loes-chars">' + loesCharBoxes(chunk) + '</div></td>' +
+          '<td class="loes-stations">' + escapeHTML(String(chunk.length) + " von " + String(info.stationCount)) + '</td>';
         body.appendChild(tr);
       });
     }
 
+    renderLoesungLeader(info);
     renderLoesungSummary(info);
   }
 
-  /* Kontrollübersicht unter der Tabelle: Kern-Kennzahlen + Ampel (nur Gelb/Grün)
-     + Verteilungshinweis (nur im Grün-Fall). Alle sichtbaren Werte HTML-escaped. */
+  /* „Übungsleitung ergänzt": nur im Grün-Fall ausgewiesen (sonst leer → per CSS
+     ausgeblendet). Zeigt die Restzeichen als Boxen + Anzahl + Hinweis. */
+  function renderLoesungLeader(info) {
+    var el = document.getElementById("loesLeader");
+    if (!el) return;
+    if (info.statusColor !== "green") { el.innerHTML = ""; return; }
+    if (info.leaderCharCount === 0) {
+      el.innerHTML =
+        '<h4 class="loes-leader-title">Übungsleitung ergänzt</h4>' +
+        '<p class="loes-leader-empty">Keine Ergänzung durch Übungsleitung erforderlich.</p>';
+      return;
+    }
+    el.innerHTML =
+      '<h4 class="loes-leader-title">Übungsleitung ergänzt <span class="loes-leader-count">· ' + escapeHTML(String(info.leaderCharCount)) + ' Zeichen</span></h4>' +
+      '<div class="loes-chars">' + loesCharBoxes(info.leaderChars) + '</div>' +
+      '<p class="loes-leader-note">Diese Zeichen werden nicht über Fahrzeuge/Stationen verteilt und müssen durch die Übungsleitung / ELW ergänzt werden.</p>';
+  }
+
+  /* Kontrollübersicht: Kern-Kennzahlen + Ampel (nur Gelb/Grün). HTML-escaped. */
   function renderLoesungSummary(info) {
     var summary = document.getElementById("loesSummary");
     if (!summary) return;
     var ampel = (info.statusColor === "green") ? "green" : "yellow";
     var ampelWord = (info.statusColor === "green") ? "Grün" : "Gelb";
-    var statusText = info.statusLabel + (info.statusHint ? " " + info.statusHint : "");
-
-    /* Zeichen je Fahrzeug: exakt oder min–max; nur wenn berechenbar. */
-    var charsPerVehicle = "–";
-    if (info.activeVehicleCount > 0 && info.hasPhrase) {
-      charsPerVehicle = (info.minCharsPerVehicle === info.maxCharsPerVehicle)
-        ? String(info.minCharsPerVehicle)
-        : (info.minCharsPerVehicle + "–" + info.maxCharsPerVehicle);
-    }
+    var statusText = (info.statusColor === "green") ? info.statusHint : info.statusLabel;
 
     var metrics =
-      '<span class="loes-summary-item">Soll-Zeichen: <b>' + escapeHTML(String(info.targetChars)) + '</b></span>' +
-      '<span class="loes-summary-item">Aktuelle Zeichen: <b>' + escapeHTML(String(info.currentChars)) + '</b></span>' +
+      '<span class="loes-summary-item">Gesamtzeichen: <b>' + escapeHTML(String(info.totalChars)) + '</b></span>' +
       '<span class="loes-summary-item">Aktive Fahrzeuge: <b>' + escapeHTML(String(info.activeVehicleCount)) + '</b></span>' +
       '<span class="loes-summary-item">Stationen: <b>' + escapeHTML(String(info.stationCount)) + '</b></span>' +
-      '<span class="loes-summary-item">Zeichen je Fahrzeug: <b>' + escapeHTML(charsPerVehicle) + '</b></span>';
+      '<span class="loes-summary-item">Fahrzeug-Kapazität: <b>' + escapeHTML(String(info.capacity)) + '</b></span>' +
+      '<span class="loes-summary-item">Über Fahrzeuge verteilt: <b>' + escapeHTML(String(info.vehicleCharCount)) + '</b></span>' +
+      '<span class="loes-summary-item">Übungsleitung ergänzt: <b>' + escapeHTML(String(info.leaderCharCount)) + '</b></span>';
 
     var statusBox =
       '<div class="loes-status-box ' + ampel + '">' +
@@ -3907,12 +3912,7 @@ body {
         '<span class="loes-status-text"><b>' + escapeHTML(ampelWord) + '</b> – ' + escapeHTML(statusText) + '</span>' +
       '</div>';
 
-    var distHtml = "";
-    if (info.statusColor === "green" && info.distributionHint) {
-      distHtml = '<div class="loes-disthint">Verteilungshinweis: ' + escapeHTML(info.distributionHint) + '</div>';
-    }
-
-    summary.innerHTML = '<div class="loes-metrics">' + metrics + '</div>' + statusBox + distHtml;
+    summary.innerHTML = '<div class="loes-metrics">' + metrics + '</div>' + statusBox;
   }
 
   /* Persistiert den aktuellen Textarea-Wert sofort (Auto-Speichern), rendert die
