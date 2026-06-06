@@ -13,9 +13,17 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.24.2)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.25.0)
   ============================================================================
-  Stand 1.24.2 (QR-Übersicht – Stationen als Karten): Jede Station ist in der
+  Stand 1.25.0 (QR-Code-Grafiken je Station × Fahrzeug): Jede Fahrzeug-Zeile der
+  QR-Übersicht zeigt nun eine echte QR-Code-Grafik (Canvas) zum jeweiligen Link.
+  Eigener, abhängigkeitsfreier QR-Encoder (QRGEN, Byte-Modus, EC-Level M, v1..10,
+  4-Modul-Ruhezone) – komplett lokal, KEIN CDN/Fremdskript; bit-identisch gegen die
+  Referenz qrcode-generator für alle erzeugten Links verifiziert. QR enthält exakt
+  den angezeigten Link; aktualisiert sich (debounced) bei Änderung des Basislinks;
+  relative Links funktionieren weiterhin. Textlink + „Alle Links kopieren" bleiben.
+  station.html/data/uebung.json sowie übrige Logik unverändert.
+  Davor – Stand 1.24.2 (QR-Übersicht – Stationen als Karten): Jede Station ist in der
   QR-Übersicht nun eine eigene Karte (Rahmen + roter Akzent links, wie die
   Fahrzeugrouten-Karten), volle Breite gestapelt → klar getrennt. Nur Anzeige.
   Davor – Stand 1.24.1 (QR-Bereich entschlackt): In den Zeilen der QR-Übersicht entfällt
@@ -1326,11 +1334,14 @@ body {
 #qrOverview { display: flex; flex-direction: column; gap: 14px; }
 .qr-card { background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--red); border-radius: var(--radius); padding: 14px 16px 10px; }
 .qr-card-title { margin: 0 0 8px; font-size: 1rem; font-weight: 600; color: var(--text); padding-bottom: 8px; border-bottom: 1px solid var(--line); }
-.qr-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--line-soft); }
+.qr-row { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
 .qr-row:first-of-type { border-top: none; }
-.qr-veh { font-weight: 600; color: var(--text); min-width: 52px; }
+.qr-canvas { flex: 0 0 auto; max-width: 132px; height: auto; background: #fff; border: 1px solid var(--line); border-radius: 6px; }
+.qr-row-info { flex: 1 1 auto; min-width: 0; }
+.qr-veh-line { margin-bottom: 4px; }
+.qr-veh { font-weight: 600; color: var(--text); }
 .qr-call { color: var(--text-muted); font-size: .9rem; }
-.qr-link { flex-basis: 100%; font-size: .82rem; font-family: var(--font-mono); }
+.qr-link { font-size: .82rem; font-family: var(--font-mono); }
 .qr-link a { color: #6fa8e0; text-decoration: none; word-break: break-all; }
 .qr-link a:hover { text-decoration: underline; }
 
@@ -2337,7 +2348,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.24.2"
+    version: "1.25.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -4636,6 +4647,93 @@ body {
      Der GitHub-Basislink wird im eigenen Storage-Key gehalten; ist er leer,
      werden relative Links angezeigt. Keine QR-Grafik in diesem Schritt, keine
      Änderung an station.html/data/uebung.json oder anderer Logik. ============ */
+  /* --- Eigener, abhängigkeitsfreier QR-Encoder (Byte-Modus, EC-Level M, v1..10) ----
+     Erzeugt die Modul-Matrix für einen Link – komplett lokal, keine CDN/Fremd-
+     skripte. Verifiziert bit-identisch gegen die Referenzbibliothek qrcode-
+     generator für alle erzeugten Stationslinks. Liefert { size, modules }. */
+  var QRGEN = (function () {
+    var EXP = new Array(256), LOG = new Array(256);
+    (function () { var x = 1; for (var i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11D; } EXP[255] = EXP[0]; })();
+    function gmul(a, b) { if (a === 0 || b === 0) return 0; return EXP[(LOG[a] + LOG[b]) % 255]; }
+    function genPoly(deg){ var poly=[1]; for(var i=0;i<deg;i++){ var next=new Array(poly.length+1); for(var z=0;z<next.length;z++) next[z]=0; for(var j=0;j<poly.length;j++){ next[j]^=gmul(poly[j], EXP[i]); next[j+1]^=poly[j]; } poly=next; } return poly; }
+    function rsEC(data, ecLen){ var gen=genPoly(ecLen).reverse(); var res=new Array(data.length+ecLen); for(var i=0;i<res.length;i++) res[i]=0; for(var i=0;i<data.length;i++) res[i]=data[i];
+      for(var i=0;i<data.length;i++){ var coef=res[i]; if(coef!==0){ for(var j=0;j<gen.length;j++){ res[i+j]^=gmul(gen[j],coef); } } }
+      return res.slice(data.length); }
+    var RSM = { 1:[1,26,16], 2:[1,44,28], 3:[1,70,44], 4:[2,50,32], 5:[2,67,43], 6:[4,43,27], 7:[4,49,31], 8:[2,60,38,2,61,39], 9:[3,58,36,2,59,37], 10:[4,69,43,1,70,44] };
+    var ALIGN = { 1:[],2:[6,18],3:[6,22],4:[6,26],5:[6,30],6:[6,34],7:[6,22,38],8:[6,24,42],9:[6,26,46],10:[6,28,50] };
+    function blocksFor(ver){ var t=RSM[ver]; var out=[]; for(var i=0;i<t.length;i+=3){ var cnt=t[i],total=t[i+1],dat=t[i+2]; for(var c=0;c<cnt;c++) out.push({total:total,data:dat,ec:total-dat}); } return out; }
+    function dataCapacity(ver){ var b=blocksFor(ver), s=0; for(var i=0;i<b.length;i++) s+=b[i].data; return s; }
+    function toUtf8Bytes(str){ var out=[]; for(var i=0;i<str.length;i++){ var c=str.charCodeAt(i); if(c<0x80) out.push(c); else if(c<0x800){ out.push(0xC0|(c>>6)); out.push(0x80|(c&0x3F)); } else if(c>=0xD800&&c<=0xDBFF){ var c2=str.charCodeAt(++i); var cp=0x10000+((c-0xD800)<<10)+(c2-0xDC00); out.push(0xF0|(cp>>18)); out.push(0x80|((cp>>12)&0x3F)); out.push(0x80|((cp>>6)&0x3F)); out.push(0x80|(cp&0x3F)); } else { out.push(0xE0|(c>>12)); out.push(0x80|((c>>6)&0x3F)); out.push(0x80|(c&0x3F)); } } return out; }
+    function chooseVersion(byteLen){ for(var v=1;v<=10;v++){ var cap=dataCapacity(v)*8; var cntBits=(v<=9)?8:16; if(4+cntBits+byteLen*8<=cap) return v; } throw new Error("zu lang für v10-M"); }
+    function makeBitStream(bytes, ver){
+      var cap=dataCapacity(ver), bits=[];
+      function push(val,len){ for(var i=len-1;i>=0;i--) bits.push((val>>i)&1); }
+      push(4,4); push(bytes.length,(ver<=9)?8:16);
+      for(var i=0;i<bytes.length;i++) push(bytes[i],8);
+      var capBits=cap*8; push(0, Math.min(4, capBits-bits.length));
+      while(bits.length%8!==0) bits.push(0);
+      var pads=[0xEC,0x11], pi=0; while(bits.length<capBits){ push(pads[pi%2],8); pi++; }
+      var cw=[]; for(var i=0;i<bits.length;i+=8){ var b=0; for(var j=0;j<8;j++) b=(b<<1)|bits[i+j]; cw.push(b); } return cw;
+    }
+    function interleave(dataCW, ver){
+      var blocks=blocksFor(ver), idx=0, dataBlocks=[], ecBlocks=[], maxData=0, ecLen=blocks[0].ec;
+      for(var i=0;i<blocks.length;i++){ var d=dataCW.slice(idx, idx+blocks[i].data); idx+=blocks[i].data; dataBlocks.push(d); if(d.length>maxData) maxData=d.length; ecBlocks.push(rsEC(d, blocks[i].ec)); }
+      var out=[];
+      for(var i=0;i<maxData;i++) for(var b=0;b<dataBlocks.length;b++){ if(i<dataBlocks[b].length) out.push(dataBlocks[b][i]); }
+      for(var i=0;i<ecLen;i++) for(var b=0;b<ecBlocks.length;b++) out.push(ecBlocks[b][i]);
+      return out;
+    }
+    function build(text, forced){
+      var bytes=toUtf8Bytes(text), ver=chooseVersion(bytes.length);
+      var allCW=interleave(makeBitStream(bytes,ver), ver);
+      var size=ver*4+17, m=[], fn=[];
+      for(var r=0;r<size;r++){ m[r]=[]; fn[r]=[]; for(var c=0;c<size;c++){ m[r][c]=false; fn[r][c]=false; } }
+      function setF(r,c,v){ m[r][c]=v; fn[r][c]=true; }
+      function finder(r,c){ for(var dr=-1;dr<=7;dr++) for(var dc=-1;dc<=7;dc++){ var rr=r+dr,cc=c+dc; if(rr<0||rr>=size||cc<0||cc>=size) continue; var inb=(dr>=0&&dr<=6&&(dc===0||dc===6))||(dc>=0&&dc<=6&&(dr===0||dr===6))||(dr>=2&&dr<=4&&dc>=2&&dc<=4); setF(rr,cc,inb); } }
+      finder(0,0); finder(0,size-7); finder(size-7,0);
+      for(var i=8;i<size-8;i++){ if(!fn[6][i]) setF(6,i, i%2===0); if(!fn[i][6]) setF(i,6, i%2===0); }
+      var ap=ALIGN[ver];
+      for(var i=0;i<ap.length;i++) for(var j=0;j<ap.length;j++){ var ar=ap[i], ac=ap[j]; if((ar<=8&&ac<=8)||(ar<=8&&ac>=size-9)||(ar>=size-9&&ac<=8)) continue; for(var dr=-2;dr<=2;dr++) for(var dc=-2;dc<=2;dc++){ setF(ar+dr,ac+dc, (Math.abs(dr)===2||Math.abs(dc)===2||(dr===0&&dc===0))); } }
+      setF(size-8,8,true);
+      for(var i=0;i<=8;i++){ fn[8][i]=true; fn[i][8]=true; }
+      for(var i=0;i<8;i++){ fn[8][size-1-i]=true; fn[size-1-i][8]=true; }
+      if(ver>=7) for(var i=0;i<6;i++) for(var j=0;j<3;j++){ fn[i][size-11+j]=true; fn[size-11+j][i]=true; }
+      var bitstr=[]; for(var i=0;i<allCW.length;i++) for(var b=7;b>=0;b--) bitstr.push((allCW[i]>>b)&1);
+      var di=0, up=true;
+      for(var col=size-1; col>0; col-=2){ if(col===6) col=5; for(var t=0;t<size;t++){ var row= up? (size-1-t):t; for(var k=0;k<2;k++){ var cc=col-k; if(fn[row][cc]) continue; m[row][cc]= (di<bitstr.length? bitstr[di]:0)===1; di++; } } up=!up; }
+      function maskFn(p,r,c){ switch(p){ case 0:return (r+c)%2===0; case 1:return r%2===0; case 2:return c%3===0; case 3:return (r+c)%3===0; case 4:return (Math.floor(r/2)+Math.floor(c/3))%2===0; case 5:return ((r*c)%2)+((r*c)%3)===0; case 6:return (((r*c)%2)+((r*c)%3))%2===0; case 7:return (((r+c)%2)+((r*c)%3))%2===0; } }
+      function bit(x,i){ return (x>>i)&1; }
+      function maskedTest(p){ var mm=[]; for(var r=0;r<size;r++) mm[r]=m[r].slice(); for(var r=0;r<size;r++) for(var c=0;c<size;c++){ if(!fn[r][c] && maskFn(p,r,c)) mm[r][c]=!mm[r][c]; } mm[size-8][8]=false; return mm; }
+      function withMaskFormat(p){
+        var mm=[]; for(var r=0;r<size;r++) mm[r]=m[r].slice();
+        for(var r=0;r<size;r++) for(var c=0;c<size;c++){ if(!fn[r][c] && maskFn(p,r,c)) mm[r][c]=!mm[r][c]; }
+        var data5=(0<<3)|p; var rem=data5<<10; var g=0x537; for(var i=14;i>=10;i--){ if((rem>>i)&1) rem^=(g<<(i-10)); } var fmt=((data5<<10)|rem)^0x5412;
+        for(var i=0;i<=5;i++) mm[i][8]=bit(fmt,i)===1;
+        mm[7][8]=bit(fmt,6)===1; mm[8][8]=bit(fmt,7)===1; mm[8][7]=bit(fmt,8)===1;
+        for(var i=9;i<15;i++) mm[8][14-i]=bit(fmt,i)===1;
+        for(var i=0;i<8;i++) mm[8][size-1-i]=bit(fmt,i)===1;
+        for(var i=8;i<15;i++) mm[size-15+i][8]=bit(fmt,i)===1;
+        mm[size-8][8]=true;
+        if(ver>=7){ var vd=ver<<12; var gp=0x1F25; var vr=vd; for(var i=17;i>=12;i--){ if((vr>>i)&1) vr^=(gp<<(i-12)); } var vbits=(ver<<12)|vr;
+          for(var i=0;i<18;i++){ var bb=bit(vbits,i)===1; var rr=Math.floor(i/3), cc=i%3; mm[rr][size-11+cc]=bb; mm[size-11+cc][rr]=bb; } }
+        return mm;
+      }
+      function penalty(mm){ var n=size, lost=0;
+        for(var row=0;row<n;row++) for(var col=0;col<n;col++){ var same=0, dark=mm[row][col]; for(var r=-1;r<=1;r++){ if(row+r<0||row+r>=n) continue; for(var c=-1;c<=1;c++){ if(col+c<0||col+c>=n) continue; if(r===0&&c===0) continue; if(dark===mm[row+r][col+c]) same++; } } if(same>5) lost+=(3+same-5); }
+        for(var row=0;row<n-1;row++) for(var col=0;col<n-1;col++){ var cnt=0; if(mm[row][col])cnt++; if(mm[row+1][col])cnt++; if(mm[row][col+1])cnt++; if(mm[row+1][col+1])cnt++; if(cnt===0||cnt===4) lost+=3; }
+        for(var row=0;row<n;row++) for(var col=0;col<n-6;col++){ if(mm[row][col]&&!mm[row][col+1]&&mm[row][col+2]&&mm[row][col+3]&&mm[row][col+4]&&!mm[row][col+5]&&mm[row][col+6]) lost+=40; }
+        for(var col=0;col<n;col++) for(var row=0;row<n-6;row++){ if(mm[row][col]&&!mm[row+1][col]&&mm[row+2][col]&&mm[row+3][col]&&mm[row+4][col]&&!mm[row+5][col]&&mm[row+6][col]) lost+=40; }
+        var dark=0; for(var row=0;row<n;row++) for(var col=0;col<n;col++) if(mm[row][col]) dark++;
+        lost += Math.abs(100*dark/n/n-50)/5*10;
+        return lost;
+      }
+      if(typeof forced==="number") return {size:size, modules:withMaskFormat(forced), version:ver, mask:forced};
+      var bestP=Infinity,bm=0; for(var p=0;p<8;p++){ var pen=penalty(maskedTest(p)); if(pen<bestP){bestP=pen;bm=p;} }
+      return {size:size, modules:withMaskFormat(bm), version:ver, mask:bm};
+    }
+    return { build:build };
+  })();
+
   var QR_SETTINGS_KEY = "funkuebung_qr_settings_v1";
 
   function loadQrSettings() {
@@ -4682,6 +4780,22 @@ body {
     return { stationCount: stations.length, vehicleCount: vehicles.length, groups: groups };
   }
 
+  /* Zeichnet den QR-Code für einen Link in ein Canvas (mit 4-Modul-Ruhezone). */
+  function drawQrCanvas(canvas, link) {
+    try {
+      var qr = QRGEN.build(link);
+      var n = qr.size, quiet = 4, scale = Math.max(3, Math.round(140 / (n + quiet * 2)));
+      var dim = (n + quiet * 2) * scale;
+      canvas.width = dim; canvas.height = dim;
+      var ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, dim, dim);
+      ctx.fillStyle = "#000000";
+      for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) {
+        if (qr.modules[r][c]) ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+      }
+    } catch (e) { /* z. B. Link zu lang → Canvas bleibt leer */ }
+  }
+
   function renderQrOverview(base) {
     var host = document.getElementById("qrOverview");
     if (!host) return;
@@ -4692,13 +4806,17 @@ body {
       var title = 'Station ' + g.nr + (nonEmpty(g.title) ? ' – ' + escapeHTML(g.title) : '');
       var rows = g.rows.map(function (r) {
         return '<div class="qr-row">' +
-                 '<span class="qr-veh">' + escapeHTML(r.vType || r.vId) + '</span>' +
-                 '<span class="qr-call">' + escapeHTML(r.vCall || "") + '</span>' +
-                 '<span class="qr-link"><a href="' + escapeAttr(r.link) + '" target="_blank" rel="noopener">' + escapeHTML(r.link) + '</a></span>' +
+                 '<canvas class="qr-canvas" data-link="' + escapeAttr(r.link) + '"></canvas>' +
+                 '<div class="qr-row-info">' +
+                   '<div class="qr-veh-line"><span class="qr-veh">' + escapeHTML(r.vType || r.vId) + '</span>' + (nonEmpty(r.vCall) ? ' <span class="qr-call">' + escapeHTML(r.vCall) + '</span>' : '') + '</div>' +
+                   '<div class="qr-link"><a href="' + escapeAttr(r.link) + '" target="_blank" rel="noopener">' + escapeHTML(r.link) + '</a></div>' +
+                 '</div>' +
                '</div>';
       }).join("");
       return '<div class="qr-card"><h4 class="qr-card-title">' + title + '</h4>' + rows + '</div>';
     }).join("");
+    /* QR-Grafiken nach dem Einfügen zeichnen */
+    host.querySelectorAll(".qr-canvas").forEach(function (cv) { drawQrCanvas(cv, cv.getAttribute("data-link")); });
   }
 
   function renderQrViews() {
@@ -4736,10 +4854,11 @@ body {
     var inp = document.getElementById("qrBaseUrl");
     var useCur = document.getElementById("qrUseCurrent");
     var copyAll = document.getElementById("qrCopyAll");
+    var qrDebounce;
     if (inp) inp.addEventListener("input", function () {
       saveQrSettings({ baseUrl: inp.value });
-      renderQrViews();
       var h = document.getElementById("qrSaveHint"); if (h) flashHint(h, "Gespeichert");
+      clearTimeout(qrDebounce); qrDebounce = setTimeout(renderQrViews, 250);
     });
     if (useCur) useCur.addEventListener("click", function () {
       if (!inp) return;
