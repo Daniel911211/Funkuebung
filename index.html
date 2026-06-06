@@ -13,9 +13,12 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.23.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.23.1)
   ============================================================================
-  Stand 1.23.0 (Routenplanung – Adress-/Straßensuche in der Karte): Die Karte hat
+  Stand 1.23.1 (Karten-Suche oben rechts): Das Adress-/Straßensuche-Control sitzt
+  jetzt oben rechts in der Karte (Position "topright") statt oben links, damit die
+  Zoom-Buttons frei bleiben und nichts verdeckt wird. Verhalten unverändert.
+  Davor – Stand 1.23.0 (Routenplanung – Adress-/Straßensuche in der Karte): Die Karte hat
   jetzt ein Leaflet-Such-Control oben links (unter den Zoom-Buttons): Eingabefeld
   „Straße oder Adresse suchen" + Lupen-Button. Gesucht wird NUR auf Klick/Enter
   (kein Autocomplete) über Nominatim (format=jsonv2, countrycodes=de, limit=5,
@@ -2272,7 +2275,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.23.0"
+    version: "1.23.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3596,8 +3599,8 @@ body {
   }
 
   /* ----- Adress-/Straßensuche (Nominatim) als Leaflet-Control -------------
-     Oben links in der Karte, unterhalb der Zoom-Buttons (Position "topleft",
-     nach der Zoom-Control hinzugefügt). Sucht NUR auf Klick/Enter (kein
+     Oben rechts in der Karte (Position "topright"), damit die Zoom-Buttons oben
+     links frei bleiben. Sucht NUR auf Klick/Enter (kein
      Autocomplete). Setzt einen separaten temporären Such-Marker und rührt die
      Stations-/Marker-/Routenlogik nicht an. */
   var NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search";
@@ -3613,7 +3616,7 @@ body {
 
   function addMapSearchControl() {
     if (!mapInstance || mapSearchControlAdded || !leafletAvailable()) return;
-    var ctrl = window.L.control({ position: "topleft" });
+    var ctrl = window.L.control({ position: "topright" });
     ctrl.onAdd = function () {
       var wrap = window.L.DomUtil.create("div", "leaflet-control map-search-ctrl");
       wrap.innerHTML =
