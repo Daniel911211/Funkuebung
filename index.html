@@ -13,9 +13,12 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.14.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.14.2)
   ============================================================================
-  Stand 1.14.1 (Text): Überschrift im Routenplanungs-Panel von „Stationspositionen /
+  Stand 1.14.2 (Routenplanung – Abstände): Gleichmäßiger vertikaler Abstand (18px)
+  zwischen Kartenbereich, Stationspositionen und Fahrzeugrouten ergänzt (vorher ohne
+  Abstand → gequetscht). Reine Layout/CSS-Änderung.
+  Davor (1.14.1, Text): Überschrift im Routenplanungs-Panel von „Stationspositionen /
   ELW-Übersicht" auf „Stationspositionen" gekürzt. Reine Textänderung.
   Davor (1.14.0, Lagebilder – Lightbox): Klick auf das kleine Vorschaubild eines
   Lagebilds öffnet eine große Vorschau (Overlay/Lightbox). Schließen per X-Button,
@@ -991,6 +994,9 @@ body {
 .route-left { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .route-map-panel { display: flex; }
 @media (max-width: 860px) { .route-workspace { grid-template-columns: 1fr; } }
+/* Gleichmäßiger vertikaler Abstand zwischen den Routenplanungs-Blöcken
+   (Kartenbereich → Stationspositionen → Fahrzeugrouten), passend zum 18px-Raster. */
+#sec-routen > .panel { margin-top: 18px; }
 
 /* Kartensteuerung */
 .route-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
@@ -1864,7 +1870,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.14.1"
+    version: "1.14.2"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
