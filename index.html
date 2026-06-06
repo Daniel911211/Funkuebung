@@ -7,19 +7,20 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.10.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.11.0)
   ============================================================================
-  Stand 1.10.0 (Routenplanung): Der Bereich „Routenplanung" ist jetzt funktional.
-  (1) Stationspositionen – Standort/Adresse, Breitengrad, Längengrad je Station
-  (technisch an der Station gespeichert, position{address,lat,lng}; abwärtskompatibel
-  migriert), mit Status Offen/In Bearbeitung/Vollständig. (2) Fahrzeugrouten je
-  aktivem Fahrzeug, neuer Storage-Key funkuebung_routen_v1 (fahrzeugId → [stationIds];
-  ungültige/gelöschte Station-IDs werden beim Laden bereinigt, Routen inaktiver
-  Fahrzeuge bleiben erhalten). Button „Routen automatisch erstellen" verteilt alle
-  Stationen per Round-Robin gleichmäßig auf aktive Fahrzeuge (Überschreiben nur nach
-  Rückfrage); manuelle Nachbearbeitung (Hinzufügen ohne Duplikat, ↑/↓, Entfernen).
-  Dashboard-Status + Zusammenfassung für Routen ergänzt; getRouteForVehicle()
-  vorbereitet. Keine Karten/Geocodierung/API, keine neue Datei.
+  Stand 1.11.0 (Routenplanung – automatische Routen): Fachliche Korrektur des
+  Routenmodells. Statt manueller Routenpflege fahren jetzt ALLE aktiven Fahrzeuge
+  ALLE Stationen an; nur der Startpunkt ist je Fahrzeug zyklisch versetzt
+  (Fahrzeugindex i ⇒ Stationsliste um i gedreht, Modulo bei mehr Fahrzeugen als
+  Stationen). Routen werden beim Rendern berechnet – KEIN Routen-Storage mehr
+  (funkuebung_routen_v1 entfällt), keine Auswahl-/Hinzufügen-/↑↓-/Entfernen-Bedienung.
+  Neue Helfer buildAutoRouteForVehicle(index, stations) und getRouteForVehicle(id,
+  berechnet). Dashboard-Status jetzt positionsbasiert (open ohne Station/aktives Fzg.;
+  done wenn alle Stationspositionen vollständig; sonst prog). Zusammenfassung: Aktive
+  Fahrzeuge · Stationen je Fahrzeug · Automatische Routen · Positionen vollständig.
+  Stationspositionen (position{address,lat,lng}) unverändert. Keine Karten/API/Datei.
+  Davor (1.10.0, Routenplanung): erste funktionale Version mit manueller Routenpflege.
   Davor (1.9.1, Layout/Text): Spaltenbreiten nachjustiert – Fahrzeugtabelle
   Aktiv/Nr./Fahrzeug/Funkrufname/Min./Max. = 7/6/18/47/11/11 %, Stationsliste
   Nr./Bezeichnung/Aufgabe-kurz/Lagebilder/Aktionen = 6/28/42/10/14 %. Die
@@ -941,19 +942,7 @@ body {
 .route-veh-head { margin-bottom: 12px; }
 .route-veh-title { font-size: 1rem; font-weight: 600; color: var(--text); }
 .route-veh-sub { font-size: .82rem; color: var(--text-muted); }
-.route-veh-count { font-size: .76rem; color: var(--text-faint); margin-top: 3px; font-variant-numeric: tabular-nums; }
-.route-add-row { display: flex; gap: 8px; margin-bottom: 12px; }
-.route-add-row .route-select {
-  flex: 1 1 auto; min-width: 0;
-  background: #1d2026;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font: inherit; font-size: .88rem;
-  padding: 7px 9px;
-}
-.route-add-row .route-select:focus { outline: none; border-color: var(--red); }
-.route-add-row .route-add-btn { flex: 0 0 auto; white-space: nowrap; }
+.route-veh-count { font-size: .76rem; color: var(--text-faint); margin-top: 4px; font-variant-numeric: tabular-nums; }
 .route-list { list-style: none; margin: 0; padding: 0; }
 .route-item {
   display: flex; align-items: center; gap: 10px;
@@ -967,8 +956,6 @@ body {
 }
 .route-name { flex: 1 1 auto; min-width: 0; font-size: .9rem; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.route-actions { flex: 0 0 auto; display: inline-flex; gap: 2px; }
-.route-empty { padding: 8px 0; font-size: .84rem; color: var(--text-faint); }
 
 /* --- Einheitliches Button-System ----------------------------------------
    Farbsemantik (konsequent verwenden):
@@ -1541,7 +1528,7 @@ body {
     <section class="section" id="sec-routen">
       <div class="section-head">
         <h2>Routenplanung</h2>
-        <p>Hier werden Stationspositionen gepflegt und Fahrzeugrouten automatisch vorbereitet. Die erzeugte Reihenfolge kann bei Bedarf manuell angepasst werden.</p>
+        <p>Stationspositionen pflegen und automatische Fahrzeugrouten anzeigen. Alle aktiven Fahrzeuge fahren alle Stationen an – nur der Startpunkt ist je Fahrzeug versetzt.</p>
       </div>
 
       <!-- 1) Stationspositionen (Standort/Adresse + Koordinaten je Station) -->
@@ -1569,22 +1556,15 @@ body {
         </div>
       </div>
 
-      <!-- 2) Zusammenfassung + Hauptaktion -->
+      <!-- 2) Zusammenfassung -->
       <div class="panel">
         <p class="section-summary" id="routeSummary"></p>
-        <div class="form-actions" style="margin-top:16px">
-          <button type="button" class="btn btn-primary" id="routeAutoBtn">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
-            Routen automatisch erstellen
-          </button>
-        </div>
-        <p class="field-hint" style="margin-top:10px">Verteilt alle vorhandenen Stationen gleichmäßig auf die aktiven Fahrzeuge. Bestehende Routen werden nach Rückfrage überschrieben.</p>
       </div>
 
-      <!-- 3) Fahrzeugrouten (nur aktive Fahrzeuge) -->
+      <!-- 3) Automatische Fahrzeugrouten (nur aktive Fahrzeuge) -->
       <div class="panel">
-        <h3 class="subsection-title">Fahrzeugrouten</h3>
-        <p class="field-hint" style="margin-bottom:14px">Hier werden aus aktiven Fahrzeugen und vorhandenen Stationen Routen vorbereitet. Die Reihenfolge kann anschließend manuell angepasst werden.</p>
+        <h3 class="subsection-title">Automatische Fahrzeugrouten</h3>
+        <p class="field-hint" style="margin-bottom:14px">Alle aktiven Fahrzeuge fahren alle Stationen an. Der Startpunkt wird je Fahrzeug automatisch versetzt, damit nicht alle Fahrzeuge an derselben Station beginnen. Die Reihenfolge wird automatisch berechnet.</p>
         <div id="routeVehicleList"><!-- per JS gefüllt --></div>
       </div>
     </section>
@@ -1690,7 +1670,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.10.0"
+    version: "1.11.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2754,50 +2734,40 @@ body {
      ROUTENPLANUNG
      ----------------------------------------------------------------------
      Zwei Aufgaben: (1) Stationspositionen (Adresse/Lat/Lng – technisch an der
-     Station gespeichert, nur hier bearbeitet) und (2) Fahrzeugrouten je aktivem
-     Fahrzeug. Die Reihenfolge wird automatisch erzeugt (Round-Robin) und kann
-     manuell nachbearbeitet werden. Eigener Storage-Key; nur lokale Eingaben,
-     keine Karten/Geocodierung/API.
+     Station gespeichert, nur hier bearbeitet) und (2) automatische Fahrzeugrouten.
+     Grundsatz: ALLE aktiven Fahrzeuge fahren ALLE Stationen an; nur der Startpunkt
+     ist je Fahrzeug versetzt. Die Reihenfolge wird beim Rendern aus Stationen und
+     aktiven Fahrzeugen berechnet (zyklische Drehung) – KEIN eigener Routen-Storage,
+     keine manuelle Routenpflege. Keine Karten/Geocodierung/API.
 
-     → später: Der QR-Code-Plan erzeugt aus den Routen fahrzeugbezogene Links,
-       z. B. station.html?station=station_3&fhz=hlf. Der Parameter fhz erlaubt es
-       station.html später, über getImagesForVehicle(station, vehicleId) die für
-       das jeweilige Fahrzeug passenden Lagebilder anzuzeigen. (Noch nicht aktiv.)
+     → später: Der QR-Code-Plan erzeugt aus den automatisch berechneten Routen
+       fahrzeugbezogene Links, z. B. station.html?station=station_3&fhz=hlf. Der
+       Parameter fhz erlaubt es station.html, über getImagesForVehicle(station,
+       vehicleId) die passenden Lagebilder anzuzeigen; die QR-Reihenfolge je
+       Fahrzeug kommt aus getRouteForVehicle(vehicleId). (Noch nicht aktiv.)
      ====================================================================== */
-  var ROUTE_STORAGE_KEY = "funkuebung_routen_v1";
   var STATUS_LABEL = { open: "Offen", prog: "In Bearbeitung", done: "Vollständig" };
 
-  /* Normalisiertes Routen-Objekt: jede bekannte Fahrzeug-ID vorhanden (fehlend →
-     []), je Fahrzeug nur gültige (existierende) Station-IDs ohne Duplikate.
-     Routen inaktiver Fahrzeuge bleiben erhalten (werden nur nicht angezeigt). */
-  function loadRoutes() {
-    var raw = {};
-    try { raw = JSON.parse(localStorage.getItem(ROUTE_STORAGE_KEY)) || {}; }
-    catch (e) { raw = {}; }
-    if (!raw || typeof raw !== "object") raw = {};
-
-    var validIds = {};
-    loadStations().forEach(function (s) { validIds[s.id] = true; });
-
-    var out = {};
-    DEFAULT_VEHICLES.forEach(function (v) {
-      var arr = Array.isArray(raw[v.id]) ? raw[v.id] : [];
-      var seen = {};
-      out[v.id] = arr.filter(function (sid) {
-        if (!validIds[sid] || seen[sid]) return false;
-        seen[sid] = true;
-        return true;
-      });
-    });
-    return out;
+  /* Zyklisch um vehicleIndex gedrehte Stationsliste: Fahrzeug 0 startet bei
+     Station 0, Fahrzeug 1 bei Station 1 usw.; bei mehr Fahrzeugen als Stationen
+     läuft die Startposition zyklisch weiter (Modulo). Gibt eine neue (gedrehte)
+     Liste zurück, ohne die Eingabe zu verändern. */
+  function buildAutoRouteForVehicle(vehicleIndex, stations) {
+    var n = stations.length;
+    if (n === 0) return [];
+    var off = ((vehicleIndex % n) + n) % n;
+    return stations.slice(off).concat(stations.slice(0, off));
   }
-  function saveRoutes(obj) {
-    try { localStorage.setItem(ROUTE_STORAGE_KEY, JSON.stringify(obj)); return true; }
-    catch (e) { return false; }
-  }
-  /* Vorbereitete Hilfsfunktion: Station-IDs der Route eines Fahrzeugs. */
+
+  /* Vorbereitete Hilfsfunktion: automatisch berechnete Route (Station-IDs) eines
+     Fahrzeugs. Reihenfolge = zyklische Drehung nach Index in den AKTIVEN
+     Fahrzeugen. Inaktives/unbekanntes Fahrzeug → []. */
   function getRouteForVehicle(vehicleId) {
-    return loadRoutes()[vehicleId] || [];
+    var active = loadVehicles().filter(function (v) { return v.active; });
+    var idx = -1;
+    for (var i = 0; i < active.length; i++) { if (active[i].id === vehicleId) { idx = i; break; } }
+    if (idx < 0) return [];
+    return buildAutoRouteForVehicle(idx, loadStations()).map(function (s) { return s.id; });
   }
 
   /* Status einer Stationsposition: open (alles leer) / done (alle drei gefüllt)
@@ -2817,23 +2787,21 @@ body {
     saveStations(list);
   }
 
-  /* Route-Status für die Dashboard-Karte:
-     - "open" : kein aktives Fahrzeug hat eine Station (oder kein aktives Fahrzeug)
-     - "done" : jedes aktive Fahrzeug hat mindestens eine Station
-     - "prog" : sonst */
+  /* Route-Status für die Dashboard-Karte (positionsbasiert – die Fahrzeugrouten
+     werden ohnehin automatisch erzeugt):
+     - "open" : keine Station ODER kein aktives Fahrzeug
+     - "done" : Stationen + aktive Fahrzeuge vorhanden UND alle Positionen vollständig
+     - "prog" : Stationen + aktive Fahrzeuge vorhanden, aber Positionen unvollständig */
   function computeRouteStatus() {
+    var stations = loadStations();
     var active = loadVehicles().filter(function (v) { return v.active; });
-    if (active.length === 0) return "open";
-    var routes = loadRoutes();
-    var withRoute = active.filter(function (v) { return (routes[v.id] || []).length > 0; });
-    if (withRoute.length === 0) return "open";
-    return withRoute.length === active.length ? "done" : "prog";
+    if (stations.length === 0 || active.length === 0) return "open";
+    var allPos = stations.every(function (s) { return stationPositionStatus(s) === "done"; });
+    return allPos ? "done" : "prog";
   }
 
   /* --- Routenplanung: Init & Rendering --------------------------------- */
   function initRoutes() {
-    var btn = document.getElementById("routeAutoBtn");
-    if (btn) btn.addEventListener("click", autoCreateRoutes);
     renderRoutes();
   }
   function renderRoutes() {
@@ -2887,147 +2855,59 @@ body {
     });
   }
 
-  /* 3) Fahrzeugrouten – nur aktive Fahrzeuge anzeigen. */
+  /* 2) Automatische Fahrzeugrouten – nur aktive Fahrzeuge; Reihenfolge wird
+     zyklisch berechnet (kein manuelles Hinzufügen/Verschieben/Entfernen). */
   function renderVehicleRoutes() {
     var host = document.getElementById("routeVehicleList");
     if (!host) return;
     host.innerHTML = "";
+    var stations = loadStations();
     var active = loadVehicles().filter(function (v) { return v.active; });
     if (active.length === 0) {
       host.innerHTML = '<p class="detail-empty">Keine aktiven Fahrzeuge. Fahrzeuge werden im Bereich „Fahrzeuge" aktiviert.</p>';
       return;
     }
-    var stations = loadStations();
-    var stationById = {};
-    stations.forEach(function (s) { stationById[s.id] = s; });
-    var routes = loadRoutes();
+    if (stations.length === 0) {
+      host.innerHTML = '<p class="detail-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</p>';
+      return;
+    }
 
-    active.forEach(function (v) {
-      var route = routes[v.id] || [];
+    active.forEach(function (v, idx) {
+      var route = buildAutoRouteForVehicle(idx, stations);
+      var start = route[0];
       var card = document.createElement("div");
       card.className = "route-veh";
 
-      var opts = stations.filter(function (s) { return route.indexOf(s.id) < 0; });
-      var optsHtml = opts.map(function (s) {
-        return '<option value="' + escapeAttr(s.id) + '">' + escapeAttr(s.title) + '</option>';
+      var itemsHtml = route.map(function (s, i) {
+        return '<li class="route-item">' +
+                 '<span class="route-pos">' + (i + 1) + '.</span>' +
+                 '<span class="route-name">' + escapeAttr(s.title) + '</span>' +
+               '</li>';
       }).join("");
-      var noOpts = opts.length === 0;
-
-      var itemsHtml;
-      if (route.length === 0) {
-        itemsHtml = '<li class="route-empty">Noch keine Station zugeordnet.</li>';
-      } else {
-        itemsHtml = route.map(function (sid, i) {
-          var title = stationById[sid] ? stationById[sid].title : sid;
-          var upDis = i === 0 ? " disabled" : "";
-          var dnDis = i === route.length - 1 ? " disabled" : "";
-          return '<li class="route-item" data-sid="' + escapeAttr(sid) + '">' +
-                   '<span class="route-pos">' + (i + 1) + '.</span>' +
-                   '<span class="route-name">' + escapeAttr(title) + '</span>' +
-                   '<span class="route-actions">' +
-                     '<button type="button" class="icon-btn" data-act="up"' + upDis + ' title="Nach oben" aria-label="Nach oben">' + stationIcon("up") + '</button>' +
-                     '<button type="button" class="icon-btn" data-act="down"' + dnDis + ' title="Nach unten" aria-label="Nach unten">' + stationIcon("down") + '</button>' +
-                     '<button type="button" class="icon-btn danger" data-act="remove" title="Entfernen" aria-label="Aus Route entfernen">' + stationIcon("trash") + '</button>' +
-                   '</span>' +
-                 '</li>';
-        }).join("");
-      }
 
       card.innerHTML =
         '<div class="route-veh-head">' +
           '<div class="route-veh-title">' + escapeAttr(v.type) + '</div>' +
           '<div class="route-veh-sub">' + escapeAttr(v.callsign) + '</div>' +
-          '<div class="route-veh-count">' + route.length + ' Station' + (route.length === 1 ? '' : 'en') + ' geplant</div>' +
-        '</div>' +
-        '<div class="route-add-row">' +
-          '<select class="route-select" aria-label="Station auswählen"' + (noOpts ? " disabled" : "") + '>' +
-            (noOpts ? '<option value="">Alle Stationen zugeordnet</option>' : optsHtml) +
-          '</select>' +
-          '<button type="button" class="btn btn-primary route-add-btn"' + (noOpts ? " disabled" : "") + '>Hinzufügen</button>' +
+          '<div class="route-veh-count">Start: ' + escapeAttr(start.title) + ' · ' + stations.length + ' Station' + (stations.length === 1 ? '' : 'en') + '</div>' +
         '</div>' +
         '<ol class="route-list">' + itemsHtml + '</ol>';
-
-      var sel = card.querySelector(".route-select");
-      var addBtn = card.querySelector(".route-add-btn");
-      if (addBtn) addBtn.addEventListener("click", function () {
-        if (sel && sel.value) addRouteStation(v.id, sel.value);
-      });
-      card.querySelectorAll(".route-item .icon-btn").forEach(function (b) {
-        b.addEventListener("click", function () {
-          var li = this.closest(".route-item");
-          var sid = li ? li.dataset.sid : null;
-          if (!sid) return;
-          var act = this.dataset.act;
-          if (act === "up") moveRouteStation(v.id, sid, -1);
-          else if (act === "down") moveRouteStation(v.id, sid, 1);
-          else if (act === "remove") removeRouteStation(v.id, sid);
-        });
-      });
 
       host.appendChild(card);
     });
   }
 
-  /* Manuelle Bearbeitung – jeweils speichern + neu rendern + Status. */
-  function addRouteStation(vehId, statId) {
-    var routes = loadRoutes();
-    var arr = routes[vehId] || (routes[vehId] = []);
-    if (arr.indexOf(statId) >= 0) return; /* kein Duplikat in derselben Route */
-    arr.push(statId);
-    saveRoutes(routes);
-    renderVehicleRoutes(); renderRouteSummary(); updateStatus();
-  }
-  function moveRouteStation(vehId, statId, dir) {
-    var routes = loadRoutes();
-    var arr = routes[vehId] || [];
-    var i = arr.indexOf(statId), j = i + dir;
-    if (i < 0 || j < 0 || j >= arr.length) return;
-    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
-    saveRoutes(routes);
-    renderVehicleRoutes(); renderRouteSummary(); updateStatus();
-  }
-  function removeRouteStation(vehId, statId) {
-    var routes = loadRoutes();
-    routes[vehId] = (routes[vehId] || []).filter(function (x) { return x !== statId; });
-    saveRoutes(routes);
-    renderVehicleRoutes(); renderRouteSummary(); updateStatus();
-  }
-
-  /* 5) Automatische Erstverteilung (Round-Robin nach Stationsreihenfolge):
-     Station k → aktives Fahrzeug k mod n. Nur aktive Fahrzeuge werden
-     (zurückgesetzt und) befüllt; inaktive Routen bleiben unverändert. */
-  function autoCreateRoutes() {
-    var active = loadVehicles().filter(function (v) { return v.active; });
-    if (active.length === 0) { window.alert("Keine aktiven Fahrzeuge vorhanden."); return; }
-    var stations = loadStations();
-    if (stations.length === 0) { window.alert("Keine Stationen vorhanden."); return; }
-
-    var routes = loadRoutes();
-    var hasExisting = active.some(function (v) { return (routes[v.id] || []).length > 0; });
-    if (hasExisting && !window.confirm("Vorhandene Routen werden überschrieben. Routen automatisch neu erstellen?")) return;
-
-    active.forEach(function (v) { routes[v.id] = []; });
-    stations.forEach(function (s, k) {
-      routes[active[k % active.length].id].push(s.id);
-    });
-    saveRoutes(routes);
-    renderVehicleRoutes(); renderRouteSummary(); updateStatus();
-  }
-
-  /* 8) Zusammenfassung im Bereich Routenplanung. */
+  /* 6) Zusammenfassung im Bereich Routenplanung. */
   function renderRouteSummary() {
     var el = document.getElementById("routeSummary");
     if (!el) return;
-    var active = loadVehicles().filter(function (v) { return v.active; });
-    var routes = loadRoutes();
-    var planned = active.filter(function (v) { return (routes[v.id] || []).length > 0; }).length;
-    var assignments = active.reduce(function (a, v) { return a + (routes[v.id] || []).length; }, 0);
     var stations = loadStations();
+    var active = loadVehicles().filter(function (v) { return v.active; });
     var posComplete = stations.filter(function (s) { return stationPositionStatus(s) === "done"; }).length;
     el.innerHTML =
       'Aktive Fahrzeuge: <strong>' + active.length + '</strong>' +
-      ' · Routen geplant: <strong>' + planned + '</strong> von <strong>' + active.length + '</strong>' +
-      ' · Stationszuordnungen: <strong>' + assignments + '</strong>' +
+      ' · Stationen je Fahrzeug: <strong>' + stations.length + '</strong>' +
+      ' · Automatische Routen: <strong>' + active.length + '</strong>' +
       ' · Positionen vollständig: <strong>' + posComplete + '</strong> von <strong>' + stations.length + '</strong>';
   }
 
