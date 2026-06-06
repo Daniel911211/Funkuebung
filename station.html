@@ -9,6 +9,11 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
+  Version: 1.0.0 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.0: Strukturierte Metadaten (Titel/Datum/Uhrzeit) im Kopf, neutraler
+  Positionscode-Hinweis (ohne Formatbeispiel), Versionsanzeige im Footer.
+  ============================================================================
   Aufruf per QR:  station.html?s=<Stationsnummer>&fhz=<Fahrzeug-ID>
   z. B. station.html?s=1&fhz=elw
 
@@ -44,8 +49,9 @@
   *{box-sizing:border-box;}
   body{margin:0;background:var(--bg-0);color:var(--text);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;}
   .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 44px;}
-  .ex{font-size:.82rem;color:var(--text-faint);text-align:center;margin-bottom:12px;}
-  .ex b{color:var(--text-muted);font-weight:600;}
+  .meta{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 22px;margin-bottom:14px;font-size:.86rem;}
+  .meta-item .k{color:var(--text-faint);}
+  .meta-item .v{color:var(--text);font-weight:600;}
 
   .topbar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);position:relative;overflow:hidden;margin-bottom:16px;}
   .topbar::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);}
@@ -92,14 +98,20 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="ex" id="exLine">Funkübung</div>
+    <div class="meta" id="exMeta"></div>
     <div id="content"><p class="muted">Lade Stationsdaten …</p></div>
-    <div class="foot">Stationsoberfläche</div>
+    <div class="foot" id="stFoot">Stationsoberfläche</div>
   </div>
 <script>
 (function () {
   "use strict";
+  /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
+     Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.0" };
+
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+  /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
+  function fmtDate(d){var s=String(d==null?"":d).trim();var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);return m?(m[3]+"."+m[2]+"."+m[1]):s;}
   function escapeAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
   function nonEmpty(v){return v!=null&&String(v).trim()!=="";}
   function getParam(n){try{return new URLSearchParams(window.location.search).get(n);}catch(e){return null;}}
@@ -120,8 +132,11 @@
 
   function render(data, station, vehicle, fhz){
     var meta=data.meta||{};
-    var ex=[]; if(nonEmpty(meta.name))ex.push('<b>'+escapeHTML(meta.name)+'</b>'); if(nonEmpty(meta.date))ex.push(escapeHTML(meta.date)); if(nonEmpty(meta.time))ex.push(escapeHTML(meta.time)+" Uhr");
-    document.getElementById("exLine").innerHTML=ex.length?ex.join(" · "):"Funkübung";
+    var mi=[];
+    if(nonEmpty(meta.name)) mi.push('<span class="meta-item"><span class="k">Titel:</span> <span class="v">'+escapeHTML(meta.name)+'</span></span>');
+    if(nonEmpty(meta.date)) mi.push('<span class="meta-item"><span class="k">Datum:</span> <span class="v">'+escapeHTML(fmtDate(meta.date))+'</span></span>');
+    if(nonEmpty(meta.time)) mi.push('<span class="meta-item"><span class="k">Uhrzeit:</span> <span class="v">'+escapeHTML(meta.time)+'</span></span>');
+    document.getElementById("exMeta").innerHTML=mi.join("");
 
     var taskHtml=nonEmpty(station.task)?'<div class="task">'+escapeHTML(station.task)+'</div>':'<p class="muted">Keine Aufgabe hinterlegt.</p>';
     var titleHtml=nonEmpty(station.title)?'Station '+escapeHTML(String(station.nr))+' – '+escapeHTML(station.title):'Station '+escapeHTML(String(station.nr));
@@ -136,9 +151,9 @@
       '</div>'+
       '<div class="card code-card">'+
         '<div class="label">Lösungszeichen</div>'+
-        '<p class="code-hint">Das Lösungszeichen wird nach geprüfter Lagemeldung von der Übungsleitung freigegeben. Geben Sie den per Funk übermittelten <b>Positionscode</b> ein (Format <code>W1P…</code>).</p>'+
+        '<p class="code-hint">Geben Sie den von der Übungsleitung übermittelten Positionscode ein, um das Lösungszeichen anzuzeigen.</p>'+
         '<div class="code-row" id="codeRow">'+
-          '<input type="text" id="codeInput" placeholder="Positionscode, z. B. W1P13" autocomplete="off" autocapitalize="characters" spellcheck="false">'+
+          '<input type="text" id="codeInput" placeholder="Positionscode eingeben" autocomplete="off" autocapitalize="characters" spellcheck="false">'+
           '<button type="button" class="btn" id="codeBtn">Freischalten</button>'+
         '</div>'+
         '<p class="code-msg" id="codeMsg" role="status" aria-live="polite"></p>'+
@@ -198,6 +213,7 @@
     render(data, station, vehicle, fhz);
   }
   function start(){
+    var ft=document.getElementById("stFoot"); if(ft) ft.textContent="Stationsoberfläche · Version "+STATION_APP_INFO.version;
     if(typeof fetch==="undefined"){showError("Nicht unterstützt","Dieser Browser kann die Übungsdaten nicht laden.");return;}
     fetch("data/uebung.json",{cache:"no-store"})
       .then(function(r){if(!r.ok)throw new Error("http "+r.status);return r.json();})
