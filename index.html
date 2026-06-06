@@ -5,11 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Funkübung – Planungstool</title>
 
+<!-- Leaflet (OpenStreetMap-Karte) – nur dieser Bereich nutzt eine externe Quelle.
+     Ohne SRI-Hashes, damit die Karte nicht durch falsche Integrity-Werte blockiert
+     wird. Fehlt Leaflet (offline), fällt die Routenplanung sauber zurück. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.11.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.12.0)
   ============================================================================
-  Stand 1.11.0 (Routenplanung – automatische Routen): Fachliche Korrektur des
+  Stand 1.12.0 (Routenplanung – interaktive Karte): Stationen werden per Klick auf
+  einer Leaflet/OpenStreetMap-Karte positioniert (Marker setzt lat/lng automatisch).
+  Globaler GPS-Radius (funkuebung_routen_settings_v1, Standard 65 m) als Kreis je
+  Marker. Grundroute Station 1 → … → letzte Station (ohne Rückweg) wird per OSRM-
+  Straßenrouting mit Strecke/Fahrzeit berechnet; bei Routingfehler Fallback auf
+  Luftlinie (deutlich als geschätzt markiert). Stationspositions-Tabelle wird zur
+  ELW-Übersicht (Nr.|Station|Adresse|Koordinaten|Status): Adresse manuell, Koordinaten
+  nur Anzeige. Automatische, zyklisch versetzte Fahrzeugrouten unverändert.
+  Davor (1.11.1, Text): SECTIONS-Beschreibung der Dashboard-Karte „Routenplanung"
+  präzisiert („Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten
+  anzeigen."). Reine Textänderung, keine Logik/Layout.
+  Davor (1.11.0, Routenplanung – automatische Routen): Fachliche Korrektur des
   Routenmodells. Statt manueller Routenpflege fahren jetzt ALLE aktiven Fahrzeuge
   ALLE Stationen an; nur der Startpunkt ist je Fahrzeug zyklisch versetzt
   (Fahrzeugindex i ⇒ Stationsliste um i gedreht, Modulo bei mehr Fahrzeugen als
@@ -904,14 +921,75 @@ body {
 .vehicle-row.invalid-row td { background: rgba(134,22,25,.06); }
 
 /* --- Routenplanung -------------------------------------------------------*/
-/* Positionstabelle: inhaltsorientiert, eigene Spaltenanteile */
+/* Kartensteuerung */
+.route-controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+.route-control-field { display: flex; flex-direction: column; gap: 6px; }
+.route-control-field > span { font-size: .78rem; color: var(--text-faint); }
+.route-control-field select,
+.route-control-field input {
+  background: #1d2026;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font: inherit; font-size: .9rem;
+  padding: 8px 10px;
+  transition: border-color .14s;
+}
+.route-control-field select:focus,
+.route-control-field input:focus { outline: none; border-color: var(--red); }
+.route-radius-input { width: 110px; }
+.route-control-actions { display: flex; gap: 10px; margin-left: auto; }
+.route-map-hint { min-height: 16px; margin: 10px 0 0; font-size: .82rem; color: var(--btn-warn); }
+
+/* Interaktive Karte */
+#routeMap {
+  height: 460px; width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  z-index: 0;
+}
+.route-map-fallback { display: flex; align-items: center; justify-content: center; height: 100%; padding: 24px; text-align: center; color: var(--text-faint); font-size: .9rem; }
+@media (max-width: 640px) { #routeMap { height: 360px; } }
+
+/* Nummerierte Stationsmarker (passend zum Feuerwehr-Design) */
+.route-marker { background: transparent; border: 0; }
+.route-marker-pin {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--red); border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.55);
+  color: #fff; font-size: .72rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Streckenübersicht */
+.route-ov-grund { margin-bottom: 14px; }
+.route-ov-label { display: block; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 4px; }
+.route-ov-route { font-size: .95rem; color: var(--text); }
+.route-ov-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 18px; }
+.route-ov-item { display: flex; flex-direction: column; gap: 3px; }
+.route-ov-k { font-size: .74rem; color: var(--text-faint); }
+.route-ov-v { font-size: .95rem; color: var(--text); font-variant-numeric: tabular-nums; }
+.route-ov-v.is-ok  { color: var(--status-done); }
+.route-ov-v.is-air { color: var(--btn-warn); }
+.route-hint-air {
+  margin: 14px 0 0; padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(210,154,43,.12);
+  border: 1px solid rgba(210,154,43,.35);
+  color: var(--btn-warn); font-size: .85rem;
+}
+.route-overview-empty { color: var(--text-faint); font-size: .9rem; }
+
+/* ELW-Übersicht / Positionstabelle: inhaltsorientiert, eigene Spaltenanteile */
 .route-pos-table { table-layout: fixed; }
 .route-pos-table .rcol-no     { width: 7%; }
-.route-pos-table .rcol-name   { width: 23%; }
-.route-pos-table .rcol-addr   { width: 32%; }
-.route-pos-table .rcol-lat    { width: 14%; }
-.route-pos-table .rcol-lng    { width: 14%; }
-.route-pos-table .rcol-status { width: 10%; }
+.route-pos-table .rcol-name   { width: 25%; }
+.route-pos-table .rcol-addr   { width: 34%; }
+.route-pos-table .rcol-coord  { width: 22%; }
+.route-pos-table .rcol-status { width: 12%; }
 .route-pos-table .rpos-name { font-size: .92rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .route-pos-table input[type="text"] {
   width: 100%;
@@ -924,6 +1002,8 @@ body {
   transition: border-color .14s;
 }
 .route-pos-table input:focus { outline: none; border-color: var(--red); }
+.route-pos-table .rpos-coord { font-family: var(--font-mono); font-size: .82rem; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.route-pos-table .rpos-coord-empty { font-family: var(--font); font-style: italic; color: var(--text-faint); }
 .route-pos-table .rpos-status { white-space: nowrap; }
 
 /* Fahrzeugrouten-Karten */
@@ -992,6 +1072,11 @@ body {
 /* Anthrazit – neutrale Aktion */
 .btn-secondary { background: var(--btn-neutral); border-color: var(--line); color: var(--text); }
 .btn-secondary:hover { background: var(--btn-neutral-h); border-color: #3d444e; }
+
+/* Rot (Danger) – destruktive Aktion (z. B. Marker entfernen).
+   Nutzt dieselbe System-Rotfarbe wie .icon-btn.danger; keine neue Farbe. */
+.btn-danger { background: transparent; border-color: var(--red); color: #d98a8c; }
+.btn-danger:hover { background: var(--red); border-color: var(--red); color: #fff; }
 
 /* Gelb – Hinweis / Prüfen (dunkle Schrift für gute Lesbarkeit) */
 .btn-warning { background: var(--btn-warn); border-color: var(--btn-warn); color: var(--btn-warn-fg); }
@@ -1528,26 +1613,57 @@ body {
     <section class="section" id="sec-routen">
       <div class="section-head">
         <h2>Routenplanung</h2>
-        <p>Stationspositionen pflegen und automatische Fahrzeugrouten anzeigen. Alle aktiven Fahrzeuge fahren alle Stationen an – nur der Startpunkt ist je Fahrzeug versetzt.</p>
+        <p>Stationen per Klick auf der Karte positionieren, globalen GPS-Radius pflegen und die automatisch versetzten Fahrzeugrouten anzeigen. Strecke und Fahrzeit der Grundroute (Station 1 → … → letzte Station, ohne Rückweg) werden über Straßenrouting berechnet.</p>
       </div>
 
-      <!-- 1) Stationspositionen (Standort/Adresse + Koordinaten je Station) -->
+      <!-- 1) Kartensteuerung -->
       <div class="panel">
-        <h3 class="subsection-title">Stationspositionen</h3>
-        <p class="field-hint" style="margin-bottom:14px">Hier werden Standort, Breitengrad und Längengrad der Stationen gepflegt. Manuelle Eingabe – keine Karte, keine automatische Ortung.</p>
+        <h3 class="subsection-title">Kartensteuerung</h3>
+        <div class="route-controls">
+          <label class="route-control-field">
+            <span>Marker setzen für</span>
+            <select id="routeStationSelect"></select>
+          </label>
+          <label class="route-control-field">
+            <span>GPS-Radius (Meter)</span>
+            <input type="number" id="routeRadiusInput" class="route-radius-input" min="1" step="1" value="65">
+          </label>
+          <div class="route-control-actions">
+            <button type="button" class="btn btn-danger" id="routeRemoveMarkerBtn">Marker entfernen</button>
+            <button type="button" class="btn btn-secondary" id="routeFitBtn">Alle Marker anzeigen</button>
+          </div>
+        </div>
+        <p class="route-map-hint" id="routeMapHint">Station auswählen und auf die Karte klicken, um den Marker zu setzen.</p>
+      </div>
+
+      <!-- 2) Interaktive Karte -->
+      <div class="panel">
+        <div id="routeMap"></div>
+      </div>
+
+      <!-- 3) Streckenübersicht / Zusammenfassung -->
+      <div class="panel">
+        <h3 class="subsection-title">Streckenübersicht</h3>
+        <div id="routeOverview"><!-- per JS gefüllt --></div>
+        <p class="section-summary" id="routeSummary"></p>
+      </div>
+
+      <!-- 4) Stationspositionen / ELW-Übersicht -->
+      <div class="panel">
+        <h3 class="subsection-title">Stationspositionen / ELW-Übersicht</h3>
+        <p class="field-hint" style="margin-bottom:14px">Adresse für ELW-Koordination und Funkunterlagen manuell pflegen. Koordinaten werden über Marker auf der Karte gesetzt und hier nur angezeigt.</p>
         <div class="station-table-wrap">
           <table class="station-table route-pos-table">
             <colgroup>
               <col class="rcol-no"><col class="rcol-name"><col class="rcol-addr">
-              <col class="rcol-lat"><col class="rcol-lng"><col class="rcol-status">
+              <col class="rcol-coord"><col class="rcol-status">
             </colgroup>
             <thead>
               <tr>
                 <th class="col-no">Nr.</th>
                 <th>Station</th>
-                <th>Standort / Adresse</th>
-                <th>Breitengrad</th>
-                <th>Längengrad</th>
+                <th>Adresse</th>
+                <th>Koordinaten</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -1556,12 +1672,7 @@ body {
         </div>
       </div>
 
-      <!-- 2) Zusammenfassung -->
-      <div class="panel">
-        <p class="section-summary" id="routeSummary"></p>
-      </div>
-
-      <!-- 3) Automatische Fahrzeugrouten (nur aktive Fahrzeuge) -->
+      <!-- 5) Automatische Fahrzeugrouten (nur aktive Fahrzeuge) -->
       <div class="panel">
         <h3 class="subsection-title">Automatische Fahrzeugrouten</h3>
         <p class="field-hint" style="margin-bottom:14px">Alle aktiven Fahrzeuge fahren alle Stationen an. Der Startpunkt wird je Fahrzeug automatisch versetzt, damit nicht alle Fahrzeuge an derselben Station beginnen. Die Reihenfolge wird automatisch berechnet.</p>
@@ -1670,7 +1781,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.11.0"
+    version: "1.12.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -1680,7 +1791,7 @@ body {
     { id: "grunddaten", label: "Grunddaten",      icon: "doc",     nav: true,  card: true,  desc: "Übungstitel, Datum, Uhrzeit, Übungsleitung sowie Funkkanäle (TMO/DMO)." },
     { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung." },
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Inhalte der Stationen, Aufgaben, Hinweise und Lagebilder festlegen." },
-    { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Reihenfolge und Wege der Fahrzeuge durch die Stationen planen." },
+    { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
@@ -1980,7 +2091,10 @@ body {
     /* Routenplanung beim Öffnen neu aufbauen: nur aktive Fahrzeuge zeigen und
        ungültige (gelöschte) Station-IDs bereinigen – Daten können sich in
        Fahrzeugen/Stationen geändert haben. */
-    if (id === "routen") renderRoutes();
+    if (id === "routen") {
+      renderRoutes();
+      if (mapInstance) setTimeout(function () { mapInstance.invalidateSize(); }, 60);
+    }
   }
 
   /* --- Dashboard-Statuskarten ------------------------------------------*/
@@ -2733,18 +2847,27 @@ body {
   /* ======================================================================
      ROUTENPLANUNG
      ----------------------------------------------------------------------
-     Zwei Aufgaben: (1) Stationspositionen (Adresse/Lat/Lng – technisch an der
-     Station gespeichert, nur hier bearbeitet) und (2) automatische Fahrzeugrouten.
-     Grundsatz: ALLE aktiven Fahrzeuge fahren ALLE Stationen an; nur der Startpunkt
-     ist je Fahrzeug versetzt. Die Reihenfolge wird beim Rendern aus Stationen und
-     aktiven Fahrzeugen berechnet (zyklische Drehung) – KEIN eigener Routen-Storage,
-     keine manuelle Routenpflege. Keine Karten/Geocodierung/API.
+     Aufgaben: (1) interaktive Leaflet/OSM-Karte – Stationen per Klick positionieren
+     (Marker setzt station.position.lat/lng), globaler GPS-Radius
+     (funkuebung_routen_settings_v1) als Kreis je Marker; (2) Grundroute Station 1 →
+     … → letzte Station (ohne Rückweg) per OSRM-Straßenrouting, Fallback Luftlinie;
+     (3) ELW-Übersicht (Adresse manuell, Koordinaten nur Anzeige); (4) automatische
+     Fahrzeugrouten. Grundsatz Fahrzeugrouten: ALLE aktiven Fahrzeuge fahren ALLE
+     Stationen an; nur der Startpunkt ist je Fahrzeug versetzt. Die Reihenfolge wird
+     beim Rendern aus Stationen und aktiven Fahrzeugen berechnet (zyklische Drehung) –
+     KEIN eigener Routen-Storage, keine manuelle Routenpflege. Externe Quellen nur
+     hier (OSM-Kacheln + OSRM); kein eigener Server, alles im Browser.
 
-     → später: Der QR-Code-Plan erzeugt aus den automatisch berechneten Routen
+     → später (GPS-Prüfung): station.html prüft anhand von station.position.lat /
+       station.position.lng und dem globalen radiusMeters aus
+       funkuebung_routen_settings_v1, ob sich ein Gerät innerhalb des erlaubten
+       Radius der Station befindet. (Noch nicht aktiv – keine Geräte-Standortabfrage.)
+     → später (QR-Code-Plan): erzeugt aus den automatisch berechneten Routen
        fahrzeugbezogene Links, z. B. station.html?station=station_3&fhz=hlf. Der
        Parameter fhz erlaubt es station.html, über getImagesForVehicle(station,
        vehicleId) die passenden Lagebilder anzuzeigen; die QR-Reihenfolge je
-       Fahrzeug kommt aus getRouteForVehicle(vehicleId). (Noch nicht aktiv.)
+       Fahrzeug kommt aus getRouteForVehicle(vehicleId). (Noch nicht aktiv – keine
+       QR-Erzeugung, keine station.html.)
      ====================================================================== */
   var STATUS_LABEL = { open: "Offen", prog: "In Bearbeitung", done: "Vollständig" };
 
@@ -2770,12 +2893,18 @@ body {
     return buildAutoRouteForVehicle(idx, loadStations()).map(function (s) { return s.id; });
   }
 
-  /* Status einer Stationsposition: open (alles leer) / done (alle drei gefüllt)
-     / prog (teilweise gefüllt). */
+  /* Status einer Stationsposition. Koordinaten zählen als EIN Merkmal (lat+lng als
+     Paar, durch den Marker gesetzt):
+     - open : Adresse leer UND keine Koordinaten
+     - done : Adresse vorhanden UND Koordinaten gesetzt
+     - prog : nur eines von beiden */
   function stationPositionStatus(s) {
     var p = (s && s.position) || {};
-    var n = (nonEmpty(p.address) ? 1 : 0) + (nonEmpty(p.lat) ? 1 : 0) + (nonEmpty(p.lng) ? 1 : 0);
-    return n === 0 ? "open" : (n === 3 ? "done" : "prog");
+    var hasAddr = nonEmpty(p.address);
+    var hasCoords = nonEmpty(p.lat) && nonEmpty(p.lng);
+    if (!hasAddr && !hasCoords) return "open";
+    if (hasAddr && hasCoords) return "done";
+    return "prog";
   }
   /* Setzt ein Positionsfeld einer Station (Adresse/Lat/Lng) und speichert. */
   function setStationPosition(stationId, field, value) {
@@ -2788,29 +2917,366 @@ body {
   }
 
   /* Route-Status für die Dashboard-Karte (positionsbasiert – die Fahrzeugrouten
-     werden ohnehin automatisch erzeugt):
-     - "open" : keine Station ODER kein aktives Fahrzeug
-     - "done" : Stationen + aktive Fahrzeuge vorhanden UND alle Positionen vollständig
-     - "prog" : Stationen + aktive Fahrzeuge vorhanden, aber Positionen unvollständig */
+     werden ohnehin automatisch erzeugt). Der globale Radius zählt NICHT pro Station:
+     - "open" : keine Station ODER kein aktives Fahrzeug ODER noch gar kein
+                Bearbeitungsstand (keine Adresse und kein Marker an irgendeiner Station)
+     - "done" : Stationen + aktive Fahrzeuge vorhanden UND alle Stationen Adresse +
+                Koordinaten haben
+     - "prog" : sonst (mind. eine Station hat einen Bearbeitungsstand, z. B. Adresse
+                ohne Marker) */
   function computeRouteStatus() {
     var stations = loadStations();
     var active = loadVehicles().filter(function (v) { return v.active; });
     if (stations.length === 0 || active.length === 0) return "open";
-    var allPos = stations.every(function (s) { return stationPositionStatus(s) === "done"; });
-    return allPos ? "done" : "prog";
+    var allDone = stations.every(function (s) { return stationPositionStatus(s) === "done"; });
+    if (allDone) return "done";
+    var anyProgress = stations.some(function (s) { return stationPositionStatus(s) !== "open"; });
+    return anyProgress ? "prog" : "open";
+  }
+
+  /* --- Routenplanung: Karte & Einstellungen ----------------------------
+     Globaler GPS-Radius in eigenem Storage; Leaflet/OSM-Karte + OSRM-Routing.
+     Alles defensiv: fehlt Leaflet (offline), bleibt der Rest funktionsfähig. */
+  var ROUTE_SETTINGS_KEY  = "funkuebung_routen_settings_v1";
+  var ROUTE_DEFAULT_RADIUS = 65;
+  var ROUTE_MAP_DEFAULT   = { lat: 50.4533, lng: 9.6167, zoom: 14 }; // Neuhof b. Fulda
+  var OSRM_BASE = "https://router.project-osrm.org/route/v1/driving/";
+
+  /* Settings laden – fehlend/ungültig/≤0 → Standard 65. */
+  function loadRouteSettings() {
+    var raw = {};
+    try { raw = JSON.parse(localStorage.getItem(ROUTE_SETTINGS_KEY)) || {}; }
+    catch (e) { raw = {}; }
+    var r = Number(raw.radiusMeters);
+    if (!isFinite(r) || r <= 0) r = ROUTE_DEFAULT_RADIUS;
+    return { radiusMeters: r };
+  }
+  function saveRouteSettings(s) {
+    try { localStorage.setItem(ROUTE_SETTINGS_KEY, JSON.stringify({ radiusMeters: s.radiusMeters })); return true; }
+    catch (e) { return false; }
+  }
+  /* Radius setzen (Zahl > 0, sonst Korrektur auf 65) und gerundet speichern. */
+  function setRouteRadius(value) {
+    var r = Number(value);
+    if (!isFinite(r) || r <= 0) r = ROUTE_DEFAULT_RADIUS;
+    r = Math.round(r);
+    saveRouteSettings({ radiusMeters: r });
+    return r;
+  }
+
+  /* Karten-/Routing-Zustand (im IIFE gehalten). */
+  var mapInstance = null, mapReady = false;
+  var mapMarkers = {}, mapCircles = {}, mapRouteLine = null;
+  var lastRouteResult = null;      // { distanceKm, durationMin, mode:"osrm"|"air", geometry }
+  var routeCalcToken = 0, routeRecalcTimer = null, mapHintTimer = null;
+
+  /* Koordinaten einer Station als {lat,lng} oder null (akzeptiert Komma/Punkt). */
+  function stationLatLng(s) {
+    var p = (s && s.position) || {};
+    if (!nonEmpty(p.lat) || !nonEmpty(p.lng)) return null;
+    var lat = parseFloat(String(p.lat).replace(",", "."));
+    var lng = parseFloat(String(p.lng).replace(",", "."));
+    if (!isFinite(lat) || !isFinite(lng)) return null;
+    return { lat: lat, lng: lng };
+  }
+  /* Gesetzte Stationen in Stationsreihenfolge (für Grundroute, ohne Rückweg). */
+  function orderedSetStations() {
+    return loadStations().filter(function (s) { return stationLatLng(s) !== null; });
+  }
+  function selectedRouteStationId() {
+    var sel = document.getElementById("routeStationSelect");
+    return sel ? sel.value : "";
+  }
+  function flashMapHint(msg) {
+    var el = document.getElementById("routeMapHint");
+    if (!el) return;
+    el.textContent = msg;
+    if (mapHintTimer) clearTimeout(mapHintTimer);
+    mapHintTimer = setTimeout(function () {
+      el.textContent = "Station auswählen und auf die Karte klicken, um den Marker zu setzen.";
+    }, 4000);
+  }
+  function leafletAvailable() { return typeof window.L !== "undefined" && !!window.L; }
+
+  /* Luftlinie (km) zwischen zwei {lat,lng}. */
+  function haversineKm(a, b) {
+    if (!a || !b) return 0;
+    var R = 6371, toRad = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * toRad, dLng = (b.lng - a.lng) * toRad;
+    var la1 = a.lat * toRad, la2 = b.lat * toRad;
+    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function formatKm(km)   { return km.toFixed(1).replace(".", ",") + " km"; }
+  function formatMin(min) { return "ca. " + Math.round(min) + " min"; }
+
+  /* Nummeriertes Marker-Icon (01, 02, …) im Feuerwehr-Rot. */
+  function stationMarkerIcon(num) {
+    var label = (num < 10 ? "0" : "") + num;
+    return window.L.divIcon({
+      className: "route-marker",
+      html: '<span class="route-marker-pin">' + label + '</span>',
+      iconSize: [28, 28], iconAnchor: [14, 14]
+    });
+  }
+
+  /* Karte einmalig initialisieren (lazy, beim ersten Öffnen des Bereichs). */
+  function initRouteMap() {
+    if (mapReady) return;
+    var el = document.getElementById("routeMap");
+    if (!el) return;
+    if (!leafletAvailable()) {
+      el.innerHTML = '<div class="route-map-fallback">Karte nicht verfügbar (Leaflet konnte nicht geladen werden). Die übrigen Funktionen der Routenplanung bleiben nutzbar.</div>';
+      return;
+    }
+    mapInstance = window.L.map(el, { zoomControl: true })
+      .setView([ROUTE_MAP_DEFAULT.lat, ROUTE_MAP_DEFAULT.lng], ROUTE_MAP_DEFAULT.zoom);
+    window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-Mitwirkende'
+    }).addTo(mapInstance);
+    mapInstance.on("click", function (e) {
+      var id = selectedRouteStationId();
+      if (!id) { flashMapHint("Bitte zuerst oben eine Station auswählen."); return; }
+      setStationCoords(id, e.latlng.lat, e.latlng.lng);
+    });
+    mapReady = true;
+  }
+
+  /* Marker setzen/verschieben (durch Kartenklick). */
+  function setStationCoords(id, lat, lng) {
+    setStationPosition(id, "lat", lat.toFixed(6));
+    setStationPosition(id, "lng", lng.toFixed(6));
+    afterPositionChange();
+  }
+  /* Nur Koordinaten der gewählten Station löschen (Adresse bleibt). */
+  function removeSelectedMarker() {
+    var id = selectedRouteStationId();
+    if (!id) { flashMapHint("Bitte zuerst oben eine Station auswählen."); return; }
+    setStationPosition(id, "lat", "");
+    setStationPosition(id, "lng", "");
+    afterPositionChange();
+  }
+  /* Gemeinsame Folgeaktionen nach Marker-/Koordinatenänderung. */
+  function afterPositionChange() {
+    renderMarkers();
+    renderRoutePositions();
+    renderRouteOverview();
+    renderRouteSummary();
+    scheduleRecalcRoute();
+    updateStatus();
+  }
+
+  /* Marker + Radiuskreise je gesetzter Station; entfernt veraltete Layer. */
+  function renderMarkers() {
+    if (!mapReady || !mapInstance) return;
+    var stations = loadStations();
+    var radius = loadRouteSettings().radiusMeters;
+    var present = {};
+    stations.forEach(function (s, idx) {
+      present[s.id] = true;
+      var ll = stationLatLng(s);
+      if (!ll) {
+        if (mapMarkers[s.id]) { mapInstance.removeLayer(mapMarkers[s.id]); delete mapMarkers[s.id]; }
+        if (mapCircles[s.id]) { mapInstance.removeLayer(mapCircles[s.id]); delete mapCircles[s.id]; }
+        return;
+      }
+      if (mapMarkers[s.id]) {
+        mapMarkers[s.id].setLatLng([ll.lat, ll.lng]).setIcon(stationMarkerIcon(idx + 1));
+      } else {
+        mapMarkers[s.id] = window.L.marker([ll.lat, ll.lng], { icon: stationMarkerIcon(idx + 1) }).addTo(mapInstance);
+      }
+      mapMarkers[s.id].bindTooltip(s.title);
+      if (mapCircles[s.id]) {
+        mapCircles[s.id].setLatLng([ll.lat, ll.lng]); mapCircles[s.id].setRadius(radius);
+      } else {
+        mapCircles[s.id] = window.L.circle([ll.lat, ll.lng], {
+          radius: radius, color: "#861619", weight: 1, opacity: .5,
+          fillColor: "#861619", fillOpacity: .08
+        }).addTo(mapInstance);
+      }
+    });
+    Object.keys(mapMarkers).forEach(function (id) {
+      if (!present[id]) { mapInstance.removeLayer(mapMarkers[id]); delete mapMarkers[id]; }
+    });
+    Object.keys(mapCircles).forEach(function (id) {
+      if (!present[id]) { mapInstance.removeLayer(mapCircles[id]); delete mapCircles[id]; }
+    });
+  }
+
+  /* Grundroute-Linie: nur gesetzte Stationen in Reihenfolge, kein Rückweg.
+     OSRM-Geometrie wenn vorhanden, sonst gerade Verbindung. */
+  function renderRouteLine() {
+    if (!mapReady || !mapInstance) return;
+    if (mapRouteLine) { mapInstance.removeLayer(mapRouteLine); mapRouteLine = null; }
+    var setSt = orderedSetStations();
+    if (setSt.length < 2) return;
+    var latlngs;
+    if (lastRouteResult && lastRouteResult.geometry && lastRouteResult.geometry.length) {
+      latlngs = lastRouteResult.geometry;
+    } else {
+      latlngs = setSt.map(function (s) { var ll = stationLatLng(s); return [ll.lat, ll.lng]; });
+    }
+    mapRouteLine = window.L.polyline(latlngs, { color: "#3d6fb0", weight: 4, opacity: .75 }).addTo(mapInstance);
+  }
+
+  /* Auf alle gesetzten Marker zoomen (oder Standardansicht Neuhof). */
+  function fitAllMarkers() {
+    if (!mapReady || !mapInstance) { flashMapHint("Karte nicht verfügbar."); return; }
+    var pts = [];
+    loadStations().forEach(function (s) { var ll = stationLatLng(s); if (ll) pts.push([ll.lat, ll.lng]); });
+    if (pts.length === 0) { mapInstance.setView([ROUTE_MAP_DEFAULT.lat, ROUTE_MAP_DEFAULT.lng], ROUTE_MAP_DEFAULT.zoom); return; }
+    if (pts.length === 1) { mapInstance.setView(pts[0], 15); return; }
+    mapInstance.fitBounds(pts, { padding: [40, 40] });
+  }
+
+  /* Strecke/Fahrzeit berechnen (debounced). OSRM-Straße, sonst Luftlinie. */
+  function scheduleRecalcRoute() {
+    if (routeRecalcTimer) clearTimeout(routeRecalcTimer);
+    routeRecalcTimer = setTimeout(recalcRoute, 400);
+  }
+  function recalcRoute() {
+    var setSt = orderedSetStations();
+    if (setSt.length < 2) {
+      lastRouteResult = null;
+      renderRouteLine(); renderRouteOverview(); renderRouteSummary();
+      return;
+    }
+    var token = ++routeCalcToken;
+    function applyFallback() {
+      if (token !== routeCalcToken) return;
+      var km = 0;
+      for (var i = 1; i < setSt.length; i++) {
+        km += haversineKm(stationLatLng(setSt[i - 1]), stationLatLng(setSt[i]));
+      }
+      lastRouteResult = { distanceKm: km, durationMin: km / 30 * 60, mode: "air", geometry: null };
+      renderRouteLine(); renderRouteOverview(); renderRouteSummary();
+    }
+    if (typeof fetch === "undefined") { applyFallback(); return; }
+    var coords = setSt.map(function (s) { var ll = stationLatLng(s); return ll.lng + "," + ll.lat; }).join(";");
+    var url = OSRM_BASE + coords + "?overview=full&geometries=geojson";
+    fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("http " + r.status);
+      return r.json();
+    }).then(function (data) {
+      if (token !== routeCalcToken) return;
+      if (!data || data.code !== "Ok" || !data.routes || !data.routes.length) throw new Error("no route");
+      var route = data.routes[0];
+      var geom = (route.geometry && route.geometry.coordinates)
+        ? route.geometry.coordinates.map(function (c) { return [c[1], c[0]]; }) : null;
+      lastRouteResult = { distanceKm: route.distance / 1000, durationMin: route.duration / 60, mode: "osrm", geometry: geom };
+      renderRouteLine(); renderRouteOverview(); renderRouteSummary();
+    }).catch(function () { applyFallback(); });
+  }
+
+  /* Auswahlfeld „Marker setzen für" aus den Stationen befüllen (01 – Titel). */
+  function populateRouteStationSelect() {
+    var sel = document.getElementById("routeStationSelect");
+    if (!sel) return;
+    var prev = sel.value;
+    var list = loadStations();
+    sel.innerHTML = "";
+    if (list.length === 0) {
+      var o = document.createElement("option");
+      o.value = ""; o.textContent = "Keine Stationen vorhanden";
+      sel.appendChild(o);
+      return;
+    }
+    list.forEach(function (s, idx) {
+      var o = document.createElement("option");
+      var num = (idx + 1 < 10 ? "0" : "") + (idx + 1);
+      o.value = s.id; o.textContent = num + " – " + s.title;
+      sel.appendChild(o);
+    });
+    if (prev && indexOfId(list, prev) >= 0) sel.value = prev;
+  }
+  function syncRadiusInput() {
+    var inp = document.getElementById("routeRadiusInput");
+    if (inp) inp.value = loadRouteSettings().radiusMeters;
   }
 
   /* --- Routenplanung: Init & Rendering --------------------------------- */
-  function initRoutes() {
-    renderRoutes();
+  var routeControlsWired = false;
+  function wireRouteControls() {
+    if (routeControlsWired) return;
+    var removeBtn = document.getElementById("routeRemoveMarkerBtn");
+    var fitBtn    = document.getElementById("routeFitBtn");
+    var radiusInp = document.getElementById("routeRadiusInput");
+    if (removeBtn) removeBtn.addEventListener("click", removeSelectedMarker);
+    if (fitBtn)    fitBtn.addEventListener("click", fitAllMarkers);
+    if (radiusInp) radiusInp.addEventListener("change", function () {
+      var r = setRouteRadius(this.value);
+      this.value = r;
+      renderMarkers(); renderRouteOverview(); renderRouteSummary();
+    });
+    routeControlsWired = true;
   }
-  function renderRoutes() {
+  /* Beim Start: Steuerung verdrahten + statische Teile rendern (ohne Karte/Netz). */
+  function initRoutes() {
+    wireRouteControls();
+    populateRouteStationSelect();
+    syncRadiusInput();
     renderRoutePositions();
     renderVehicleRoutes();
+    renderRouteOverview();
     renderRouteSummary();
   }
+  /* Voller Render inkl. Karte – wird beim Öffnen des Bereichs aufgerufen. */
+  function renderRoutes() {
+    populateRouteStationSelect();
+    syncRadiusInput();
+    initRouteMap();
+    renderMarkers();
+    renderRouteLine();
+    renderRoutePositions();
+    renderVehicleRoutes();
+    renderRouteOverview();
+    renderRouteSummary();
+    scheduleRecalcRoute();
+  }
 
-  /* 1) Stationspositionen (Adresse/Lat/Lng je Station). */
+  /* 3) Streckenübersicht (Grundroute, Kennzahlen, Routing-Status). */
+  function renderRouteOverview() {
+    var el = document.getElementById("routeOverview");
+    if (!el) return;
+    var stations = loadStations();
+    var settings = loadRouteSettings();
+    var setSt = stations.filter(function (s) { return stationLatLng(s) !== null; });
+    function kv(label, value, cls) {
+      return '<div class="route-ov-item"><span class="route-ov-k">' + label + '</span>' +
+             '<span class="route-ov-v' + (cls ? ' is-' + cls : '') + '">' + value + '</span></div>';
+    }
+    var grund = setSt.length
+      ? setSt.map(function (s) { return escapeAttr(s.title); }).join(" → ")
+      : '<span class="route-overview-empty">Noch keine Stationen mit Marker gesetzt.</span>';
+    var strecke = "–", zeit = "–", rstatus = "–", statusCls = "";
+    if (lastRouteResult) {
+      strecke = formatKm(lastRouteResult.distanceKm);
+      zeit    = formatMin(lastRouteResult.durationMin);
+      if (lastRouteResult.mode === "osrm") { rstatus = "Straßenroute berechnet"; statusCls = "ok"; }
+      else { rstatus = "Nur Luftlinie geschätzt"; statusCls = "air"; }
+    } else if (setSt.length < 2) {
+      rstatus = "Mind. 2 Stationen mit Marker nötig";
+    }
+    var html =
+      '<div class="route-ov-grund"><span class="route-ov-label">Grundroute</span>' +
+        '<span class="route-ov-route">' + grund + '</span></div>' +
+      '<div class="route-ov-grid">' +
+        kv("Stationen gesetzt", setSt.length + " von " + stations.length) +
+        kv("GPS-Radius", settings.radiusMeters + " m") +
+        kv("Strecke", strecke) +
+        kv("Fahrzeit", zeit) +
+        kv("Routing-Status", rstatus, statusCls) +
+      '</div>';
+    if (lastRouteResult && lastRouteResult.mode === "air") {
+      html += '<p class="route-hint-air">Routing konnte nicht berechnet werden – Anzeige basiert auf Luftlinie.</p>';
+    }
+    el.innerHTML = html;
+  }
+
+  /* 4) ELW-Übersicht / Stationspositionen. Adresse manuell editierbar,
+     Koordinaten nur Anzeige (werden über Marker gesetzt). */
   function renderRoutePositions() {
     var body = document.getElementById("routePosBody");
     if (!body) return;
@@ -2818,19 +3284,21 @@ body {
     body.innerHTML = "";
     if (list.length === 0) {
       var er = document.createElement("tr");
-      er.innerHTML = '<td colspan="6" class="station-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</td>';
+      er.innerHTML = '<td colspan="5" class="station-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</td>';
       body.appendChild(er);
       return;
     }
     list.forEach(function (s, idx) {
       var p = s.position || { address: "", lat: "", lng: "" };
+      var ll = stationLatLng(s);
+      var coordTxt = ll ? (ll.lat.toFixed(6) + ", " + ll.lng.toFixed(6)) : "nicht gesetzt";
+      var coordCls = "rpos-coord" + (ll ? "" : " rpos-coord-empty");
       var tr = document.createElement("tr");
       tr.innerHTML =
         '<td class="col-no"><span class="station-no">' + (idx + 1) + '</span></td>' +
         '<td class="rpos-name">' + escapeAttr(s.title) + '</td>' +
-        '<td><input type="text" class="rpos-addr" value="' + escapeAttr(p.address) + '" placeholder="Standort / Adresse"></td>' +
-        '<td><input type="text" class="rpos-lat" value="' + escapeAttr(p.lat) + '" placeholder="z. B. 50.1234"></td>' +
-        '<td><input type="text" class="rpos-lng" value="' + escapeAttr(p.lng) + '" placeholder="z. B. 8.5678"></td>' +
+        '<td><input type="text" class="rpos-addr" value="' + escapeAttr(p.address) + '" placeholder="Adresse"></td>' +
+        '<td class="' + coordCls + '">' + coordTxt + '</td>' +
         '<td class="rpos-status"></td>';
 
       var statusCell = tr.querySelector(".rpos-status");
@@ -2843,13 +3311,11 @@ body {
       setStatusCell();
 
       tr.querySelector(".rpos-addr").addEventListener("input", function () {
-        setStationPosition(s.id, "address", this.value); setStatusCell(); renderRouteSummary();
-      });
-      tr.querySelector(".rpos-lat").addEventListener("input", function () {
-        setStationPosition(s.id, "lat", this.value); setStatusCell(); renderRouteSummary();
-      });
-      tr.querySelector(".rpos-lng").addEventListener("input", function () {
-        setStationPosition(s.id, "lng", this.value); setStatusCell(); renderRouteSummary();
+        setStationPosition(s.id, "address", this.value);
+        setStatusCell();
+        renderRouteSummary();
+        renderRouteOverview();
+        updateStatus();
       });
       body.appendChild(tr);
     });
@@ -2903,12 +3369,18 @@ body {
     if (!el) return;
     var stations = loadStations();
     var active = loadVehicles().filter(function (v) { return v.active; });
+    var settings = loadRouteSettings();
     var posComplete = stations.filter(function (s) { return stationPositionStatus(s) === "done"; }).length;
+    var strecke = lastRouteResult ? formatKm(lastRouteResult.distanceKm) : "–";
+    var zeit    = lastRouteResult ? formatMin(lastRouteResult.durationMin) : "–";
     el.innerHTML =
       'Aktive Fahrzeuge: <strong>' + active.length + '</strong>' +
       ' · Stationen je Fahrzeug: <strong>' + stations.length + '</strong>' +
       ' · Automatische Routen: <strong>' + active.length + '</strong>' +
-      ' · Positionen vollständig: <strong>' + posComplete + '</strong> von <strong>' + stations.length + '</strong>';
+      ' · Stationen vollständig: <strong>' + posComplete + '</strong> von <strong>' + stations.length + '</strong>' +
+      ' · GPS-Radius: <strong>' + settings.radiusMeters + ' m</strong>' +
+      ' · Strecke: <strong>' + strecke + '</strong>' +
+      ' · Fahrzeit: <strong>' + zeit + '</strong>';
   }
 
   /* ======================================================================
