@@ -13,9 +13,20 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.21.2)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.22.0)
   ============================================================================
-  Stand 1.21.2 (Lösungssatz – Hinweisbox aufgeräumt): Die Metazeile „SOLL: … ·
+  Stand 1.22.0 (Lösungssatz – Satzsammlung als Overlay): Der Button „Satzsammlung"
+  in Karte 1 öffnet jetzt ein Overlay/Modal (KEIN eigener Bereich/Tab/Nav-Eintrag)
+  mit einer einfachen lokalen Sammlung guter Lösungssätze. Eigener Storage-Key
+  funkuebung_satzsammlung_v1 (Array aus Strings). Funktionen: Satz manuell
+  hinzufügen, aktuellen Lösungssatz speichern, je Satz Übernehmen/Löschen
+  (mit Sicherheitsabfrage), TXT-Import (ein Satz/Zeile), JSON-Import (Array aus
+  Strings) – beide ergänzend mit Duplikat-Übersprung und Import-Zusammenfassung –
+  sowie JSON-Export (funkuebung-satzsammlung.json). Duplikate werden getrimmt und
+  case-insensitiv erkannt; leere Sätze nicht gespeichert; Inhalte escaped.
+  „Übernehmen" verhält sich wie manuelle Eingabe (Lösungssatz + Status + Zuordnung
+  + Dashboard aktualisiert). Die früheren 3 Beispielsätze entfallen (Start leer).
+  Davor – Stand 1.21.2 (Lösungssatz – Hinweisbox aufgeräumt): Die Metazeile „SOLL: … ·
   IST: …" unter dem Hinweistext entfällt (Information steht bereits in den
   SOLL/IST/STATUS-Boxen). Zugehörige CSS-Regel entfernt. Keine Logikänderung.
   Davor – Stand 1.21.1 (Routenplanung – Tabelle & Routenliste auf Adresse umgestellt): In
@@ -1230,22 +1241,6 @@ body {
 .loes-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 .loes-note { margin: 12px 0 0; font-size: .82rem; color: var(--text-faint); line-height: 1.5; }
 .loes-mono { font-family: var(--font-mono); color: var(--text-muted); }
-.loes-collection {
-  margin-top: 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--bg-2);
-  padding: 6px;
-}
-.loes-collection-item {
-  display: block; width: 100%; text-align: left;
-  background: none; border: none; color: var(--text);
-  font: inherit; font-size: .9rem; padding: 8px 8px; cursor: pointer;
-  border-radius: 6px; border-top: 1px solid var(--line-soft);
-}
-.loes-collection-item:first-child { border-top: none; }
-.loes-collection-item:hover { background: var(--bg-1); }
-
 /* SOLL / IST / STATUS – drei Kennzahl-Boxen */
 .loes-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
 .loes-stat {
@@ -1302,6 +1297,67 @@ body {
 }
 .loes-assign-char.empty { color: var(--text-faint); font-weight: 400; border-style: dashed; }
 .loes-assign-char.space { color: var(--text-faint); }
+
+/* --- Satzsammlung-Overlay ------------------------------------------------*/
+.satz-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 28px;
+}
+.satz-overlay[hidden] { display: none; }
+.satz-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(8, 9, 11, .72); backdrop-filter: blur(2px);
+  animation: manualFade .16s ease;
+}
+.satz-dialog {
+  position: relative;
+  width: 100%; max-width: 720px;
+  max-height: min(86vh, 820px);
+  display: flex; flex-direction: column;
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  overflow: hidden;
+  animation: manualPop .18s ease;
+}
+.satz-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 16px 20px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #20242a 0%, #1b1e23 100%);
+  position: relative;
+}
+.satz-header::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: var(--red);
+}
+.satz-header h2 { font-size: 1.18rem; font-weight: 600; }
+.satz-body { padding: 18px 20px; overflow-y: auto; }
+.satz-intro { margin: 0 0 16px; font-size: .85rem; color: var(--text-muted); line-height: 1.5; }
+.satz-add { margin-bottom: 16px; }
+.satz-add .field input { width: 100%; }
+.satz-add-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.satz-io {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 14px; padding-top: 16px; border-top: 1px solid var(--line-soft);
+}
+.satz-msg { margin: 0 0 12px; font-size: .84rem; min-height: 1.1em; line-height: 1.45; color: var(--text-muted); }
+.satz-msg.ok   { color: var(--status-done); }
+.satz-msg.warn { color: var(--status-prog); }
+.satz-list { display: flex; flex-direction: column; gap: 8px; }
+.satz-empty { margin: 0; font-size: .88rem; color: var(--text-faint); font-style: italic; }
+.satz-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-1); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+}
+.satz-item-text { flex: 1 1 auto; min-width: 0; font-size: .9rem; color: var(--text); line-height: 1.45; word-break: break-word; }
+.satz-item-actions { flex: 0 0 auto; display: flex; gap: 8px; }
+.satz-item-actions .btn { padding: 6px 12px; font-size: .82rem; }
+@media (max-width: 560px) {
+  .satz-item { flex-direction: column; align-items: stretch; }
+  .satz-item-actions { justify-content: flex-end; }
+}
 
 /* --- Einheitliches Button-System ----------------------------------------
    Farbsemantik (konsequent verwenden):
@@ -1968,10 +2024,9 @@ body {
         </div>
         <div class="loes-actions">
           <button type="button" class="btn btn-secondary" id="loesClear">Feld leeren</button>
-          <button type="button" class="btn btn-secondary" id="loesCollection" aria-expanded="false">Satzsammlung</button>
+          <button type="button" class="btn btn-secondary" id="loesCollection">Satzsammlung</button>
           <span class="save-hint" id="loesSaveHint">Automatische Speicherung aktiv</span>
         </div>
-        <div class="loes-collection" id="loesCollectionPanel" hidden><!-- per JS gefüllt --></div>
         <p class="loes-note">Pro aktivem Fahrzeug und Station wird höchstens ein Zeichen vergeben. Restzeichen übernimmt die Übungsleitung. Standardsatz als Referenz: <span class="loes-mono">ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!</span></p>
       </div>
 
@@ -2080,6 +2135,46 @@ body {
 <!-- =========================================================================
      LAGEBILD-LIGHTBOX (große Vorschau bei Klick auf ein Vorschaubild)
      ====================================================================== -->
+<!-- Satzsammlung-Overlay (gehört funktional zu „Lösungssatz erfassen";
+     KEIN eigener Bereich/Tab/Nav-Eintrag). Storage: funkuebung_satzsammlung_v1 -->
+<div class="satz-overlay" id="satzOverlay" hidden>
+  <div class="satz-backdrop" data-satz-close></div>
+  <div class="satz-dialog" role="dialog" aria-modal="true" aria-labelledby="satzTitle">
+    <header class="satz-header">
+      <h2 id="satzTitle">Satzsammlung</h2>
+      <button type="button" class="manual-close" id="satzClose" data-satz-close aria-label="Satzsammlung schließen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </header>
+    <div class="satz-body">
+      <p class="satz-intro">Sammlung guter Lösungssätze (lokal im Browser gespeichert). Sätze hinzufügen, übernehmen, importieren oder exportieren.</p>
+
+      <div class="satz-add">
+        <div class="field full">
+          <label for="satzNewInput">Neuen Satz hinzufügen</label>
+          <input type="text" id="satzNewInput" placeholder="z. B. ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!">
+        </div>
+        <div class="satz-add-actions">
+          <button type="button" class="btn btn-primary" id="satzAddBtn">Satz speichern</button>
+          <button type="button" class="btn btn-secondary" id="satzAddCurrentBtn">Aktuellen Lösungssatz speichern</button>
+        </div>
+      </div>
+
+      <div class="satz-io">
+        <button type="button" class="btn btn-secondary" id="satzImportTxtBtn">TXT importieren</button>
+        <button type="button" class="btn btn-secondary" id="satzImportJsonBtn">JSON importieren</button>
+        <button type="button" class="btn btn-secondary" id="satzExportBtn">JSON exportieren</button>
+        <input type="file" id="satzTxtFile" accept=".txt,text/plain" hidden>
+        <input type="file" id="satzJsonFile" accept=".json,application/json" hidden>
+      </div>
+
+      <p class="satz-msg" id="satzMsg" role="status" aria-live="polite"></p>
+
+      <div class="satz-list" id="satzList"><!-- per JS gefüllt --></div>
+    </div>
+  </div>
+</div>
+
 <div class="img-lightbox" id="imgLightbox" hidden aria-hidden="true" role="dialog" aria-label="Lagebild-Vorschau">
   <button type="button" class="img-lightbox-close" id="imgLightboxClose" aria-label="Schließen">&times;</button>
   <img class="img-lightbox-img" id="imgLightboxImg" alt="Lagebild-Vorschau">
@@ -2106,7 +2201,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.21.2"
+    version: "1.22.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3769,13 +3864,6 @@ body {
   var LOESUNG_STORAGE_KEY = "funkuebung_loesungssatz_v1";
   var LOESUNG_DEFAULT = "ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!";
   var LOESUNG_SPACE = "␣";
-  /* Kleine, einfache Satzsammlung (Standardsatz + Beispiele). Bewusst klein
-     gehalten – keine komplexe Wörterbuch-Logik. */
-  var LOESUNG_COLLECTION = [
-    "ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!",
-    "RUHIGE FUNKDISZIPLIN SICHERT DEN UEBERBLICK IM EINSATZ!",
-    "KLARE MELDUNGEN SCHAFFEN ZEIT UND RETTEN LEBEN HEUTE!"
-  ];
 
   /* Lädt den Lösungssatz; liefert IMMER { phrase, mode:"vehicles" }.
      mode bleibt unverändert (reine Metadaten, funktional nicht ausgewertet). */
@@ -4018,33 +4106,6 @@ body {
     if (hint) flashHint(hint, hintText || "Gespeichert");
   }
 
-  /* Satzsammlung: kleine Liste; Klick übernimmt den Satz ins Feld. */
-  function renderLoesungCollection() {
-    var panel = document.getElementById("loesCollectionPanel");
-    if (!panel) return;
-    panel.innerHTML = LOESUNG_COLLECTION.map(function (s, i) {
-      return '<button type="button" class="loes-collection-item" data-idx="' + i + '">' + escapeHTML(s) + '</button>';
-    }).join("");
-    panel.querySelectorAll(".loes-collection-item").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var idx = parseInt(btn.dataset.idx, 10);
-        var ta = document.getElementById("loesPhrase");
-        if (ta) ta.value = LOESUNG_COLLECTION[idx] || "";
-        toggleLoesungCollection(false);
-        persistLoesung("Satz übernommen");
-      });
-    });
-  }
-  function toggleLoesungCollection(show) {
-    var panel = document.getElementById("loesCollectionPanel");
-    var btn = document.getElementById("loesCollection");
-    if (!panel) return;
-    var open = (typeof show === "boolean") ? show : panel.hidden;
-    if (open) renderLoesungCollection();
-    panel.hidden = !open;
-    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
-  }
-
   /* Init: Auto-Speichern beim Tippen + Buttons + Erst-Render. */
   function initLoesung() {
     var ta = document.getElementById("loesPhrase");
@@ -4053,11 +4114,242 @@ body {
     if (ta) ta.addEventListener("input", function () { persistLoesung("Gespeichert"); });
     if (clearBtn) clearBtn.addEventListener("click", function () {
       if (ta) ta.value = "";
-      toggleLoesungCollection(false);
       persistLoesung("Feld geleert");
     });
-    if (collBtn) collBtn.addEventListener("click", function () { toggleLoesungCollection(); });
+    if (collBtn) collBtn.addEventListener("click", openSatzOverlay);
     renderLoesung();
+  }
+
+  /* ======================================================================
+     SATZSAMMLUNG (Overlay)
+     ----------------------------------------------------------------------
+     Einfache lokale Sammlung guter Lösungssätze (Array aus Strings) im
+     eigenen Storage-Key funkuebung_satzsammlung_v1. Gehört funktional zu
+     „Lösungssatz erfassen": Sätze speichern, übernehmen, per TXT/JSON
+     importieren (ergänzend, Duplikate übersprungen) und als JSON exportieren.
+     Keine Kategorien/Tags/Tabs/eigener Bereich. Duplikat-Vergleich: getrimmt
+     und ohne Berücksichtigung der Groß-/Kleinschreibung; Originalschreibweise
+     (getrimmt) wird gespeichert. ====================================== */
+  var SATZ_STORAGE_KEY = "funkuebung_satzsammlung_v1";
+  var satzLastFocus = null;
+
+  function loadSatzsammlung() {
+    var raw = [];
+    try { raw = JSON.parse(localStorage.getItem(SATZ_STORAGE_KEY)) || []; }
+    catch (e) { raw = []; }
+    if (!Array.isArray(raw)) return [];
+    var out = [], seen = {};
+    raw.forEach(function (s) {
+      if (typeof s !== "string") return;
+      var t = s.trim();
+      if (!t) return;
+      var k = t.toLowerCase();
+      if (seen[k]) return;
+      seen[k] = true; out.push(t);
+    });
+    return out;
+  }
+  function saveSatzsammlung(list) {
+    try { localStorage.setItem(SATZ_STORAGE_KEY, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
+  }
+  /* Fügt einen Satz in-place hinzu; liefert "added" | "empty" | "dup". */
+  function satzTryAdd(list, sentence) {
+    var t = String(sentence == null ? "" : sentence).trim();
+    if (!t) return "empty";
+    var k = t.toLowerCase();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].trim().toLowerCase() === k) return "dup";
+    }
+    list.push(t);
+    return "added";
+  }
+
+  function satzMsg(text, kind) {
+    var el = document.getElementById("satzMsg");
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "satz-msg" + (kind ? " " + kind : "");
+  }
+
+  function renderSatzList() {
+    var host = document.getElementById("satzList");
+    if (!host) return;
+    var list = loadSatzsammlung();
+    if (list.length === 0) {
+      host.innerHTML = '<p class="satz-empty">Noch keine Sätze gespeichert.</p>';
+      return;
+    }
+    host.innerHTML = list.map(function (s, i) {
+      return '<div class="satz-item">' +
+               '<span class="satz-item-text">' + escapeHTML(s) + '</span>' +
+               '<span class="satz-item-actions">' +
+                 '<button type="button" class="btn btn-secondary" data-satz-take="' + i + '">Übernehmen</button>' +
+                 '<button type="button" class="btn btn-danger" data-satz-del="' + i + '">Löschen</button>' +
+               '</span>' +
+             '</div>';
+    }).join("");
+    host.querySelectorAll("[data-satz-take]").forEach(function (b) {
+      b.addEventListener("click", function () { satzTake(parseInt(b.dataset.satzTake, 10)); });
+    });
+    host.querySelectorAll("[data-satz-del]").forEach(function (b) {
+      b.addEventListener("click", function () { satzDelete(parseInt(b.dataset.satzDel, 10)); });
+    });
+  }
+
+  /* Satz übernehmen: verhält sich wie manuelle Eingabe ins Lösungssatz-Feld. */
+  function satzTake(idx) {
+    var list = loadSatzsammlung();
+    var s = list[idx];
+    if (typeof s !== "string") return;
+    var ta = document.getElementById("loesPhrase");
+    if (ta) ta.value = s;
+    persistLoesung("Satz übernommen");
+    closeSatzOverlay();
+  }
+
+  function satzAddManual() {
+    var inp = document.getElementById("satzNewInput");
+    var list = loadSatzsammlung();
+    var r = satzTryAdd(list, inp ? inp.value : "");
+    if (r === "empty") { satzMsg("Bitte einen Satz eingeben.", "warn"); return; }
+    if (r === "dup")   { satzMsg("Dieser Satz ist bereits gespeichert.", "warn"); return; }
+    saveSatzsammlung(list);
+    if (inp) inp.value = "";
+    renderSatzList();
+    satzMsg("Satz gespeichert.", "ok");
+  }
+
+  function satzAddCurrent() {
+    var ta = document.getElementById("loesPhrase");
+    var list = loadSatzsammlung();
+    var r = satzTryAdd(list, ta ? ta.value : "");
+    if (r === "empty") { satzMsg("Der Lösungssatz ist leer – nichts zu speichern.", "warn"); return; }
+    if (r === "dup")   { satzMsg("Der aktuelle Lösungssatz ist bereits in der Sammlung.", "warn"); return; }
+    saveSatzsammlung(list);
+    renderSatzList();
+    satzMsg("Aktueller Lösungssatz gespeichert.", "ok");
+  }
+
+  function satzDelete(idx) {
+    var list = loadSatzsammlung();
+    var s = list[idx];
+    if (typeof s !== "string") return;
+    if (!window.confirm("Diesen Satz aus der Sammlung löschen?\n\n" + s)) return;
+    list.splice(idx, 1);
+    saveSatzsammlung(list);
+    renderSatzList();
+    satzMsg("Satz gelöscht.", "ok");
+  }
+
+  /* TXT-Import: ein Satz pro Zeile; leere Zeilen ignoriert; Duplikate übersprungen. */
+  function satzImportTxt(text) {
+    var lines = String(text).split(/\r?\n/);
+    var list = loadSatzsammlung();
+    var added = 0, dup = 0, empty = 0;
+    lines.forEach(function (line) {
+      var r = satzTryAdd(list, line);
+      if (r === "added") added++;
+      else if (r === "dup") dup++;
+      else empty++;
+    });
+    saveSatzsammlung(list);
+    renderSatzList();
+    satzMsg(added + " Sätze hinzugefügt, " + dup + " Duplikate übersprungen, " + empty + " leere Zeilen ignoriert.", "ok");
+  }
+
+  /* JSON-Import: nur Array aus Strings; ungültige Einträge ignoriert; ergänzend. */
+  function satzImportJson(text) {
+    var data;
+    try { data = JSON.parse(text); }
+    catch (e) { satzMsg("Ungültiges JSON: Die Datei konnte nicht gelesen werden.", "warn"); return; }
+    if (!Array.isArray(data)) { satzMsg("Ungültiges Format: Es wird ein Array aus Texten erwartet.", "warn"); return; }
+    var list = loadSatzsammlung();
+    var added = 0, dup = 0, invalid = 0;
+    data.forEach(function (item) {
+      if (typeof item !== "string") { invalid++; return; }
+      var r = satzTryAdd(list, item);
+      if (r === "added") added++;
+      else if (r === "dup") dup++;
+      else invalid++;
+    });
+    saveSatzsammlung(list);
+    renderSatzList();
+    satzMsg(added + " Sätze hinzugefügt, " + dup + " Duplikate übersprungen, " + invalid + " ungültige Einträge ignoriert.", "ok");
+  }
+
+  function satzExportJson() {
+    var list = loadSatzsammlung();
+    try {
+      var blob = new Blob([JSON.stringify(list, null, 2)], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "funkuebung-satzsammlung.json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+      satzMsg("Satzsammlung als JSON exportiert (" + list.length + " Sätze).", "ok");
+    } catch (e) { satzMsg("Export nicht möglich.", "warn"); }
+  }
+
+  /* Liest eine Textdatei robust ein und ruft handler(text) auf. */
+  function satzReadFile(input, handler) {
+    var file = input && input.files && input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () { try { handler(reader.result || ""); } catch (e) { satzMsg("Import fehlgeschlagen.", "warn"); } };
+    reader.onerror = function () { satzMsg("Datei konnte nicht gelesen werden.", "warn"); };
+    reader.readAsText(file);
+    input.value = ""; /* gleiche Datei erneut importierbar */
+  }
+
+  function openSatzOverlay() {
+    var ov = document.getElementById("satzOverlay");
+    if (!ov) return;
+    satzLastFocus = document.activeElement;
+    satzMsg("");
+    renderSatzList();
+    ov.hidden = false;
+    document.body.style.overflow = "hidden";
+    var c = document.getElementById("satzClose"); if (c) c.focus();
+  }
+  function closeSatzOverlay() {
+    var ov = document.getElementById("satzOverlay");
+    if (!ov) return;
+    ov.hidden = true;
+    document.body.style.overflow = "";
+    if (satzLastFocus && typeof satzLastFocus.focus === "function") satzLastFocus.focus();
+  }
+
+  function initSatzsammlung() {
+    var addBtn = document.getElementById("satzAddBtn");
+    var addCurBtn = document.getElementById("satzAddCurrentBtn");
+    var inp = document.getElementById("satzNewInput");
+    var txtBtn = document.getElementById("satzImportTxtBtn");
+    var jsonBtn = document.getElementById("satzImportJsonBtn");
+    var expBtn = document.getElementById("satzExportBtn");
+    var txtFile = document.getElementById("satzTxtFile");
+    var jsonFile = document.getElementById("satzJsonFile");
+
+    if (addBtn) addBtn.addEventListener("click", satzAddManual);
+    if (addCurBtn) addCurBtn.addEventListener("click", satzAddCurrent);
+    if (inp) inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); satzAddManual(); } });
+    if (txtBtn && txtFile) txtBtn.addEventListener("click", function () { txtFile.click(); });
+    if (jsonBtn && jsonFile) jsonBtn.addEventListener("click", function () { jsonFile.click(); });
+    if (txtFile) txtFile.addEventListener("change", function () { satzReadFile(txtFile, satzImportTxt); });
+    if (jsonFile) jsonFile.addEventListener("change", function () { satzReadFile(jsonFile, satzImportJson); });
+    if (expBtn) expBtn.addEventListener("click", satzExportJson);
+
+    /* Schließen: X-Button und Klick auf den Hintergrund */
+    document.querySelectorAll("[data-satz-close]").forEach(function (el) {
+      el.addEventListener("click", closeSatzOverlay);
+    });
+    /* Schließen mit Escape */
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        var ov = document.getElementById("satzOverlay");
+        if (ov && !ov.hidden) closeSatzOverlay();
+      }
+    });
   }
 
   /* ======================================================================
@@ -4187,6 +4479,7 @@ body {
     initStations();
     initRoutes();
     initLoesung();
+    initSatzsammlung();
     initManual();
     initImageLightbox();
     updateStatus();
