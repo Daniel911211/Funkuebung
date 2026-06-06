@@ -13,9 +13,16 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.21.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.21.1)
   ============================================================================
-  Stand 1.21.0 (Lösungssatz – Neuaufbau in 3 Kartenbereichen): Der Bereich
+  Stand 1.21.1 (Routenplanung – Tabelle & Routenliste auf Adresse umgestellt): In
+  der Tabelle „Stationspositionen" heißt der Spaltenkopf jetzt „Station" (Zellen
+  weiter nur die Nummer) und die separate Namensspalte „Station" entfällt
+  (Spalten: Station | Adresse | Koordinaten | Status). In der Liste „Automatische
+  Fahrzeugrouten" zeigt jede Station nun die Adresse statt der Bezeichnung; bei
+  leerer Adresse dezent „Adresse nicht gesetzt". Dropdown, Karten-Tooltip und
+  Stationsplanungs-Tabelle unverändert. Keine Logikänderung.
+  Davor – Stand 1.21.0 (Lösungssatz – Neuaufbau in 3 Kartenbereichen): Der Bereich
   „Lösungssatz" wurde komplett neu aufgebaut. (1) ERFASSEN: Textarea mit Auto-
   Speicherung, Buttons „Feld leeren" + „Satzsammlung" (kleine Satzliste).
   (2) ZEICHENSTATUS: SOLL (=aktive Fahrzeuge×Stationen) / IST (Zeichen) / STATUS
@@ -1150,12 +1157,10 @@ body {
 
 /* ELW-Übersicht / Positionstabelle: inhaltsorientiert, eigene Spaltenanteile */
 .route-pos-table { table-layout: fixed; }
-.route-pos-table .rcol-no     { width: 7%; }
-.route-pos-table .rcol-name   { width: 25%; }
-.route-pos-table .rcol-addr   { width: 34%; }
-.route-pos-table .rcol-coord  { width: 22%; }
-.route-pos-table .rcol-status { width: 12%; }
-.route-pos-table .rpos-name { font-size: .92rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-pos-table .rcol-no     { width: 8%; }
+.route-pos-table .rcol-addr   { width: 50%; }
+.route-pos-table .rcol-coord  { width: 28%; }
+.route-pos-table .rcol-status { width: 14%; }
 .route-pos-table input[type="text"] {
   width: 100%;
   background: #1d2026;
@@ -1200,6 +1205,7 @@ body {
 }
 .route-name { flex: 1 1 auto; min-width: 0; font-size: .9rem; color: var(--text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-name-empty { color: var(--text-faint); font-style: italic; }
 
 /* --- Lösungssatz ---------------------------------------------------------*/
 #sec-loesung > .panel { margin-top: 18px; }
@@ -1917,13 +1923,12 @@ body {
         <div class="station-table-wrap">
           <table class="station-table route-pos-table">
             <colgroup>
-              <col class="rcol-no"><col class="rcol-name"><col class="rcol-addr">
+              <col class="rcol-no"><col class="rcol-addr">
               <col class="rcol-coord"><col class="rcol-status">
             </colgroup>
             <thead>
               <tr>
-                <th class="col-no">Nr.</th>
-                <th>Station</th>
+                <th class="col-no">Station</th>
                 <th>Adresse</th>
                 <th>Koordinaten</th>
                 <th>Status</th>
@@ -2099,7 +2104,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.21.0"
+    version: "1.21.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3668,7 +3673,7 @@ body {
     body.innerHTML = "";
     if (list.length === 0) {
       var er = document.createElement("tr");
-      er.innerHTML = '<td colspan="5" class="station-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</td>';
+      er.innerHTML = '<td colspan="4" class="station-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</td>';
       body.appendChild(er);
       return;
     }
@@ -3680,7 +3685,6 @@ body {
       var tr = document.createElement("tr");
       tr.innerHTML =
         '<td class="col-no"><span class="station-no">' + (idx + 1) + '</span></td>' +
-        '<td class="rpos-name">' + escapeAttr(stationDisplayName(s, idx)) + '</td>' +
         '<td><input type="text" class="rpos-addr" value="' + escapeAttr(p.address) + '" placeholder="Adresse"></td>' +
         '<td class="' + coordCls + '">' + coordTxt + '</td>' +
         '<td class="rpos-status"></td>';
@@ -3727,9 +3731,13 @@ body {
       card.className = "route-veh";
 
       var itemsHtml = route.map(function (s, i) {
+        /* Anzeige der Adresse (Stationsnummer = Reihenfolge davor genügt zur
+           Identifikation). Leere Adresse → dezenter Fallback „Adresse nicht gesetzt". */
+        var hasAddr = !!(s.position && nonEmpty(s.position.address));
+        var addrText = hasAddr ? s.position.address : "Adresse nicht gesetzt";
         return '<li class="route-item">' +
                  '<span class="route-pos">' + (i + 1) + '.</span>' +
-                 '<span class="route-name">' + escapeAttr(stationDisplayName(s, indexOfId(stations, s.id))) + '</span>' +
+                 '<span class="route-name' + (hasAddr ? '' : ' route-name-empty') + '">' + escapeAttr(addrText) + '</span>' +
                '</li>';
       }).join("");
 
