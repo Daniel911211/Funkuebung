@@ -13,12 +13,14 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.13.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.13.2)
   ============================================================================
-  Stand 1.13.1 (Routenplanung – Layout): Kartenbereich neu angeordnet – zweispaltig
-  mit Kartensteuerung links und Streckenübersicht über der Karte rechts; Karte jetzt
-  quadratisch (aspect-ratio 1/1). ELW-Übersicht und Fahrzeugrouten bleiben darunter in
-  voller Breite. Unter 860 px wieder einspaltig. Reine Layout/CSS-Änderung.
+  Stand 1.13.2 (Layout – Vollbreite + Kartenbereich): Alle Bereiche nutzen jetzt die
+  volle Bildschirmbreite (Deckelung max-width 1080px entfernt). Routenplanung: links
+  Kartensteuerung + Streckenübersicht (gestapelt), rechts die große Karte; die Karte ist
+  durch Grid-Stretch genau so hoch wie die linke Spalte (gleichmäßig). Unter 860 px
+  einspaltig. Reine Layout/CSS-Änderung.
+  Davor (1.13.1, Routenplanung – Layout): Kartenbereich zweispaltig, Karte quadratisch.
   Davor (1.13.0, Routenplanung – Bedienung): Neuer Button „Alle Marker entfernen" in
   der Kartensteuerung – löscht mit Sicherheits-Rückfrage die Koordinaten ALLER
   Stationen (Adressen bleiben); Marker, Radiuskreise und berechnete Route verschwinden.
@@ -339,7 +341,7 @@ body {
   padding: 28px 32px 48px;
   overflow-y: auto;
 }
-.section { display: none; max-width: 1080px; }
+.section { display: none; max-width: none; }
 .section.active { display: block; animation: fade .18s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
@@ -933,14 +935,16 @@ body {
 .vehicle-row.invalid-row td { background: rgba(134,22,25,.06); }
 
 /* --- Routenplanung -------------------------------------------------------*/
-/* Karten-Arbeitsbereich: links Steuerung, rechts Streckenübersicht + Karte */
+/* Karten-Arbeitsbereich: links Steuerung + Streckenübersicht, rechts die Karte.
+   align-items: stretch → die Karte ist genau so hoch wie die linke Spalte (gleichmäßig). */
 .route-workspace {
   display: grid;
-  grid-template-columns: minmax(280px, 340px) 1fr;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
 }
-.route-right { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.route-left { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.route-map-panel { display: flex; }
 @media (max-width: 860px) { .route-workspace { grid-template-columns: 1fr; } }
 
 /* Kartensteuerung */
@@ -968,9 +972,10 @@ body {
 .route-control-actions { display: flex; gap: 10px; margin-left: auto; }
 .route-map-hint { min-height: 16px; margin: 10px 0 0; font-size: .82rem; color: var(--btn-warn); }
 
-/* Interaktive Karte – quadratisch (Höhe folgt der Breite) */
+/* Interaktive Karte – füllt das rechte Panel; Höhe = linke Spalte (durch Grid-Stretch) */
 #routeMap {
-  width: 100%; aspect-ratio: 1 / 1; height: auto;
+  flex: 1 1 auto;
+  width: 100%; min-height: 460px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
@@ -1642,40 +1647,40 @@ body {
         <p>Stationen per Klick auf der Karte positionieren, globalen GPS-Radius pflegen und die automatisch versetzten Fahrzeugrouten anzeigen. Strecke und Fahrzeit der Grundroute (Station 1 → … → letzte Station, ohne Rückweg) werden über Straßenrouting berechnet.</p>
       </div>
 
-      <!-- Karten-Arbeitsbereich: links Steuerung, rechts Streckenübersicht über der Karte -->
+      <!-- Karten-Arbeitsbereich: links Steuerung + Streckenübersicht, rechts die Karte -->
       <div class="route-workspace">
-        <!-- 1) Kartensteuerung (links) -->
-        <div class="panel route-controls-panel">
-          <h3 class="subsection-title">Kartensteuerung</h3>
-          <div class="route-controls">
-            <label class="route-control-field">
-              <span>Marker setzen für</span>
-              <select id="routeStationSelect"></select>
-            </label>
-            <label class="route-control-field">
-              <span>GPS-Radius (Meter)</span>
-              <input type="number" id="routeRadiusInput" class="route-radius-input" min="1" step="1" value="65">
-            </label>
-            <div class="route-control-actions">
-              <button type="button" class="btn btn-danger" id="routeRemoveMarkerBtn">Marker entfernen</button>
-              <button type="button" class="btn btn-danger" id="routeClearAllBtn">Alle Marker entfernen</button>
-              <button type="button" class="btn btn-secondary" id="routeFitBtn">Alle Marker anzeigen</button>
+        <!-- links: Kartensteuerung oben, Streckenübersicht darunter -->
+        <div class="route-left">
+          <!-- 1) Kartensteuerung -->
+          <div class="panel route-controls-panel">
+            <h3 class="subsection-title">Kartensteuerung</h3>
+            <div class="route-controls">
+              <label class="route-control-field">
+                <span>Marker setzen für</span>
+                <select id="routeStationSelect"></select>
+              </label>
+              <label class="route-control-field">
+                <span>GPS-Radius (Meter)</span>
+                <input type="number" id="routeRadiusInput" class="route-radius-input" min="1" step="1" value="65">
+              </label>
+              <div class="route-control-actions">
+                <button type="button" class="btn btn-danger" id="routeRemoveMarkerBtn">Marker entfernen</button>
+                <button type="button" class="btn btn-danger" id="routeClearAllBtn">Alle Marker entfernen</button>
+                <button type="button" class="btn btn-secondary" id="routeFitBtn">Alle Marker anzeigen</button>
+              </div>
             </div>
+            <p class="route-map-hint" id="routeMapHint">Station auswählen und auf die Karte klicken, um den Marker zu setzen.</p>
           </div>
-          <p class="route-map-hint" id="routeMapHint">Station auswählen und auf die Karte klicken, um den Marker zu setzen.</p>
-        </div>
-
-        <!-- rechts: Streckenübersicht oben, Karte darunter -->
-        <div class="route-right">
           <!-- 2) Streckenübersicht -->
           <div class="panel">
             <h3 class="subsection-title">Streckenübersicht</h3>
             <div id="routeOverview"><!-- per JS gefüllt --></div>
           </div>
-          <!-- 3) Interaktive Karte (quadratisch) -->
-          <div class="panel route-map-panel">
-            <div id="routeMap"></div>
-          </div>
+        </div>
+
+        <!-- rechts: Karte -->
+        <div class="panel route-map-panel">
+          <div id="routeMap"></div>
         </div>
       </div>
 
@@ -1812,7 +1817,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.13.1"
+    version: "1.13.2"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
