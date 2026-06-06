@@ -13,9 +13,14 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.17.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.17.1)
   ============================================================================
-  Stand 1.17.0 (Lösungssatz – Auto-Speichern + Übersicht): Der Lösungssatz wird
+  Stand 1.17.1 (Lösungssatz – Status zählerbasiert): Der Status in der Kontroll-
+  übersicht wird jetzt aus dem Vergleich „verteilte Zeichen (X) gegenüber gesamt
+  benötigten Zeichen (Y)" abgeleitet (X==Y → Vollständig, 0≤X<Y → In Bearbeitung,
+  Y==0 → Offen) statt aus der Anzahl aktiver Fahrzeuge. Ergebnisse identisch,
+  Logik sauber an die Zähler gekoppelt. Anzeige „X von Y" unverändert.
+  Davor (1.17.0, Lösungssatz – Auto-Speichern + Übersicht): Der Lösungssatz wird
   jetzt bei jeder Eingabe automatisch gespeichert (Indikator „Automatische
   Speicherung aktiv", flasht „Gespeichert"), analog zur Grunddaten-Maske. Dadurch
   bleiben Kontrollübersicht UND Dashboard-Status live konsistent (vorher änderte
@@ -1972,7 +1977,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.17.0"
+    version: "1.17.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3719,12 +3724,14 @@ body {
     body.innerHTML = "";
 
     /* Kontrollübersicht-Helfer (sichtbare Werte sind Zahlen/Status → unkritisch,
-       aber einheitlich über escapeHTML gerendert). */
+       aber einheitlich über escapeHTML gerendert). Status dieser Zeile = Vergleich
+       verteilte Zeichen (X) gegenüber gesamt benötigten Zeichen (Y). */
     function renderSummary(total, distributed) {
       if (!summary) return;
-      var statusLabel = !nonEmpty(phrase)
-        ? "Offen"
-        : (activeVehicles.length === 0 ? "In Bearbeitung" : "Vollständig");
+      var statusLabel;
+      if (!nonEmpty(phrase) || total === 0) statusLabel = "Offen";
+      else if (distributed >= total)        statusLabel = "Vollständig";
+      else                                  statusLabel = "In Bearbeitung";
       summary.innerHTML =
         '<span class="loes-summary-item">Verteilte Zeichen: <b>' + escapeHTML(String(distributed)) + '</b> von <b>' + escapeHTML(String(total)) + '</b></span>' +
         '<span class="loes-summary-item">Aktive Fahrzeuge: <b>' + escapeHTML(String(activeVehicles.length)) + '</b></span>' +
