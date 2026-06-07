@@ -9,8 +9,14 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.3 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.4 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.4: Teilnehmeranzeige zeigt jetzt die LAUFNUMMER der echten Station in
+  der Fahrzeugroute (Station 1..N) statt der echten Stationsnummer/Bezeichnung; die
+  2. Kopfzeile zeigt Fahrzeug · Einsatzort/Adresse der echten Station (Fallback:
+  Adresse → Titel → neutral). Laufnummer aus assign.laufnr oder aus dem Positions-
+  code abgeleitet; ohne Ermittelbarkeit klare Fehlermeldung. Echte Stationsnummer
+  bleibt intern für Aufgabe/Lagebild/Code/Lösung erhalten.
   Stand 1.0.3: Bildunterschrift des Lagebilds (z. B. „Lagebild 1") wird nicht mehr
   angezeigt (title bleibt nur als alt-Text).
   Stand 1.0.2: Titel in der Kopfzeile nicht mehr fett – gleiche Optik wie Datum
@@ -110,7 +116,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.3" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.4" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -122,6 +128,17 @@
   function showError(t,d){document.getElementById("content").innerHTML='<div class="error"><h2>'+escapeHTML(t)+'</h2><p>'+d+'</p></div>';}
   /* Positionscode robust normalisieren: Großschreibung, alle Whitespaces raus. */
   function normCode(s){return String(s==null?"":s).toUpperCase().replace(/\s+/g,"");}
+  /* Laufnummer der echten Station in der Fahrzeugroute aus dem Positionscode
+     ableiten: code = W1P<n> mit n = FahrzeugIndex*Stationen + Routenposition + 1
+     → Laufnummer = ((n-1) mod Stationen) + 1. Null, wenn nicht ermittelbar. */
+  function laufnrFromCode(code, stationCount){
+    if(!(stationCount>0)) return null;
+    var m=/^W1P(\d+)$/.exec(String(code==null?"":code).toUpperCase().replace(/\s+/g,""));
+    if(!m) return null;
+    var n=parseInt(m[1],10);
+    if(!(n>=1)) return null;
+    return ((n-1)%stationCount)+1;
+  }
 
   function lagebildHtml(station, fhz){
     var images=Array.isArray(station.images)?station.images:[];
@@ -135,6 +152,18 @@
   }
 
   function render(data, station, vehicle, fhz){
+    /* Zuordnung (char + code + laufnr) für dieses Fahrzeug an dieser ECHTEN Station
+       (station.nr = echte Stationsnummer aus der URL – bleibt intern erhalten). */
+    var assign = (data.assignments && data.assignments[fhz]) ? data.assignments[fhz][String(station.nr)] : null;
+    var stationCount = Array.isArray(data.stations) ? data.stations.length : 0;
+    /* Sichtbare Laufnummer = Position der echten Station in der Fahrzeugroute.
+       Bevorzugt aus assign.laufnr, sonst aus dem Positionscode abgeleitet. */
+    var laufnr = (assign && typeof assign.laufnr==="number" && assign.laufnr>0) ? assign.laufnr : laufnrFromCode(assign && assign.code, stationCount);
+    if(!laufnr){ showError("Anzeige nicht möglich","Die Laufnummer dieser Station für dieses Fahrzeug konnte nicht ermittelt werden. Bitte die Übungsdaten (data/uebung.json) im Planungstool neu exportieren und hochladen."); return; }
+
+    /* Einsatzort der ECHTEN Station: Adresse → (Stationsort) → Titel → neutral. */
+    var ort = nonEmpty(station.address) ? station.address : (nonEmpty(station.title) ? station.title : "Einsatzort nicht hinterlegt");
+
     var meta=data.meta||{};
     var ex=[];
     if(nonEmpty(meta.name)) ex.push(escapeHTML(meta.name));
@@ -143,12 +172,11 @@
     document.getElementById("exMeta").innerHTML=ex.join(' · ');
 
     var taskHtml=nonEmpty(station.task)?'<div class="task">'+escapeHTML(station.task)+'</div>':'<p class="muted">Keine Aufgabe hinterlegt.</p>';
-    var titleHtml=nonEmpty(station.title)?'Station '+escapeHTML(String(station.nr))+' – '+escapeHTML(station.title):'Station '+escapeHTML(String(station.nr));
 
     document.getElementById("content").innerHTML=
-      '<div class="topbar"><div class="st-no">'+escapeHTML(String(station.nr))+'</div>'+
-        '<div><h1>'+titleHtml+'</h1>'+
-        '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b>'+(nonEmpty(vehicle.callsign)?' · '+escapeHTML(vehicle.callsign):'')+'</div></div></div>'+
+      '<div class="topbar"><div class="st-no">'+escapeHTML(String(laufnr))+'</div>'+
+        '<div><h1>Station '+escapeHTML(String(laufnr))+'</h1>'+
+        '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b> · '+escapeHTML(ort)+'</div></div></div>'+
       '<div class="grid">'+
         '<div class="card"><div class="label">Aufgabe</div>'+taskHtml+'</div>'+
         '<div class="card"><div class="label">Lagebild</div>'+lagebildHtml(station,fhz)+'</div>'+
@@ -164,8 +192,6 @@
         '<div id="letterReveal"></div>'+
       '</div>';
 
-    /* Zuordnung (char + code) für genau dieses Fahrzeug an dieser Station. */
-    var assign = (data.assignments && data.assignments[fhz]) ? data.assignments[fhz][String(station.nr)] : null;
     var expected = normCode(assign && assign.code);
 
     var input = document.getElementById("codeInput");
@@ -182,7 +208,7 @@
       else txt=ch;
       document.getElementById("letterReveal").innerHTML=
         '<div class="letterbox"><div class="'+cls+'">'+escapeHTML(txt)+'</div>'+
-        '<div class="letter-note">Lösungszeichen für <b>'+escapeHTML(vehicle.type||vehicle.id)+'</b> an <b>Station '+escapeHTML(String(station.nr))+'</b>. Bitte notieren.</div></div>';
+        '<div class="letter-note">Lösungszeichen für <b>'+escapeHTML(vehicle.type||vehicle.id)+'</b> an <b>Station '+escapeHTML(String(laufnr))+'</b>. Bitte notieren.</div></div>';
       var row=document.getElementById("codeRow"); if(row) row.style.display="none";
     }
 
