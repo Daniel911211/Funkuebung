@@ -459,6 +459,12 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
 
+Stand 1.0.13: Lagebild-Lightbox – Tipp/Klick auf ein Lagebild öffnet es als
+Vollbild (max. Bildschirmgröße, dunkler Hintergrund). Schließen per Tipp/Klick
+irgendwo im Overlay, ×-Button oder Escape. Funktioniert auf Tablet/Handy (Tap =
+click) wie am Desktop; Bild ist per Tastatur fokussierbar (Enter/Leertaste).
+Reine Anzeige-Erweiterung, keine Änderung an Daten/Positionscode-Logik.
+
 Stand 1.0.12: Positionscode-Format auf W<Wortnummer>P<Zeichenposition> umgestellt
 (Erzeugung im Planungstool; station.html vergleicht weiterhin nur als String).
 Obsoleten Fallback laufnrFromCode entfernt – Laufnummer kommt direkt aus
