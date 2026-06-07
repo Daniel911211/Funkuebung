@@ -44,9 +44,6 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 **Status:** offen · Grundseite `elw.html` erledigt (siehe „Erledigt"), Ausbau später
 
-- **Positionscode erst nach korrekt eingetippter Aufgabe freischalten** (statt
-  einfachem „Code anzeigen"): ELW/Crew tippt die Aufgabe/Antwort, dann erscheint der
-  Code. Vorab klären: was genau muss eingegeben werden, Toleranz?
 - **Stations-Übersicht** (je Station: welche Fahrzeuge mit Laufnummer, Adresse,
   Lagebild groß per Lightbox).
 - **Link-/QR-Liste je Fahrzeug** direkt vom ELW-Gerät (station.html-Links).
@@ -57,6 +54,21 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 ---
 
 ## Erledigt
+
+### [x] Rätsel-Freischaltung (ELW↔FHZ-Funkverkehr) – live
+
+**Status:** erledigt am 2026-06-07 · index v1.33.0 / station v1.0.15 / elw v1.2.0
+(Branch `claude/funny-lovelace-Ljjaw` → `main`).
+
+Freischalt-Rätsel sind jetzt reguläres Live-Feature, gepflegt **je Station** im
+Stations-Detail (Aufgabentyp Text/Rätsel, Geltungsbereich alle/ausgewählte Fahrzeuge).
+Je Seite FHZ-Rätsel (**Antwort der Besatzung**) und ELW-Rätsel (**Rückwort des ELW**),
+**Freitext oder Multiple-Choice**. Gate-Logik stationsseitig (station.html prüft beide
+Wörter); elw.html zeigt das ELW-Rätsel als Overlay und den Code direkt/per Klick
+(`elwCodeDirect`). Zusätzlich „Lagebild ausblenden" je Station und Funkkanäle in der
+QR-Druck-Kopfzeile. Antwortwörter nur als Verschleierungs-Hash exportiert.
+Offene Ausbauideen (nicht umgesetzt): Mehrfachversuch/Toleranz-Feinheiten,
+zeitlich begrenzte Codes.
 
 ### [x] ELW-Koordination als eigene HTML-Seite (`elw.html`)
 
