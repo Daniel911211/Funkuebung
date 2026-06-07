@@ -9,8 +9,10 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.10 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.11 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.11: Aufraeumung – ungenutzte CSS-Regel .code-hint entfernt (der
+  Hinweistext wurde in 1.0.9 entfernt). Keine sichtbare Aenderung.
   Stand 1.0.10: Aufgabenkarte optisch feiner abgestimmt – Beschreibungstext
   (station.task) etwas kleiner, ruhigere Farbe (text-muted) und mehr Abstand zum
   hervorgehobenen Aufgabentitel (station.title). Nur Optik, keine Logikaenderung.
@@ -104,7 +106,6 @@
 
   /* Lösungszeichen – Freischaltung per Positionscode */
   .code-card{margin-top:16px;}
-  .code-hint{margin:0 0 12px;font-size:.95rem;color:var(--text-muted);line-height:1.5;}
   .code-row{display:flex;flex-wrap:wrap;gap:10px;}
   .code-row input{flex:1 1 220px;min-width:0;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--text);font:inherit;font-size:1.05rem;letter-spacing:.04em;padding:12px 14px;text-transform:uppercase;}
   .code-row input::placeholder{color:var(--text-faint);text-transform:none;letter-spacing:0;}
@@ -137,7 +138,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.10" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.11" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
