@@ -1,8 +1,12 @@
 # Arbeitsanweisung – Funkübung-Planungstool
 
 Projekt: statische GitHub-Pages-App (kein Build-Schritt). Alles inline in
-`index.html` (Planungstool) und `station.html` (Teilnehmer-/QR-Ansicht);
-Übungsdaten in `data/uebung.json` (Base64-verpackt). Live ausgeliefert wird
+`index.html` (Planungstool), `station.html` (Teilnehmer-/QR-Ansicht) und
+`elw.html` (ELW-Koordination für Einsatz-/Übungsleitung); Übungsdaten in
+`data/uebung.json` (Base64-verpackt). `station.html` und `elw.html` sind lesende
+Schwesterseiten (laden nur `data/uebung.json`, eigene Versionierung
+`STATION_APP_INFO`/`ELW_APP_INFO`). **`elw.html` zeigt NIE den Lösungssatz oder das
+Lösungszeichen (`char`) – nur Positionscodes.** Live ausgeliefert wird
 ausschließlich der Stand auf dem Branch `main`.
 
 Die vollständige Versionshistorie steht in `CHANGELOG.md` (nicht mehr im
@@ -182,14 +186,29 @@ nicht hart kodieren. `station.html` hält dieselbe Optik eigenständig.
 `station.html` hält die Optik eigenständig (eigene CSS), nutzt aber dieselben
 Token-Werte wie der `:root`-Block in `index.html`.
 
+**`elw.html` (ELW-Koordination):**
+- Eigenständige lesende Seite (lädt nur `data/uebung.json`, eigene CSS mit denselben
+  Token-Werten, eigene `ELW_APP_INFO.version`). Aufruf `elw.html` (alle aktiven
+  Fahrzeuge) oder `elw.html?fhz=<id>` (eines).
+- Aufbau: Kopfkarte (`.elw-top`, Übungsleitung) · Karte **Funkkanäle**
+  (`meta.channels`, Fallback-Hinweis bei altem Export) · Karte **Fahrzeuge &
+  Aufträge**: je aktivem Fahrzeug eine `.veh`-Karte mit Routenliste nach Laufnummer —
+  Laufnummer · Einsatzort (echte Stationsnummer + Aufgabe) · **Positionscode**
+  (verdeckt, „Code anzeigen") · Status **Auftrag erteilt → erledigt**.
+- Status nur **lokal** (localStorage `funkuebung_elw_status_v1`, je Übung über
+  name+datum getrennt), keine Online-Übertragung. **Kein Lösungssatz/`char`.**
+
 ## Datenmodell & Fachlogik (festgeschrieben)
 
 - **`data/uebung.json`-Format:** äußere Hülle
   `{ app:"EA-Funkuebung-Planungstool", format:"b64", payload:<Base64(UTF-8-JSON)> }`.
-  Innen: `{ app, version, generatedAt, meta:{name,date,time},
+  Innen: `{ app, version, generatedAt,
+  meta:{name,date,time,leader,channels:[{tmo,dmo}]},
   vehicles:[{id,type,callsign}],
   stations:[{nr,id,title,task,address,images:[{url,title,vehicleIds}]}],
-  assignments:{ fhzId:{ stationNr:{char,code,laufnr} } } }`.
+  assignments:{ fhzId:{ stationNr:{char,code,laufnr} } } }`. `meta.leader`
+  (Übungsleitung) und `meta.channels` (befüllte Funkkanäle, ohne interne id) ab
+  index v1.31.0 für `elw.html`; ältere Exporte ohne `channels` → Fallback-Hinweis.
 - **Positionscode:** Format `W<Wortnummer>P<Zeichenposition-im-Wort>` (beide
   1-basiert), z. B. `W2P3`. Erzeugung über den **getrimmten** Lösungssatz (nur
   vorne/hinten trimmen): ein Leerzeichen gehört noch zum bisherigen Wort und

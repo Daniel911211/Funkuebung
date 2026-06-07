@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>ELW-Koordination – Funkübung</title>
+<!--
+  ============================================================================
+  FUNKÜBUNG – ELW-KOORDINATION (elw.html)
+  ============================================================================
+  Version: 1.0.0 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Planungstools; zentral in ELW_APP_INFO.version, im Footer sichtbar).
+  Versionsverlauf: siehe CHANGELOG.md.
+  ============================================================================
+  Aufruf:  elw.html            (alle aktiven Fahrzeuge)
+           elw.html?fhz=elw    (nur ein Fahrzeug)
+
+  Lesende Schwesterseite zu station.html für die Einsatzleitung/Übungsleitung.
+  Lädt data/uebung.json und zeigt je Fahrzeug die Route als Dispositionsliste:
+  Laufnummer · Einsatzort · Positionscode (verdeckt, per Klick) · Status
+  (offen → Auftrag erteilt → erledigt). Der ELW gibt der Besatzung bei
+  erledigter Aufgabe den Positionscode durch; diese schaltet damit an
+  station.html ihr Lösungszeichen frei.
+
+  WICHTIG: Diese Seite zeigt NIEMALS den Lösungssatz oder das Lösungszeichen
+  (assignments[..].char) – nur Positionscodes. Status wird ausschließlich
+  LOKAL im Browser (localStorage) gespeichert, keine Online-Übertragung.
+  index.html und station.html werden nicht berührt.
+  ============================================================================
+-->
+<style>
+  :root {
+    --bg-0:#101216; --bg-1:#14161a; --bg-2:#1b1e23;
+    --line:#2c313a; --line-soft:#242931; --text:#e7ebf0; --text-muted:#99a0aa; --text-faint:#6b727c;
+    --red:#861619; --red-strong:#a11f27; --red-soft:rgba(134,22,25,.18); --ok:#3fae6b; --warn:#e0a32e;
+    --radius:14px; --radius-sm:9px;
+    --font:"Segoe UI","Roboto","Helvetica Neue",system-ui,-apple-system,sans-serif;
+    --font-mono:"Consolas","SF Mono","Roboto Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg-0);color:var(--text);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 44px;}
+  .meta{font-size:.82rem;color:var(--text-faint);text-align:center;margin-bottom:12px;}
+
+  .elw-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;padding:14px 18px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);position:relative;overflow:hidden;margin-bottom:16px;}
+  .elw-top::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);}
+  .elw-title{font-size:1.3rem;font-weight:700;}
+  .elw-sub{font-size:.95rem;color:var(--text-muted);}
+  .elw-sub b{color:var(--text);}
+
+  .card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px;}
+  .label{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-faint);margin-bottom:10px;}
+  .muted{font-size:.95rem;color:var(--text-faint);font-style:italic;}
+  .elw-note{margin:0 0 14px;font-size:.86rem;color:var(--text-muted);line-height:1.5;}
+
+  /* Funkkanäle */
+  table.chan{width:100%;border-collapse:collapse;font-size:.98rem;}
+  table.chan th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);text-align:left;padding:4px 10px;border-bottom:1px solid var(--line);}
+  table.chan td{padding:8px 10px;border-bottom:1px solid var(--line-soft);font-family:var(--font-mono);color:var(--text);}
+  table.chan td.chan-nr{color:var(--text-faint);width:2.5em;font-family:var(--font);}
+  table.chan tr:last-child td{border-bottom:none;}
+
+  /* Fahrzeugkarten */
+  .veh{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;}
+  .veh:last-child{margin-bottom:0;}
+  .veh-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line-soft);}
+  .veh-title{font-size:1.05rem;font-weight:700;color:var(--text);}
+  .veh-sub{font-size:.92rem;color:var(--text-muted);}
+  .veh-reset{margin-left:auto;}
+  .route{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .erow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:var(--radius-sm);background:var(--bg-2);}
+  .erow.is-done{opacity:.6;}
+  .erow-empty{opacity:.85;padding:8px 2px;}
+  .lauf{flex:0 0 auto;width:34px;height:34px;border-radius:8px;background:var(--red-soft);border:1px solid var(--red);display:grid;place-items:center;font-family:var(--font-mono);font-weight:800;font-size:1.05rem;color:#fff;}
+  .erow-main{flex:1 1 180px;min-width:0;}
+  .addr{display:block;font-size:1rem;color:var(--text);font-weight:600;line-height:1.3;}
+  .aufg{display:block;font-size:.82rem;color:var(--text-faint);margin-top:2px;}
+  .erow-code{flex:0 0 auto;min-width:128px;text-align:right;}
+  .code{font-family:var(--font-mono);font-size:1.1rem;letter-spacing:.04em;color:var(--ok);font-weight:700;}
+  .code.none{color:var(--text-faint);font-weight:400;font-style:italic;font-size:.85rem;}
+  .erow-act{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end;}
+
+  .btn-mini{font:inherit;font-size:.82rem;font-weight:600;padding:7px 12px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-2);color:var(--text);cursor:pointer;transition:background .14s,border-color .14s,filter .14s;}
+  .btn-mini:hover{background:#23272e;}
+  .btn-give{background:var(--red);border-color:var(--red);color:#fff;}
+  .btn-give:hover{background:var(--red-strong);border-color:var(--red-strong);}
+  .btn-done{background:#2f9e60;border-color:#2f9e60;color:#fff;}
+  .btn-done:hover{filter:brightness(1.08);background:#2f9e60;}
+  .btn-reset,.veh-reset{font-size:.78rem;padding:5px 10px;color:var(--text-muted);}
+  .badge{font-size:.8rem;font-weight:600;padding:4px 9px;border-radius:999px;white-space:nowrap;}
+  .badge-prog{background:rgba(224,163,46,.16);color:var(--warn);border:1px solid rgba(224,163,46,.5);}
+  .badge-ok{background:rgba(63,174,107,.16);color:var(--ok);border:1px solid rgba(63,174,107,.5);}
+
+  .error{margin-top:16px;background:var(--red-soft);border:1px solid var(--red);border-radius:var(--radius);padding:16px 18px;}
+  .error h2{margin:0 0 6px;font-size:1.05rem;color:var(--red-strong);}
+  .error p{margin:0;font-size:.95rem;color:var(--text-muted);}
+  .error code{font-family:var(--font-mono);color:var(--text);background:var(--bg-1);padding:1px 5px;border-radius:4px;}
+  .foot{margin-top:22px;text-align:center;font-size:.74rem;color:var(--text-faint);}
+
+  @media (max-width:560px){
+    .erow-code{min-width:0;text-align:left;flex-basis:100%;}
+    .erow-act{flex-basis:100%;justify-content:flex-start;}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="meta" id="exMeta"></div>
+    <div id="content"><p class="muted">Lade Übungsdaten …</p></div>
+    <div class="foot" id="elwFoot">ELW-Koordination</div>
+  </div>
+<script>
+(function () {
+  "use strict";
+  /* Eigene Version der ELW-Koordination (unabhängig vom Planungstool). */
+  var ELW_APP_INFO = { name: "ELW-Koordination", version: "1.0.0" };
+  var STATUS_KEY = "funkuebung_elw_status_v1";
+
+  var EX = null;            /* geladene Übungsdaten */
+  var revealed = {};        /* aufgedeckte Positionscodes (nur Sitzung): "fhz/nr" -> true */
+
+  /* ---- Hilfsfunktionen (wie station.html) ---- */
+  function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+  function escapeAttr(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  function fmtDate(d){var s=String(d==null?"":d).trim();var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s);return m?(m[3]+"."+m[2]+"."+m[1]):s;}
+  function nonEmpty(v){return v!=null&&String(v).trim()!=="";}
+  function getParam(n){try{return new URLSearchParams(window.location.search).get(n);}catch(e){return null;}}
+  function decodeBase64Utf8(b64){var bin=atob(b64),by=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)by[i]=bin.charCodeAt(i);return new TextDecoder("utf-8").decode(by);}
+  function showError(t,d){document.getElementById("content").innerHTML='<div class="error"><h2>'+escapeHTML(t)+'</h2><p>'+d+'</p></div>';}
+
+  function processWrapper(w){
+    var txt;
+    if(w&&w.format==="b64"&&typeof w.payload==="string")txt=decodeBase64Utf8(w.payload);
+    else if(w&&w.data)txt=JSON.stringify(w.data);
+    else throw new Error("format");
+    var data=JSON.parse(txt);
+    if(!data||!Array.isArray(data.stations))throw new Error("structure");
+    return data;
+  }
+
+  /* ---- Status (lokal je Gerät) ---- */
+  function exKey(){ var m=(EX&&EX.meta)?EX.meta:{}; return (m.name||"")+"|"+(m.date||""); }
+  function loadStatusAll(){ try{ return JSON.parse(localStorage.getItem(STATUS_KEY))||{}; }catch(e){ return {}; } }
+  function saveStatusAll(o){ try{ localStorage.setItem(STATUS_KEY, JSON.stringify(o)); }catch(e){} }
+  function getRowState(fhz,nr){ var ex=loadStatusAll()[exKey()]||{}; return ex[fhz+"/"+nr]||0; }
+  function setRowState(fhz,nr,state){ var all=loadStatusAll(),k=exKey(),ex=all[k]||{}; if(state){ ex[fhz+"/"+nr]=state; } else { delete ex[fhz+"/"+nr]; } all[k]=ex; saveStatusAll(all); }
+  function resetVehicle(fhz){ var all=loadStatusAll(),k=exKey(),ex=all[k]||{}; Object.keys(ex).forEach(function(key){ if(key.indexOf(fhz+"/")===0) delete ex[key]; }); all[k]=ex; saveStatusAll(all); }
+
+  /* ---- Funkkanäle ---- */
+  function channelsHtml(channels){
+    if(!Array.isArray(channels)||channels.length===0){
+      return '<p class="muted">Funkkanäle sind in dieser Datei nicht enthalten. Bitte im Planungstool unter „Druck / Export" die Stationsdaten neu exportieren (ab Version 1.31.0) und data/uebung.json hochladen.</p>';
+    }
+    var rows=channels.map(function(c,i){
+      return '<tr><td class="chan-nr">'+(i+1)+'</td><td>'+(nonEmpty(c.tmo)?escapeHTML(c.tmo):"–")+'</td><td>'+(nonEmpty(c.dmo)?escapeHTML(c.dmo):"–")+'</td></tr>';
+    }).join("");
+    return '<table class="chan"><thead><tr><th>#</th><th>TMO</th><th>DMO</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+
+  /* ---- Fahrzeug-/Routenanzeige ---- */
+  function stationByNr(nr){ return (EX.stations||[]).filter(function(s){return Number(s.nr)===Number(nr);})[0]; }
+
+  function erowHtml(v, r){
+    var st=stationByNr(r.nr)||{};
+    var addr=nonEmpty(st.address)?st.address:"Einsatzort nicht hinterlegt";
+    var sub="Station "+r.nr+(nonEmpty(st.title)?" – "+st.title:"");
+    var key=v.id+"/"+r.nr;
+    var state=getRowState(v.id, r.nr);
+
+    var codeCell;
+    if(!nonEmpty(r.code)) codeCell='<span class="code none">kein Code</span>';
+    else if(revealed[key]) codeCell='<span class="code">'+escapeHTML(r.code)+'</span>';
+    else codeCell='<button type="button" class="btn-mini" data-code-show data-fhz="'+escapeAttr(v.id)+'" data-nr="'+escapeAttr(String(r.nr))+'">Code anzeigen</button>';
+
+    var actCell;
+    if(state===2) actCell='<span class="badge badge-ok">erledigt ✓</span><button type="button" class="btn-mini btn-reset" data-act data-to="0" data-fhz="'+escapeAttr(v.id)+'" data-nr="'+escapeAttr(String(r.nr))+'">zurücksetzen</button>';
+    else if(state===1) actCell='<span class="badge badge-prog">erteilt ✓</span><button type="button" class="btn-mini btn-done" data-act data-to="2" data-fhz="'+escapeAttr(v.id)+'" data-nr="'+escapeAttr(String(r.nr))+'">erledigt</button>';
+    else actCell='<button type="button" class="btn-mini btn-give" data-act data-to="1" data-fhz="'+escapeAttr(v.id)+'" data-nr="'+escapeAttr(String(r.nr))+'">Auftrag erteilt</button>';
+
+    return '<li class="erow'+(state===2?" is-done":"")+'">'+
+             '<span class="lauf">'+escapeHTML(String(r.laufnr))+'</span>'+
+             '<span class="erow-main"><span class="addr">'+escapeHTML(addr)+'</span><span class="aufg">'+escapeHTML(sub)+'</span></span>'+
+             '<span class="erow-code">'+codeCell+'</span>'+
+             '<span class="erow-act">'+actCell+'</span>'+
+           '</li>';
+  }
+
+  function vehicleRowsHtml(v){
+    var amap=(EX.assignments&&EX.assignments[v.id])?EX.assignments[v.id]:{};
+    var nrs=Object.keys(amap);
+    if(!nrs.length) return '<li class="muted erow-empty">Keine Stationszuordnungen für dieses Fahrzeug.</li>';
+    var rows=nrs.map(function(k){ var a=amap[k]||{}; return { nr:Number(k), laufnr:(typeof a.laufnr==="number"?a.laufnr:9999), code:a.code||"" }; });
+    rows.sort(function(a,b){ return a.laufnr-b.laufnr; });
+    return rows.map(function(r){ return erowHtml(v, r); }).join("");
+  }
+
+  function renderVehicles(){
+    var host=document.getElementById("fhzList");
+    if(!host) return;
+    var vehicles=Array.isArray(EX.vehicles)?EX.vehicles:[];
+    var only=getParam("fhz");
+    if(only) vehicles=vehicles.filter(function(v){return v.id===only;});
+    if(!vehicles.length){ host.innerHTML='<p class="muted">'+(only?"Fahrzeug nicht in den Übungsdaten enthalten.":"Keine aktiven Fahrzeuge in den Übungsdaten.")+'</p>'; return; }
+    host.innerHTML=vehicles.map(function(v){
+      return '<div class="veh">'+
+               '<div class="veh-head">'+
+                 '<div class="veh-title">'+escapeHTML(v.type||v.id)+'</div>'+
+                 '<div class="veh-sub">'+escapeHTML(v.callsign||"")+'</div>'+
+                 '<button type="button" class="btn-mini veh-reset" data-vreset data-fhz="'+escapeAttr(v.id)+'">Status zurücksetzen</button>'+
+               '</div>'+
+               '<ol class="route">'+vehicleRowsHtml(v)+'</ol>'+
+             '</div>';
+    }).join("");
+  }
+
+  function render(data){
+    EX=data;
+    var m=data.meta||{};
+    var head=[];
+    if(nonEmpty(m.name)) head.push(escapeHTML(m.name));
+    if(nonEmpty(m.date)) head.push(escapeHTML(fmtDate(m.date)));
+    if(nonEmpty(m.time)) head.push(escapeHTML(m.time)+" Uhr");
+    document.getElementById("exMeta").innerHTML=head.join(" · ");
+    var leaderLine=nonEmpty(m.leader)?'<div class="elw-sub">Übungsleitung: <b>'+escapeHTML(m.leader)+'</b></div>':'';
+
+    document.getElementById("content").innerHTML=
+      '<div class="elw-top"><div class="elw-title">ELW-Koordination</div>'+leaderLine+'</div>'+
+      '<div class="card"><div class="label">Funkkanäle</div>'+channelsHtml(m.channels)+'</div>'+
+      '<div class="card"><div class="label">Fahrzeuge &amp; Aufträge</div>'+
+        '<p class="elw-note">„Code anzeigen" blendet den Positionscode ein, den die Besatzung zur Freischaltung an der Station benötigt. Der Status (Auftrag erteilt / erledigt) wird nur auf diesem Gerät gespeichert.</p>'+
+        '<div id="fhzList"></div>'+
+      '</div>';
+    renderVehicles();
+  }
+
+  function onContentClick(e){
+    var t=e.target.closest("[data-code-show],[data-act],[data-vreset]");
+    if(!t) return;
+    var fhz=t.getAttribute("data-fhz");
+    if(t.hasAttribute("data-code-show")){ revealed[fhz+"/"+t.getAttribute("data-nr")]=true; renderVehicles(); return; }
+    if(t.hasAttribute("data-act")){ setRowState(fhz, t.getAttribute("data-nr"), parseInt(t.getAttribute("data-to"),10)); renderVehicles(); return; }
+    if(t.hasAttribute("data-vreset")){ if(window.confirm("Status aller Stationen dieses Fahrzeugs zurücksetzen?")){ resetVehicle(fhz); renderVehicles(); } return; }
+  }
+
+  function start(){
+    var ft=document.getElementById("elwFoot"); if(ft) ft.textContent="ELW-Koordination · Version "+ELW_APP_INFO.version;
+    var c=document.getElementById("content"); if(c) c.addEventListener("click", onContentClick);
+    if(typeof fetch==="undefined"){ showError("Nicht unterstützt","Dieser Browser kann die Übungsdaten nicht laden."); return; }
+    fetch("data/uebung.json",{cache:"no-store"})
+      .then(function(r){ if(!r.ok)throw new Error("http "+r.status); return r.json(); })
+      .then(function(w){ render(processWrapper(w)); })
+      .catch(function(){ showError("Übungsdaten konnten nicht geladen werden","Die Datei <code>data/uebung.json</code> fehlt, ist ungültig oder noch nicht generiert."); });
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
+})();
+</script>
+</body>
+</html>

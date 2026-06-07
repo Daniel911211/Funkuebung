@@ -11,6 +11,15 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.31.0 (Export um Funkkanäle/Übungsleitung erweitert + ELW-Link):
+data/uebung.json enthält jetzt in meta zusätzlich `leader` (Übungsleitung) und
+`channels` (befüllte Funkkanäle TMO/DMO, ohne interne id) – Grundlage für die neue
+ELW-Koordinationsseite. Rückwärtskompatibel (station.html ignoriert die Zusatzfelder;
+char/code/laufnr unverändert; loesung.phrase weiterhin NICHT exportiert). Im Bereich
+„Druck / Export" → „Stationsdaten" ein dezenter Link „ELW-Koordination öffnen"
+(elw.html, neuer Tab; nur im Planungstool, nicht in der Teilnehmeransicht). Für
+Live-Funkkanäle einmal neu exportieren und data/uebung.json hochladen.
+
 Stand 1.30.0 (Bildersammlung – Lagebilder live aus GitHub-Repo):
 Neue „Bildersammlung" in der Stationsplanung (Button im Lagebild-Kopf, analog zur
 Satzsammlung als Overlay). Lädt die Bilder live aus dem öffentlichen Repository
@@ -516,3 +525,21 @@ als TT.MM.JJJJ. Werte aus data/uebung.json → meta.
 
 Stand 1.0.0: Neutraler Positionscode-Hinweis (ohne Formatbeispiel),
 Versionsanzeige im Footer, Positionscode-Freischaltung des Lösungszeichens.
+
+---
+
+## elw.html (ELW-Koordination)
+
+> Eigene Versionierung (zentral in `ELW_APP_INFO.version`, im Footer sichtbar).
+> Lesende Schwesterseite zu station.html für ELW/Übungsleitung; lädt
+> data/uebung.json. Zeigt NIEMALS Lösungssatz/Lösungszeichen (nur Positionscodes).
+
+Stand 1.0.0: Neue Koordinationsseite. Übungskopf (Name/Datum/Uhrzeit, Übungsleitung)
++ Funkkanäle (TMO/DMO aus meta.channels; Fallback-Hinweis, wenn der Export älter als
+index v1.31.0 ist). Je aktivem Fahrzeug eine Karte mit der Route nach Laufnummer:
+Laufnummer · Einsatzort (echte Stationsnummer + Aufgabe) · Positionscode (verdeckt,
+per „Code anzeigen") · Status „Auftrag erteilt" → „erledigt". Status nur LOKAL je
+Gerät (localStorage `funkuebung_elw_status_v1`, je Übung getrennt über name+datum),
+Reset je Fahrzeug. Optionaler Filter `?fhz=<id>`. Gleiche dunkle Optik/Design-Tokens
+wie station.html; kein Lösungszeichen, keine Online-Übertragung, keine Änderung an
+index.html-Logik oder data/uebung.json.
