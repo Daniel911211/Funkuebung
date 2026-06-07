@@ -11,6 +11,19 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.29.0 (QR-Code-Plan – Vollständigkeitsprüfung + Dashboard-Pill, aktiv-basiert):
+Der QR-Code-Plan hat jetzt einen eigenen Status (vorher dauerhaft „Offen", zählte
+nie zur Fortschrittsleiste → 100 % unmöglich). SOLL = vorhandene Stationen × AKTIVE
+Fahrzeuge (jeder Link enthält echte Stationsnummer + Fahrzeug-ID, also je Kombination
+ein QR-Code). Vollständig, wenn: GitHub-Basislink gesetzt, mindestens ein Fahrzeug
+aktiv, Stationen vorhanden und für jede Kombination ein gültiger QR-Code erzeugbar
+(Anzahl erzeugbarer Codes = SOLL). Der Aktiv-Schalter zählt, Min./Max.-Personen sind
+irrelevant, deaktivierte Fahrzeuge erzeugen keine Pflicht-Codes. Neue Funktionen
+computeQrStatus()/qrCanEncode(); QR-Pill + Fortschritt in updateStatus() verdrahtet;
+Basislink-Eingabe koppelt die Pill live. Effizient: nur der längste Link wird auf
+Erzeugbarkeit geprüft (QR-Kapazität wächst monoton mit der Version). Keine Änderung
+an QR-Übersicht/Druck/Export oder data/uebung.json.
+
 Stand 1.28.2 (Loesungssatz – Buchstaben gross anzeigen): Die Loesungszeichen-Chips
 in den Fahrzeugkarten zeigen Buchstaben jetzt immer GROSS (nur Anzeige via
 toUpperCase; exportierter char und der Code-Vergleich in station.html bleiben
