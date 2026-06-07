@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.29.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.30.0)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -1265,6 +1265,37 @@ body {
   .satz-item-actions { justify-content: flex-end; }
 }
 
+/* --- Bildersammlung-Overlay (Raster) ------------------------------------
+   Nutzt die Satzsammlung-Optik (.satz-overlay/.satz-dialog/.satz-header/
+   .satz-body); ergänzt nur das Thumbnail-Raster. */
+.detail-images-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.bild-dialog { max-width: 880px; }
+.bild-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.bild-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.bild-empty { margin: 0; font-size: .88rem; color: var(--text-faint); font-style: italic; }
+.bild-card {
+  display: flex; flex-direction: column;
+  background: var(--bg-1); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); overflow: hidden;
+}
+.bild-thumb {
+  width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block;
+  background: var(--surface-2); cursor: pointer; border: 0;
+}
+.bild-card-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px;
+}
+.bild-card-name {
+  font-size: .76rem; color: var(--text-muted); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bild-card-foot .btn { padding: 5px 10px; font-size: .78rem; flex: 0 0 auto; }
+
 /* --- Einheitliches Button-System ----------------------------------------
    Farbsemantik (konsequent verwenden):
      .btn-primary    Rot       – Hauptaktion / Speichern / Hinzufügen
@@ -2137,6 +2168,29 @@ body {
   </div>
 </div>
 
+<!-- Bildersammlung-Overlay (live aus dem öffentlichen GitHub-Repo
+     Daniel911211/Bilder; gehört funktional zu „Lagebilder" der Stationsplanung;
+     KEIN eigener Bereich/Tab/Nav-Eintrag). Keine lokale Speicherung der Bilder. -->
+<div class="satz-overlay" id="bildOverlay" hidden>
+  <div class="satz-backdrop" data-bild-close></div>
+  <div class="satz-dialog bild-dialog" role="dialog" aria-modal="true" aria-labelledby="bildTitle">
+    <header class="satz-header">
+      <h2 id="bildTitle">Bildersammlung</h2>
+      <button type="button" class="manual-close" id="bildClose" data-bild-close aria-label="Bildersammlung schließen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </header>
+    <div class="satz-body">
+      <p class="satz-intro">Lagebilder aus dem GitHub-Repository <code>Daniel911211/Bilder</code> – immer der aktuelle Stand. Auf ein Bild klicken oder „Übernehmen", um es als Lagebild zur Station hinzuzufügen. Das manuelle Bild-URL-Feld bleibt weiterhin nutzbar.</p>
+      <div class="bild-actions">
+        <button type="button" class="btn btn-secondary" id="bildReloadBtn">Aktualisieren</button>
+      </div>
+      <p class="satz-msg" id="bildMsg" role="status" aria-live="polite"></p>
+      <div class="bild-grid" id="bildGrid"><!-- per JS gefüllt --></div>
+    </div>
+  </div>
+</div>
+
 <div class="img-lightbox" id="qrLightbox" hidden aria-hidden="true" role="dialog" aria-label="QR-Code-Vorschau">
   <button type="button" class="img-lightbox-close" id="qrLightboxClose" aria-label="Schließen">&times;</button>
   <div class="qr-lightbox-box">
@@ -2174,7 +2228,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.29.0"
+    version: "1.30.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3045,7 +3099,10 @@ body {
       '<div class="detail-images">' +
         '<div class="detail-images-head">' +
           '<label>Lagebilder</label>' +
-          '<button type="button" class="btn btn-primary" id="detAddImg">+ Lagebild hinzufügen</button>' +
+          '<span class="detail-images-actions">' +
+            '<button type="button" class="btn btn-secondary" id="detImgLib">Bildersammlung</button>' +
+            '<button type="button" class="btn btn-primary" id="detAddImg">+ Lagebild hinzufügen</button>' +
+          '</span>' +
         '</div>' +
         '<div id="detImageList"></div>' +
       '</div>';
@@ -3079,6 +3136,9 @@ body {
     });
     document.getElementById("detAddImg").addEventListener("click", function () {
       addStationImage(s.id);
+    });
+    document.getElementById("detImgLib").addEventListener("click", function () {
+      openBildOverlay(s.id);
     });
 
     syncTitleError();
@@ -3299,6 +3359,22 @@ body {
     var s = list[indexOfId(list, stationId)];
     if (!s) return;
     s.images.push({ id: newImageId(), title: "Lagebild " + (s.images.length + 1), url: "", vehicleIds: [] });
+    saveStations(list);
+    renderStationImages(stationId);
+    renderStationList();
+    updateStationSummary();
+    updateStatus();
+  }
+  /* Fügt der Station ein Lagebild mit vorgegebener URL hinzu (aus der
+     Bildersammlung). Ist bereits ein Lagebild ohne URL vorhanden, wird dessen
+     URL gefüllt (kein leerer Rest-Eintrag), sonst ein neues Lagebild angelegt. */
+  function addStationImageWithUrl(stationId, url) {
+    var list = loadStations();
+    var s = list[indexOfId(list, stationId)];
+    if (!s) return;
+    var empty = s.images.filter(function (im) { return !nonEmpty(im.url); })[0];
+    if (empty) { empty.url = String(url == null ? "" : url); }
+    else { s.images.push({ id: newImageId(), title: "Lagebild " + (s.images.length + 1), url: String(url == null ? "" : url), vehicleIds: [] }); }
     saveStations(list);
     renderStationImages(stationId);
     renderStationList();
@@ -4547,6 +4623,142 @@ body {
   }
 
   /* ======================================================================
+     BILDERSAMMLUNG (Overlay) – live aus GitHub
+     ----------------------------------------------------------------------
+     Holt die Lagebilder direkt aus dem öffentlichen Repo Daniel911211/Bilder
+     über die GitHub-Contents-API (im Browser, mit kurzem In-Memory-Cache
+     gegen das unauthentifizierte Limit von 60 Abrufen/Stunde). Auswahl fügt
+     das gewählte Bild als neues Lagebild zur aktuellen Station hinzu (raw-URL
+     aus GitHub). Die Bilder selbst werden NICHT lokal gespeichert; das
+     manuelle Bild-URL-Feld bleibt unabhängig nutzbar. Analog zur
+     Satzsammlung (eigenes Overlay, kein eigener Bereich/Tab). ============ */
+  var BILD_API = "https://api.github.com/repos/Daniel911211/Bilder/contents";
+  var BILD_RAW_BASE = "https://raw.githubusercontent.com/Daniel911211/Bilder/main/";
+  var BILD_CACHE_TTL = 10 * 60 * 1000; /* 10 Minuten */
+  var bildCache = null;          /* { fetchedAt, items:[{name,url}] } */
+  var bildLastFocus = null;
+  var bildTargetStation = null;
+  var bildLoading = false;
+
+  function bildMsg(text, kind) {
+    var el = document.getElementById("bildMsg");
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "satz-msg" + (kind ? " " + kind : "");
+  }
+
+  function bildIsImageName(name) {
+    return /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(name || "");
+  }
+
+  /* Holt die Bildliste live aus GitHub; cb(err, items). Nutzt den Cache,
+     sofern nicht erzwungen (force) und nicht älter als BILD_CACHE_TTL. */
+  function bildFetchList(force, cb) {
+    var now = Date.now();
+    if (!force && bildCache && (now - bildCache.fetchedAt) < BILD_CACHE_TTL) {
+      cb(null, bildCache.items); return;
+    }
+    if (bildLoading) return;
+    bildLoading = true;
+    fetch(BILD_API, { headers: { "Accept": "application/vnd.github+json" } })
+      .then(function (r) {
+        if (r.status === 403) throw new Error("rate");
+        if (!r.ok) throw new Error("http");
+        return r.json();
+      })
+      .then(function (data) {
+        if (!Array.isArray(data)) throw new Error("format");
+        var items = data
+          .filter(function (e) { return e && e.type === "file" && bildIsImageName(e.name); })
+          .map(function (e) { return { name: e.name, url: e.download_url || (BILD_RAW_BASE + encodeURIComponent(e.name)) }; })
+          .sort(function (a, b) { return a.name.localeCompare(b.name, "de"); });
+        bildCache = { fetchedAt: Date.now(), items: items };
+        bildLoading = false;
+        cb(null, items);
+      })
+      .catch(function (err) {
+        bildLoading = false;
+        cb(err || new Error("unknown"), null);
+      });
+  }
+
+  function renderBildGrid(force) {
+    var host = document.getElementById("bildGrid");
+    if (!host) return;
+    host.innerHTML = '<p class="bild-empty">Bilder werden geladen …</p>';
+    bildMsg("");
+    bildFetchList(force, function (err, items) {
+      if (err) {
+        host.innerHTML = '<p class="bild-empty">Keine Bilder geladen.</p>';
+        if (err.message === "rate") {
+          bildMsg("GitHub-Abruflimit erreicht (60 Abrufe/Stunde). Bitte später erneut aktualisieren. Solange kann eine Bild-URL manuell eingetragen werden.", "warn");
+        } else {
+          bildMsg("Bilder konnten nicht geladen werden (offline oder Repository nicht erreichbar). Eine Bild-URL kann weiterhin manuell eingetragen werden.", "warn");
+        }
+        return;
+      }
+      if (!items.length) {
+        host.innerHTML = '<p class="bild-empty">Im Repository wurden keine Bilddateien gefunden.</p>';
+        return;
+      }
+      host.innerHTML = items.map(function (it, i) {
+        return '<div class="bild-card">' +
+                 '<img class="bild-thumb" loading="lazy" alt="' + escapeAttr(it.name) + '" src="' + escapeAttr(it.url) + '" data-bild-take="' + i + '">' +
+                 '<div class="bild-card-foot">' +
+                   '<span class="bild-card-name" title="' + escapeAttr(it.name) + '">' + escapeHTML(it.name) + '</span>' +
+                   '<button type="button" class="btn btn-primary" data-bild-take="' + i + '">Übernehmen</button>' +
+                 '</div>' +
+               '</div>';
+      }).join("");
+      host.querySelectorAll("[data-bild-take]").forEach(function (el) {
+        el.addEventListener("click", function () {
+          bildTake(items[parseInt(el.dataset.bildTake, 10)]);
+        });
+      });
+      bildMsg(items.length + (items.length === 1 ? " Bild geladen." : " Bilder geladen."), "ok");
+    });
+  }
+
+  function bildTake(item) {
+    if (!item || !bildTargetStation) return;
+    addStationImageWithUrl(bildTargetStation, item.url);
+    closeBildOverlay();
+  }
+
+  function openBildOverlay(stationId) {
+    var ov = document.getElementById("bildOverlay");
+    if (!ov) return;
+    bildTargetStation = stationId;
+    bildLastFocus = document.activeElement;
+    ov.hidden = false;
+    document.body.style.overflow = "hidden";
+    var c = document.getElementById("bildClose"); if (c) c.focus();
+    renderBildGrid(false);
+  }
+  function closeBildOverlay() {
+    var ov = document.getElementById("bildOverlay");
+    if (!ov) return;
+    ov.hidden = true;
+    document.body.style.overflow = "";
+    bildTargetStation = null;
+    if (bildLastFocus && typeof bildLastFocus.focus === "function") bildLastFocus.focus();
+  }
+
+  function initBildersammlung() {
+    var reload = document.getElementById("bildReloadBtn");
+    if (reload) reload.addEventListener("click", function () { renderBildGrid(true); });
+    document.querySelectorAll("[data-bild-close]").forEach(function (el) {
+      el.addEventListener("click", closeBildOverlay);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        var ov = document.getElementById("bildOverlay");
+        if (ov && !ov.hidden) closeBildOverlay();
+      }
+    });
+  }
+
+  /* ======================================================================
      QR-CODE-PLAN
      ----------------------------------------------------------------------
      Erzeugt je Kombination aus Station und aktivem Fahrzeug einen Link auf die
@@ -5169,6 +5381,7 @@ body {
     initRoutes();
     initLoesung();
     initSatzsammlung();
+    initBildersammlung();
     initQr();
     initDruck();
     initManual();
