@@ -13,9 +13,12 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.27.2)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.27.3)
   ============================================================================
-  Stand 1.27.2 (Export-Button gekuerzt): Button im Block "Stationsdaten" heisst
+  Stand 1.27.3 (Aufraeumung): Ungenutzte CSS-Regeln (.qr-note, .label-optional)
+  entfernt; Dashboard-Kachel "Loesungssatz" gekuerzt (ohne Klammerzusatz, analog
+  zum Bereichskopf). Nur Aufraeumung, keine Funktions-/Logikaenderung.
+  Davor – Stand 1.27.2 (Export-Button gekuerzt): Button im Block "Stationsdaten" heisst
   jetzt "Stationsdaten exportieren" (Funktion unveraendert, Datei bleibt
   data/uebung.json).
   Davor – Stand 1.27.1 (Text-/UI-Aufraeumung): Bereichstexte gekuerzt/aktualisiert
@@ -778,11 +781,6 @@ body {
   color: var(--text-faint);
   line-height: 1.35;
 }
-/* "(optional)"-Zusatz an Feld-Labels: dezent, geringeres Gewicht */
-.label-optional {
-  font-weight: 400;
-  color: var(--text-faint);
-}
 
 /* dezenter Pflicht-Stern (passt zum roten Akzent) */
 .req {
@@ -1400,8 +1398,6 @@ body {
 #sec-qr > .panel { margin-top: 18px; }
 #sec-qr > .panel:first-of-type { margin-top: 0; }
 .qr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
-.qr-note { margin: 0; font-size: .85rem; color: var(--text-faint); line-height: 1.5; }
-.qr-note code { font-family: var(--font-mono); color: var(--text-muted); }
 .qr-empty { margin: 0; font-size: .9rem; color: var(--text-faint); font-style: italic; }
 #qrOverview { display: flex; flex-direction: column; gap: 14px; }
 .qr-card { background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--red); border-radius: var(--radius); padding: 14px 16px 10px; }
@@ -2511,7 +2507,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.27.2"
+    version: "1.27.3"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2522,7 +2518,7 @@ body {
     { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung." },
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Aufgabe, Aufgabenbeschreibung und Lagebilder je Station festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
-    { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf aktive Fahrzeuge und Stationen verteilen (max. 1 Zeichen je Fahrzeug/Station)." },
+    { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf Fahrzeuge und Stationen verteilen." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
