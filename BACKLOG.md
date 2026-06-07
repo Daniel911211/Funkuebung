@@ -40,26 +40,33 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
   ändern · Codes exakt passend zu station.html · Lösungssatz nie im Klartext in
   `data/uebung.json` · nur für ELW/Übungsleitung, nicht für Teilnehmer.
 
-### [ ] ELW-Koordination als eigene HTML-Seite
+### [ ] ELW-Koordination – Ausbauideen (Folgepunkte)
 
-**Status:** offen · größerer späterer Ausbau
+**Status:** offen · Grundseite `elw.html` erledigt (siehe „Erledigt"), Ausbau später
 
-- **Ziel:** eigene Seite für ELW/Übungs-/Spielleitung.
-- **Dateiname:** `elw.html` oder `elw-koordination.html` (vorab mit Nutzer
-  abstimmen).
-- **Inhalte (möglich):** Übersicht Fahrzeuge/Stationen · Routen/nächste Stationen ·
-  Status je Fahrzeug/Station · Positionscodes · Lösungssatz-/Zeichenstatus ·
-  optional Notizen/Rückmeldungen · optional Druck-/Auswertungsansicht.
-- **Vorab klären:** nur Anzeige oder aktive Statuspflege? · lokale Speicherung? ·
-  Positionscode-Liste integrieren? · GPS-Status dort anzeigen? · Datenbasis?
-- **Randbedingungen:** gleiche dunkle Leitstellen-Optik + Design-Tokens (CLAUDE.md) ·
-  keine Serverpflicht · keine Online-Übertragung ohne Entscheidung · QR-/Stations-
-  logik nicht beschädigen · `data/uebung.json` nicht ohne fachliche Entscheidung
-  erweitern.
+- **Positionscode erst nach korrekt eingetippter Aufgabe freischalten** (statt
+  einfachem „Code anzeigen"): ELW/Crew tippt die Aufgabe/Antwort, dann erscheint der
+  Code. Vorab klären: was genau muss eingegeben werden, Toleranz?
+- **Stations-Übersicht** (je Station: welche Fahrzeuge mit Laufnummer, Adresse,
+  Lagebild groß per Lightbox).
+- **Link-/QR-Liste je Fahrzeug** direkt vom ELW-Gerät (station.html-Links).
+- **Weitere Rollen/Aufgaben**, „damit jeder etwas zu tun hat" (offen für Ideen).
+- **Randbedingungen:** kein Lösungssatz/`char` auf `elw.html` · gleiche Optik/Tokens ·
+  keine Online-Übertragung · QR-/Stationslogik nicht beschädigen.
 
 ---
 
 ## Erledigt
+
+### [x] ELW-Koordination als eigene HTML-Seite (`elw.html`)
+
+**Status:** erledigt am 2026-06-07 · `elw.html` v1.0.0 / index.html v1.31.0
+
+Neue lesende Schwesterseite `elw.html` für ELW/Übungsleitung: Übungskopf +
+Funkkanäle + je Fahrzeug die Route nach Laufnummer (Einsatzort · Positionscode
+verdeckt/„Code anzeigen" · Status „Auftrag erteilt → erledigt", lokal je Gerät).
+**Kein Lösungssatz/`char`.** Dafür Export erweitert (`meta.leader`,
+`meta.channels`). Ausbauideen → Abschnitt „Offen".
 
 ### [x] Stationsplanung: Feld „Kurzbeschreibung / Hinweise" umbenennen
 
