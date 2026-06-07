@@ -9,8 +9,10 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.4 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.5 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.5: Einsatzort-Fallback erweitert (address -> location -> ort -> einsatzort
+  -> title -> neutral).
   Stand 1.0.4: Teilnehmeranzeige zeigt jetzt die LAUFNUMMER der echten Station in
   der Fahrzeugroute (Station 1..N) statt der echten Stationsnummer/Bezeichnung; die
   2. Kopfzeile zeigt Fahrzeug · Einsatzort/Adresse der echten Station (Fallback:
@@ -116,7 +118,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.4" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.5" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -162,7 +164,12 @@
     if(!laufnr){ showError("Anzeige nicht möglich","Die Laufnummer dieser Station für dieses Fahrzeug konnte nicht ermittelt werden. Bitte die Übungsdaten (data/uebung.json) im Planungstool neu exportieren und hochladen."); return; }
 
     /* Einsatzort der ECHTEN Station: Adresse → (Stationsort) → Titel → neutral. */
-    var ort = nonEmpty(station.address) ? station.address : (nonEmpty(station.title) ? station.title : "Einsatzort nicht hinterlegt");
+    var ort = nonEmpty(station.address) ? station.address
+            : nonEmpty(station.location) ? station.location
+            : nonEmpty(station.ort) ? station.ort
+            : nonEmpty(station.einsatzort) ? station.einsatzort
+            : nonEmpty(station.title) ? station.title
+            : "Einsatzort nicht hinterlegt";
 
     var meta=data.meta||{};
     var ex=[];
