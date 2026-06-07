@@ -13,9 +13,15 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.27.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.27.1)
   ============================================================================
-  Stand 1.27.0 (Stationsbegriffe + Pflichtfeld "Aufgabe"): In der Stationsplanung
+  Stand 1.27.1 (Text-/UI-Aufraeumung): Bereichstexte gekuerzt/aktualisiert
+  (Stationsplanung, Routenplanung, Loesungssatz), Hinweistext unter "Automatische
+  Fahrzeugrouten" und QR-Hinweisblock entfernt, Export-Button heisst jetzt
+  "Stationsdaten fuer QR-Seite exportieren" (Funktion unveraendert, Datei bleibt
+  data/uebung.json). Stations-Notizfeld "Kurzbeschreibung / Hinweise" -> "Notiz
+  fuer die Uebungsleitung" (internes Feld, nur Label). Keine Logikaenderung.
+  Davor – Stand 1.27.0 (Stationsbegriffe + Pflichtfeld "Aufgabe"): In der Stationsplanung
   heisst die Spalte/das Feld "Bezeichnung" jetzt "Aufgabe" (kurzer Titel, intern
   title) und "Aufgabe kurz"/"Aufgabe der Station" heisst "Aufgabenbeschreibung"
   (ausfuehrlicher Text, intern task). "Aufgabe" ist Pflichtfeld (*, Fehlermeldung
@@ -2120,7 +2126,7 @@ body {
     <section class="section" id="sec-stationen">
       <div class="section-head">
         <h2>Stationsplanung</h2>
-        <p>Inhalt der Stationen: Bezeichnung, Aufgabe, Hinweise und Lagebilder. Standort, Adresse und Koordinaten folgen später in der Routenplanung.</p>
+        <p>Aufgabe, Aufgabenbeschreibung und Lagebilder der Stationen festlegen. Einsatzort, Adresse und Koordinaten werden in der Routenplanung gepflegt.</p>
       </div>
 
       <!-- Flexible Stationsverwaltung: Liste (Reihenfolge, löschen) +
@@ -2169,7 +2175,7 @@ body {
     <section class="section" id="sec-routen">
       <div class="section-head">
         <h2>Routenplanung</h2>
-        <p>Stationen per Klick auf der Karte positionieren, globalen GPS-Radius pflegen und die automatisch versetzten Fahrzeugrouten anzeigen. Strecke und Fahrzeit der Grundroute (Station 1 → … → letzte Station, ohne Rückweg) werden über Straßenrouting berechnet.</p>
+        <p>Einsatzorte, GPS-Radius und automatisch versetzte Fahrzeugrouten übersichtlich planen.</p>
       </div>
 
       <!-- Karten-Arbeitsbereich: links Steuerung + Streckenübersicht, rechts die Karte -->
@@ -2234,7 +2240,6 @@ body {
       <!-- 5) Automatische Fahrzeugrouten (nur aktive Fahrzeuge) -->
       <div class="panel">
         <h3 class="subsection-title">Automatische Fahrzeugrouten</h3>
-        <p class="field-hint" style="margin-bottom:14px">Alle aktiven Fahrzeuge fahren alle Stationen an. Der Startpunkt wird je Fahrzeug automatisch versetzt, damit nicht alle Fahrzeuge an derselben Station beginnen. Die Reihenfolge wird automatisch berechnet.</p>
         <div id="routeVehicleList"><!-- per JS gefüllt --></div>
       </div>
     </section>
@@ -2246,7 +2251,7 @@ body {
     <section class="section" id="sec-loesung">
       <div class="section-head">
         <h2>Lösungssatz</h2>
-        <p>Lösungssatz der Übung erfassen und – nach dem Prinzip „max. 1 Zeichen je Fahrzeug und Station" – automatisch auf die aktiven Fahrzeuge und ihre Stationsreihenfolge verteilen. Überschüssige Zeichen werden der Übungsleitung / ELW zugewiesen.</p>
+        <p>Lösungssatz erfassen und automatisch auf Fahrzeuge und Stationen verteilen.</p>
       </div>
 
       <!-- 1) Lösungssatz erfassen -->
@@ -2316,11 +2321,6 @@ body {
         </div>
         <div id="qrOverview"><!-- per JS gefüllt --></div>
       </div>
-
-      <!-- 3) Hinweis: Druck/Export folgt -->
-      <div class="panel">
-        <p class="qr-note">Der Export der Übungsdaten (<code>data/uebung.json</code>) und der komplette Planungsexport/-import folgen im Bereich „Druck / Export".</p>
-      </div>
     </section>
 
     <!-- ----- 8) DRUCK / EXPORT ----------------------------------------- -->
@@ -2361,7 +2361,7 @@ body {
       <div class="panel de-card">
         <div class="de-card-head"><span class="de-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><h3 class="subsection-title">Stationsdaten</h3></div>
         <div class="de-actions">
-          <button type="button" class="btn btn-secondary" id="uebungExportBtn">data/uebung.json exportieren</button>
+          <button type="button" class="btn btn-secondary" id="uebungExportBtn">Stationsdaten für QR-Seite exportieren</button>
         </div>
         <p class="de-msg" id="uebungMsg" role="status" aria-live="polite"></p>
       </div>
@@ -2508,7 +2508,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.27.0"
+    version: "1.27.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2517,7 +2517,7 @@ body {
     { id: "uebersicht", label: "Übersicht",       icon: "grid",    nav: true,  card: false },
     { id: "grunddaten", label: "Grunddaten",      icon: "doc",     nav: true,  card: true,  desc: "Übungstitel, Datum, Uhrzeit, Übungsleitung sowie Funkkanäle (TMO/DMO)." },
     { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung." },
-    { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Inhalte der Stationen, Aufgaben, Hinweise und Lagebilder festlegen." },
+    { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Aufgabe, Aufgabenbeschreibung und Lagebilder je Station festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
     { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf aktive Fahrzeuge und Stationen verteilen (max. 1 Zeichen je Fahrzeug/Station)." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
@@ -3368,8 +3368,8 @@ body {
         '<textarea id="detTask" class="detail-task" rows="5" placeholder="Ausführlicher Aufgabentext für die Teilnehmer">' + escapeAttr(s.task) + '</textarea>' +
       '</div>' +
       '<div class="detail-field">' +
-        '<label for="detDesc">Kurzbeschreibung / Hinweise</label>' +
-        '<textarea id="detDesc" rows="3" placeholder="optionale Hinweise">' + escapeAttr(s.description) + '</textarea>' +
+        '<label for="detDesc">Notiz für die Übungsleitung</label>' +
+        '<textarea id="detDesc" rows="3" placeholder="Nur intern – für Teilnehmer nicht sichtbar">' + escapeAttr(s.description) + '</textarea>' +
       '</div>' +
       '<div class="detail-images">' +
         '<div class="detail-images-head">' +

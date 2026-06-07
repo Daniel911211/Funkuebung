@@ -9,20 +9,18 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
-### [ ] Stationsplanung: Feld „Kurzbeschreibung / Hinweise" umbenennen
-
-**Status:** offen · vorgemerkt am 2026-06-07 · Priorität: niedrig
-
-- Sichtbares Label **„Kurzbeschreibung / Hinweise"** → **„Notiz für die Übungsleitung"**.
-- Betrifft `index.html` → `renderStationDetail()` (Label des `detDesc`-Feldes;
-  ggf. Platzhalter „optionale Hinweise" passend anpassen).
-- Es ist ein **internes Feld** (intern `description`): wird **nicht** exportiert,
-  Teilnehmer sehen es nie → nur das **Label** ändern, Feldname/Logik bleiben.
-- Mit dem nächsten ohnehin geplanten Patch umsetzen, Versionsregel beachten.
+_(aktuell keine offenen Punkte)_
 
 ---
 
 ## Erledigt
+
+### [x] Stationsplanung: Feld „Kurzbeschreibung / Hinweise" umbenennen
+
+**Status:** erledigt am 2026-06-07 · umgesetzt mit index.html v1.27.1
+
+Label **„Kurzbeschreibung / Hinweise" → „Notiz für die Übungsleitung"** (internes
+Feld `description`, nur Label + Platzhalter; Feldname/Logik unverändert).
 
 ### [x] Stationsplanung: Begriffe „Aufgabe" / „Aufgabenbeschreibung" + Pflichtfeld
 
