@@ -170,22 +170,31 @@ nicht hart kodieren. `station.html` hält dieselbe Optik eigenständig.
   `.section.active` sichtbar). Jede Section: `.section-head` (h2 + Beschreibung)
   + Inhalt; das Dashboard nutzt `.card-grid` mit anklickbaren Kacheln.
 - `SECTIONS`-Reihenfolge = Navigation: Übersicht · Grunddaten · Fahrzeuge ·
-  Stationsplanung · Routenplanung · Lösungssatz · **Rätsel (Test)** · QR-Code-Plan ·
-  Druck/Export. („Rätsel (Test)" = Freischalt-Rätsel-Testfunktion, siehe unten;
-  rückbaubar – nur auf dem Testbranch, nicht zwingend live.)
+  Stationsplanung · Routenplanung · Lösungssatz · QR-Code-Plan · Druck/Export.
+  (Die Freischalt-Rätsel werden **im Stations-Detail** gepflegt, kein eigener
+  Bereich mehr.)
+- **Rätsel/Freischaltung im Stations-Detail (ab index v1.33.0):** Aufgabentyp
+  „Text"/„Rätsel" je Station; bei „Rätsel" ein Editor mit **Geltungsbereich** (alle /
+  ausgewählte Fahrzeuge, Chips wie Lagebilder), **FHZ-Rätsel** (Antwort der Besatzung)
+  und **ELW-Rätsel** (Rückwort des ELW), je **Freitext oder Multiple-Choice**. Zusätzlich
+  je Station „Lagebild ausblenden" und das Pflichtfeld „ELW zeigt Code direkt" (ja/nein).
+  Speicherung im Station-Objekt (`renderStationRiddles`/`updateRiddle`).
 
 **`station.html` (Teilnehmeransicht):**
 - `.topbar` (Flex): `.st-no` (rotes Quadrat = **Laufnummer**) + `h1`
   (**Einsatzort/Adresse**) + `.veh` (Fahrzeug · Funkrufname).
 - `.grid` (1 Spalte mobil, ab 760px 2 Spalten): **Aufgabe**-Karte +
-  **Lagebild**-Karte. Fehlt das Lagebild, entfällt die Karte ganz (ab v1.0.7)
-  → Aufgabe spannt über die volle Breite (kein `.grid`-Wrapper).
+  **Lagebild**-Karte. Fehlt das Lagebild – oder ist es per `stations[].hideLagebild`
+  ausgeblendet (ab v1.0.15) – entfällt die Karte ganz → Aufgabe spannt über die volle
+  Breite (kein `.grid`-Wrapper).
 - `.code-card` darunter: Positionscode-Eingabe + freigeschaltetes Lösungszeichen.
-- **Freischalt-Vor-Gate (Testfunktion, ab v1.0.14):** Bei hinterlegtem FHZ-Rätsel
-  und/oder ELW-Wort (`assignments[fhz][s].riddleFhz`/`hashElw`) erscheint oberhalb
-  der `.code-card` eine `.gate-card`: FHZ-Rätsel + Eingabe des herunter­gefunkten
-  ELW-Worts; erst bei korrektem Wort (Hash-Vergleich) wird die `.code-card`
-  sichtbar. Ohne `hashElw` unverändert.
+- **Freischalt-Vor-Gate (ab v1.0.15):** Bei hinterlegten Hashes erscheint oberhalb
+  der `.code-card` eine `.gate-card` mit bis zu zwei Teil-Gates: **FHZ-Gate**
+  (FHZ-Rätsel `riddleFhz` + Eingabe der **Antwort der Besatzung**, Freitext oder
+  Auswahl `fhzOptions` bei `fhzMode==="choice"`; Vergleich `hashFhz`) und **ELW-Gate**
+  (Eingabe des **Rückworts des ELW**; Vergleich `hashElw`). Erst wenn **alle**
+  hinterlegten Wörter stimmen (Hash-Vergleich, case-/leerzeichen-tolerant), wird die
+  `.code-card` sichtbar. Fehlen beide Hashes → `.code-card` direkt sichtbar.
 
 **Druck:** QR-Druckkarten als A4-Seiten je Fahrzeug in Routenreihenfolge
 (Label = Laufnummer, Link = echte Stationsnummer).
@@ -200,15 +209,18 @@ Token-Werte wie der `:root`-Block in `index.html`.
 - Aufbau: Kopfkarte (`.elw-top`, Übungsleitung) · Karte **Funkkanäle**
   (`meta.channels`, Fallback-Hinweis bei altem Export) · Karte **Fahrzeuge &
   Aufträge**: je aktivem Fahrzeug eine `.veh`-Karte mit Routenliste nach Laufnummer —
-  Laufnummer · Einsatzort (echte Stationsnummer + Aufgabe) · **Positionscode**
-  (verdeckt, „Code anzeigen") · Status **Auftrag erteilt → erledigt**.
+  Laufnummer · Einsatzort (Adresse, Hauptzeile) · **Aufgabe** (Stationstitel als
+  eigene Spalte, ohne Stationsnummer/Beschreibung) · **Positionscode** · Status
+  **Auftrag erteilt → erledigt**. Funkkanäle-Spaltenkopf „NR", „Kanal n".
 - Status nur **lokal** (localStorage `funkuebung_elw_status_v1`, je Übung über
   name+datum getrennt), keine Online-Übertragung. **Kein Lösungssatz/`char`.**
-- **FHZ-Wort-Gate (Testfunktion, ab v1.1.0):** Bei hinterlegtem `hashFhz` ersetzt
-  ein Eingabefeld „FHZ-Wort" + „Code freigeben" das „Code anzeigen"; der
-  Positionscode erscheint erst bei korrektem (herauf­gefunktem) FHZ-Wort
-  (Hash-Vergleich). `riddleElw` wird je Route-Eintrag als „ELW-Rätsel" gezeigt.
-  Ohne `hashFhz` unverändert. Weiterhin **kein** `char`/Lösungssatz.
+- **Code-Anzeige + ELW-Rätsel (ab v1.2.0):** `elw.html` prüft **kein** Freischalt-Wort
+  mehr. Der Positionscode erscheint je Station entweder **direkt**
+  (`stations[].elwCodeDirect===true`) oder erst nach Klick „Code anzeigen". Ein
+  hinterlegtes `riddleElw` (mit `elwOptions` bei Multiple-Choice) wird per Button
+  „ELW-Rätsel anzeigen" in einem **Overlay** gezeigt – die ELW löst es und funkt das
+  **Rückwort des ELW** an die Besatzung (Prüfung auf `station.html`). Weiterhin
+  **kein** `char`/Lösungssatz.
 
 ## Datenmodell & Fachlogik (festgeschrieben)
 
@@ -217,22 +229,29 @@ Token-Werte wie der `:root`-Block in `index.html`.
   Innen: `{ app, version, generatedAt,
   meta:{name,date,time,leader,channels:[{tmo,dmo}]},
   vehicles:[{id,type,callsign}],
-  stations:[{nr,id,title,task,address,images:[{url,title,vehicleIds}]}],
+  stations:[{nr,id,title,task,address,hideLagebild,elwCodeDirect,images:[{url,title,vehicleIds}]}],
   assignments:{ fhzId:{ stationNr:{char,code,laufnr} } } }`. `meta.leader`
   (Übungsleitung) und `meta.channels` (befüllte Funkkanäle, ohne interne id) ab
   index v1.31.0 für `elw.html`; ältere Exporte ohne `channels` → Fallback-Hinweis.
-- **Rätsel-Felder (Testfunktion, ab index v1.32.0):** je `assignments`-Zelle
-  optional `riddleFhz`, `riddleElw` (Rätseltexte, Klartext) und `hashFhz`, `hashElw`
-  (Antwortwörter als **Verschleierungs-Hash** cyrb53, gesalzen mit `name+date` –
-  KEIN Krypto, gleiches Niveau wie der Base64-Payload). Alle vier **optional** →
-  fehlen sie, gibt es kein Gate (alter Ablauf). `hashFhz` prüft `elw.html` (FHZ-Wort
-  rauf), `hashElw` prüft `station.html` (ELW-Wort runter). `normWord` = Kleinschrift
-  + alle Whitespaces raus; `hashWord` identisch in index/station/elw. **Wichtig:**
-  Die Rätsel*texte* stehen für beide Seiten in der Datei – nur die Antwortwörter
-  sind verschleiert. Rätsel müssen daher so gebaut sein, dass sie nur mit Wissen
-  **vor Ort** (FHZ) bzw. **der ELW** lösbar sind, sonst lässt sich der Funkverkehr
-  umgehen. Pflege im Bereich „Rätsel (Test)" (lokal `funkuebung_raetsel_test_v1`,
-  Klartext-Wörter nur lokal). **Antwortwörter nie im Klartext exportieren.**
+  `stations[].hideLagebild`/`elwCodeDirect` ab index v1.33.0 (siehe Rätsel).
+- **Rätsel-Felder (ab index v1.33.0):** Pflege je Station im Stations-Detail
+  (`riddle` im Station-Objekt: `scope` „all"/„selected", `vehicleIds`, je Seite `fhz`/
+  `elw` = `{q,mode,options,answer,correct}`). Export je `assignments`-Zelle – nur für
+  Fahrzeuge im Geltungsbereich – optional `riddleFhz`/`riddleElw` (Rätseltexte,
+  Klartext), `fhzMode`/`elwMode` = `"choice"` (+ `fhzOptions`/`elwOptions` als
+  Klartext-Optionen) bei Multiple-Choice und `hashFhz`/`hashElw` (Antwortwörter als
+  **Verschleierungs-Hash** cyrb53, gesalzen mit `name+date` – KEIN Krypto, gleiches
+  Niveau wie der Base64-Payload). Alle Felder **optional** → fehlen sie, gibt es kein
+  Gate (alter Ablauf). Gate-Logik **stationsseitig**: `station.html` prüft `hashFhz`
+  (Antwort der Besatzung, vor Ort gelöst) **und** `hashElw` (Rückwort des ELW,
+  heruntergefunkt); `elw.html` prüft **kein** Wort, zeigt nur `riddleElw` (Overlay)
+  und den Code. Bei Multiple-Choice ist die richtige Option = `options[correct]`; ihr
+  Hash landet in `hashFhz`/`hashElw`, `station.html` vergleicht den Hash der geklickten
+  Option. `normWord` = Kleinschrift + alle Whitespaces raus; `hashWord` identisch in
+  index/station (elw braucht es nicht mehr). **Wichtig:** Rätsel*texte*/Optionen stehen
+  im Klartext in der Datei – nur die Antwortwörter sind verschleiert. Rätsel daher so
+  bauen, dass sie nur mit Wissen **vor Ort** (FHZ) bzw. **der ELW** lösbar sind, sonst
+  lässt sich der Funkverkehr umgehen. **Antwortwörter nie im Klartext exportieren.**
 - **Positionscode:** Format `W<Wortnummer>P<Zeichenposition-im-Wort>` (beide
   1-basiert), z. B. `W2P3`. Erzeugung über den **getrimmten** Lösungssatz (nur
   vorne/hinten trimmen): ein Leerzeichen gehört noch zum bisherigen Wort und

@@ -91,6 +91,14 @@
   .code-msg{margin:12px 0 0;font-size:.95rem;min-height:1.2em;}
   .code-msg.ok{color:var(--ok);} .code-msg.warn{color:var(--warn);}
   .gate-hint{margin:10px 0 12px;font-size:.92rem;color:var(--text-muted);}
+  .gate-part{padding:10px 0;}
+  .gate-part + .gate-part{border-top:1px solid var(--line-soft);margin-top:4px;}
+  .gate-opts{display:flex;flex-wrap:wrap;gap:8px;}
+  .gate-opt{font:inherit;font-size:1rem;padding:11px 16px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-1);color:var(--text);cursor:pointer;transition:border-color .14s,background .14s;}
+  .gate-opt:hover:not(:disabled){border-color:var(--red);}
+  .gate-opt:disabled{cursor:default;opacity:.85;}
+  .gate-opt.correct{border-color:var(--ok);background:rgba(63,174,107,.15);color:var(--ok);font-weight:600;}
+  .gate-opt.wrong{border-color:var(--warn);}
 
   .letterbox{display:flex;align-items:center;gap:18px;margin-top:14px;}
   .letter{flex:0 0 auto;width:104px;height:104px;border-radius:var(--radius);display:grid;place-items:center;background:var(--bg-1);border:2px solid var(--ok);font-family:var(--font-mono);font-weight:800;font-size:3.4rem;color:#fff;}
@@ -119,7 +127,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.14" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.15" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -132,10 +140,11 @@
   /* Positionscode robust normalisieren: Großschreibung, alle Whitespaces raus. */
   function normCode(s){return String(s==null?"":s).toUpperCase().replace(/\s+/g,"");}
 
-  /* --- Freischalt-Wort (TESTFUNKTION) ---------------------------------------
+  /* --- Freischalt-Wörter ----------------------------------------------------
      Verschleierungs-Hash (cyrb53, gesalzen) – KEIN Krypto, identisch zu
-     index.html/elw.html. Prüft das von der ELW herunter­gefunkte ELW-Wort gegen
-     assignments[fhz][s].hashElw, bevor das Positionscode-Feld freigegeben wird.
+     index.html/elw.html. Prüft die vor Ort gelöste „Antwort der Besatzung"
+     (assignments[fhz][s].hashFhz) sowie das von der ELW heruntergefunkte
+     „Rückwort des ELW" (hashElw), bevor das Positionscode-Feld freigegeben wird.
      normWord = Kleinschreibung, alle Whitespaces raus. Salt = name+date. */
   function normWord(s){return String(s==null?"":s).toLowerCase().replace(/\s+/g,"");}
   function saltFromMeta(meta){var m=meta||{};return (m.name||"")+"|"+(m.date||"");}
@@ -193,34 +202,63 @@
       ? '<div class="card"><div class="label">Aufgabe</div>'+aufgabeInner+'</div>'
       : '';
 
-    /* Aufgabe + Lagebild nebeneinander; fehlt das Lagebild, nimmt die Aufgabe die
-       volle Breite ein (kein Grid-Wrapper). */
-    var imgsHtml=lagebildHtml(station,fhz);
+    /* Aufgabe + Lagebild nebeneinander; fehlt das Lagebild – oder ist es für diese
+       Station bewusst ausgeblendet (hideLagebild) – nimmt die Aufgabe die volle
+       Breite ein (kein Grid-Wrapper). */
+    var imgsHtml = station.hideLagebild===true ? "" : lagebildHtml(station,fhz);
     var mainArea = imgsHtml
       ? '<div class="grid">'+aufgabeCard+'<div class="card"><div class="label">Lagebild</div>'+imgsHtml+'</div></div>'
       : aufgabeCard;
 
-    /* Freischalt-Vor-Gate (TESTFUNKTION): FHZ-Rätsel anzeigen (Besatzung löst es
-       vor Ort, funkt das FHZ-Wort hoch) und – falls hinterlegt – das von der ELW
-       herunter­gefunkte ELW-Wort abfragen, bevor das Positionscode-Feld erscheint.
-       Fehlt hashElw → kein Gate, Code-Feld direkt sichtbar (rückwärtskompatibel). */
+    /* Freischalt-Vor-Gate: die Besatzung löst das FHZ-Rätsel vor Ort und gibt die
+       „Antwort der Besatzung" ein (Freitext oder Auswahl); zusätzlich – falls
+       hinterlegt – das von der ELW heruntergefunkte „Rückwort des ELW". Erst wenn
+       alle hinterlegten Wörter stimmen, erscheint das Positionscode-Feld.
+       Fehlen beide Hashes → kein Gate, Code-Feld direkt sichtbar. */
     var riddleFhz = assign && typeof assign.riddleFhz==="string" ? assign.riddleFhz : "";
-    var hashElw   = assign && typeof assign.hashElw==="string"   ? assign.hashElw   : "";
-    var needWordGate = nonEmpty(hashElw);
+    var fhzMode   = assign && assign.fhzMode==="choice" ? "choice" : "text";
+    var fhzOptions= assign && Array.isArray(assign.fhzOptions) ? assign.fhzOptions : [];
+    var hashFhz   = assign && typeof assign.hashFhz==="string"  ? assign.hashFhz  : "";
+    var hashElw   = assign && typeof assign.hashElw==="string"  ? assign.hashElw  : "";
+    var needFhz   = nonEmpty(hashFhz);
+    var needElw   = nonEmpty(hashElw);
+    var needGate  = needFhz || needElw;
     var gateCard = "";
-    if(needWordGate || nonEmpty(riddleFhz)){
+    if(needGate){
+      var fhzPart = "";
+      if(needFhz){
+        var fhzAnswer = (fhzMode==="choice")
+          ? '<div class="gate-opts" id="fhzOpts">'+fhzOptions.map(function(o){
+              return '<button type="button" class="gate-opt" data-opt="'+escapeAttr(o)+'">'+escapeHTML(o)+'</button>';
+            }).join("")+'</div>'
+          : '<div class="code-row" id="fhzRow">'+
+              '<input type="text" id="fhzInput" placeholder="Antwort der Besatzung" autocomplete="off" spellcheck="false">'+
+              '<button type="button" class="btn" id="fhzBtn">Prüfen</button>'+
+            '</div>';
+        fhzPart =
+          '<div class="gate-part">'+
+            (nonEmpty(riddleFhz)?'<div class="task">'+escapeHTML(riddleFhz)+'</div>':'')+
+            '<p class="gate-hint">Löse die Aufgabe vor Ort und gib die Antwort der Besatzung ein.</p>'+
+            fhzAnswer+
+            '<p class="code-msg" id="fhzMsg" role="status" aria-live="polite"></p>'+
+          '</div>';
+      }
+      var elwPart = "";
+      if(needElw){
+        elwPart =
+          '<div class="gate-part">'+
+            '<p class="gate-hint">Die Einsatzleitung funkt dir das Rückwort des ELW herunter – gib es hier ein.</p>'+
+            '<div class="code-row" id="elwRow">'+
+              '<input type="text" id="elwInput" placeholder="Rückwort des ELW" autocomplete="off" spellcheck="false">'+
+              '<button type="button" class="btn" id="elwBtn">Prüfen</button>'+
+            '</div>'+
+            '<p class="code-msg" id="elwMsg" role="status" aria-live="polite"></p>'+
+          '</div>';
+      }
       gateCard =
         '<div class="card gate-card">'+
           '<div class="label">Freischaltung</div>'+
-          (nonEmpty(riddleFhz)?'<div class="task">'+escapeHTML(riddleFhz)+'</div>':'')+
-          (needWordGate
-            ? '<p class="gate-hint">Löse die Aufgabe und funke das Lösungswort an die Einsatzleitung. Sie funkt dir das ELW-Wort zurück – gib es hier ein, um das Positionscode-Feld freizuschalten.</p>'+
-              '<div class="code-row" id="wordRow">'+
-                '<input type="text" id="wordInput" placeholder="ELW-Wort eingeben" autocomplete="off" spellcheck="false">'+
-                '<button type="button" class="btn" id="wordBtn">Freischalten</button>'+
-              '</div>'+
-              '<p class="code-msg" id="wordMsg" role="status" aria-live="polite"></p>'
-            : '')+
+          fhzPart+elwPart+
         '</div>';
     }
 
@@ -230,7 +268,7 @@
         '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b>'+(nonEmpty(vehicle.callsign)?' · '+escapeHTML(vehicle.callsign):'')+'</div></div></div>'+
       mainArea+
       gateCard+
-      '<div class="card code-card" id="codeCard"'+(needWordGate?' style="display:none"':'')+'>'+
+      '<div class="card code-card" id="codeCard"'+(needGate?' style="display:none"':'')+'>'+
         '<div class="label">Lösungszeichen</div>'+
         '<div class="code-row" id="codeRow">'+
           '<input type="text" id="codeInput" placeholder="Positionscode eingeben" autocomplete="off" autocapitalize="characters" spellcheck="false">'+
@@ -270,24 +308,60 @@
     btn.addEventListener("click", tryUnlock);
     input.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryUnlock(); } });
 
-    /* Vor-Gate: ELW-Wort prüfen → Positionscode-Feld freigeben. */
-    if(needWordGate){
-      var wInput=document.getElementById("wordInput");
-      var wBtn=document.getElementById("wordBtn");
-      var wMsg=document.getElementById("wordMsg");
+    /* Vor-Gate: „Antwort der Besatzung" (FHZ) und/oder „Rückwort des ELW" (ELW)
+       prüfen. Erst wenn alle hinterlegten Wörter stimmen → Positionscode-Feld. */
+    if(needGate){
       var salt=saltFromMeta(data.meta);
-      function setWMsg(t,k){ wMsg.textContent=t||""; wMsg.className="code-msg"+(k?" "+k:""); }
-      function tryWord(){
-        if(!normWord(wInput.value)){ setWMsg("Bitte das ELW-Wort eingeben.","warn"); return; }
-        if(hashWord(wInput.value, salt)===hashElw){
-          setWMsg("Wort korrekt – Positionscode-Eingabe freigeschaltet.","ok");
-          var wr=document.getElementById("wordRow"); if(wr) wr.style.display="none";
-          var cc=document.getElementById("codeCard"); if(cc) cc.style.display="";
-          if(input) input.focus();
-        } else { setWMsg("Wort stimmt nicht. Bitte erneut prüfen.","warn"); }
+      var fhzOK=!needFhz, elwOK=!needElw;
+      function revealCode(){
+        if(!(fhzOK&&elwOK)) return;
+        var cc=document.getElementById("codeCard"); if(cc) cc.style.display="";
+        if(input) input.focus();
       }
-      if(wBtn) wBtn.addEventListener("click", tryWord);
-      if(wInput) wInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryWord(); } });
+      if(needFhz){
+        var fhzMsg=document.getElementById("fhzMsg");
+        function setFhzMsg(t,k){ if(fhzMsg){ fhzMsg.textContent=t||""; fhzMsg.className="code-msg"+(k?" "+k:""); } }
+        function passFhz(){ fhzOK=true; setFhzMsg("Antwort korrekt.","ok"); revealCode(); }
+        if(fhzMode==="choice"){
+          var opts=document.getElementById("fhzOpts");
+          if(opts) opts.addEventListener("click", function(e){
+            var b=e.target.closest(".gate-opt"); if(!b||fhzOK) return;
+            if(hashWord(b.getAttribute("data-opt"), salt)===hashFhz){
+              b.classList.add("correct");
+              var all=opts.querySelectorAll(".gate-opt"); for(var i=0;i<all.length;i++){ all[i].disabled=true; }
+              passFhz();
+            } else { b.classList.add("wrong"); setFhzMsg("Das stimmt nicht. Bitte erneut versuchen.","warn"); }
+          });
+        } else {
+          var fInput=document.getElementById("fhzInput");
+          var fBtn=document.getElementById("fhzBtn");
+          function tryFhz(){
+            if(!normWord(fInput.value)){ setFhzMsg("Bitte die Antwort der Besatzung eingeben.","warn"); return; }
+            if(hashWord(fInput.value, salt)===hashFhz){
+              var fr=document.getElementById("fhzRow"); if(fr) fr.style.display="none";
+              passFhz();
+            } else { setFhzMsg("Antwort stimmt nicht. Bitte erneut prüfen.","warn"); }
+          }
+          if(fBtn) fBtn.addEventListener("click", tryFhz);
+          if(fInput) fInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryFhz(); } });
+        }
+      }
+      if(needElw){
+        var eInput=document.getElementById("elwInput");
+        var eBtn=document.getElementById("elwBtn");
+        var elwMsg=document.getElementById("elwMsg");
+        function setElwMsg(t,k){ if(elwMsg){ elwMsg.textContent=t||""; elwMsg.className="code-msg"+(k?" "+k:""); } }
+        function tryElw(){
+          if(!normWord(eInput.value)){ setElwMsg("Bitte das Rückwort des ELW eingeben.","warn"); return; }
+          if(hashWord(eInput.value, salt)===hashElw){
+            setElwMsg("Wort korrekt.","ok");
+            var er=document.getElementById("elwRow"); if(er) er.style.display="none";
+            elwOK=true; revealCode();
+          } else { setElwMsg("Wort stimmt nicht. Bitte erneut prüfen.","warn"); }
+        }
+        if(eBtn) eBtn.addEventListener("click", tryElw);
+        if(eInput) eInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryElw(); } });
+      }
     }
   }
 

@@ -11,6 +11,26 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.33.0 (Rätsel-Freischaltung in die Stationsplanung integriert, jetzt live):
+Der eigene Bereich „Rätsel (Test)" entfällt; Freischalt-Rätsel werden nun **direkt
+je Station** im Stations-Detail gepflegt (Aufgabentyp „Text"/„Rätsel"). Ein Rätsel
+pro Station mit **Geltungsbereich** „alle Fahrzeuge" / „ausgewählte Fahrzeuge"
+(Fahrzeugauswahl wie bei den Lagebildern). Je Seite **FHZ-Rätsel** (Antwort der
+Besatzung) und **ELW-Rätsel** (Rückwort des ELW), jeweils als **Freitext oder
+Multiple-Choice**. Zusätzlich je Station: **„Lagebild ausblenden"** und das
+Pflichtfeld **„ELW zeigt Positionscode direkt" (ja/nein)**. Speicherung im
+Station-Objekt (`funkuebung_stationen_v1`: `taskType`, `hideLagebild`,
+`elwCodeDirect`, `riddle`); der frühere Key `funkuebung_raetsel_test_v1` entfällt.
+Export je `assignments`-Zelle (nur Fahrzeuge im Geltungsbereich) optional
+`riddleFhz`/`riddleElw` (Klartext), `fhzMode`/`elwMode`=`choice` + `fhzOptions`/
+`elwOptions` bei Multiple-Choice und `hashFhz`/`hashElw` (Verschleierungs-Hash
+cyrb53, gesalzen mit name+date – Antwortwörter NIE im Klartext). `stations[]` enthält
+zusätzlich `hideLagebild`/`elwCodeDirect`. Gate-Logik jetzt **stationsseitig**: beide
+Wörter werden auf station.html geprüft (FHZ-Selbst-Gate + Rückwort des ELW); elw.html
+prüft kein Wort mehr. Außerdem: **Funkkanäle in der Kopfzeile jeder QR-Druckseite**.
+Alle Rätsel-Felder optional → ohne Pflege bleibt der bisherige Ablauf
+(rückwärtskompatibel). `loesung.phrase` weiterhin NICHT exportiert; `char` unverändert.
+
 Stand 1.32.0 (Rätsel-Freischaltung – TESTFUNKTION, nicht live): Neuer Bereich
 „Rätsel (Test)" zwischen „Lösungssatz" und „QR-Code-Plan". Pro Fahrzeug × echte
 Station lassen sich vier Felder pflegen – FHZ-Rätsel + FHZ-Wort und ELW-Rätsel +
@@ -482,6 +502,17 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
 
+Stand 1.0.15 (Freischalt-Gate flexibler + verständliche Begriffe + Lagebild
+ausblenden): Die Freischalt-Karte prüft jetzt – je nach hinterlegten Hashes – zwei
+Wörter auf der Stationsseite: die **Antwort der Besatzung** (FHZ-Rätsel, vor Ort
+gelöst; Freitext **oder** Auswahl aus Optionen bei Multiple-Choice) und das
+**Rückwort des ELW** (von der ELW heruntergefunkt). Erst wenn alle hinterlegten
+Wörter stimmen (Verschleierungs-Hash, case-/leerzeichen-tolerant), erscheint das
+Positionscode-Feld; fehlen beide Hashes, ist es direkt sichtbar (rückwärtskompatibel).
+Begriffe „FHZ-Wort"/„ELW-Wort" → „Antwort der Besatzung"/„Rückwort des ELW". Neu:
+ist für die Station `hideLagebild` gesetzt, wird die Lagebild-Karte ausgeblendet
+(Aufgabe über volle Breite). Lösungszeichen-Logik unverändert; kein Lösungssatz.
+
 Stand 1.0.14 (Freischalt-Vor-Gate – TESTFUNKTION, nur bei gepflegten Rätseln):
 Ist für eine Fahrzeug-/Stationskombination ein FHZ-Rätsel und/oder ein ELW-Wort
 hinterlegt (`assignments[fhz][s].riddleFhz` / `hashElw` aus data/uebung.json),
@@ -558,6 +589,17 @@ Versionsanzeige im Footer, Positionscode-Freischaltung des Lösungszeichens.
 > Eigene Versionierung (zentral in `ELW_APP_INFO.version`, im Footer sichtbar).
 > Lesende Schwesterseite zu station.html für ELW/Übungsleitung; lädt
 > data/uebung.json. Zeigt NIEMALS Lösungssatz/Lösungszeichen (nur Positionscodes).
+
+Stand 1.2.0 (kein Wort-Gate mehr, ELW-Rätsel als Overlay, Code direkt, neue Optik):
+Das FHZ-Wort-Gate entfällt – die Freischalt-Wörter werden ausschließlich auf
+station.html geprüft. Der Positionscode erscheint je Station entweder **direkt**
+(`elwCodeDirect`=true) oder erst nach Klick „Code anzeigen". Ein hinterlegtes
+**ELW-Rätsel** (`riddleElw`, inkl. Optionen bei Multiple-Choice) wird über den Button
+„ELW-Rätsel anzeigen" in einem **Overlay** gezeigt – die ELW löst es und funkt das
+**Rückwort des ELW** an die Besatzung (Prüfung auf station.html). Zeilenlayout: die
+**Aufgabe** (Stationstitel) steht in einer eigenen Spalte (ohne Stationsnummer/
+Beschreibung), Einsatzort bleibt Hauptzeile. Funkkanäle: Spaltenkopf „#" → „NR",
+„Kanal n"-Bezeichnung, kräftigere TMO/DMO-Werte. Weiterhin KEIN Lösungssatz/`char`.
 
 Stand 1.1.0 (FHZ-Wort-Gate vor dem Positionscode – TESTFUNKTION): Ist für eine
 Fahrzeug-/Stationskombination ein `hashFhz` hinterlegt, erscheint statt „Code
