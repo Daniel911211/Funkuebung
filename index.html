@@ -13,9 +13,14 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.26.6)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.26.7)
   ============================================================================
-  Stand 1.26.6 (QR-Druckkarten: Label = Laufnummer, Link = echte Station + Pruefung):
+  Stand 1.26.7 (data/uebung.json: Laufnummer + Adresse fuer Teilnehmeranzeige): Der
+  Generator schreibt je Zuordnung zusaetzlich laufnr (Routenposition) und je Station
+  address (Einsatzort) in data/uebung.json. station.html zeigt damit Laufnummer +
+  Adresse statt echter Stationsnummer/Bezeichnung (echte Nr bleibt intern fuer
+  Aufgabe/Lagebild/Code/QR). QR-Druckkarten/-Pruefung unveraendert (v1.26.6).
+  Davor –   Stand 1.26.6 (QR-Druckkarten: Label = Laufnummer, Link = echte Station + Pruefung):
   Sichtbare Kartenbeschriftung laeuft je Fahrzeug fortlaufend Station 1..N (Lauf-
   nummer der Route); der QR-Code zeigt weiter auf die ECHTE Stationsnummer
   (station.html?s=<echt>&fhz=<id>). Vor dem Drucken pruefen: Kartenanzahl=Stationen,
@@ -2479,7 +2484,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.26.6"
+    version: "1.26.7"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -5119,13 +5124,13 @@ body {
     var assignments={};
     plan.vehicleAssignments.forEach(function(a, vi){
       assignments[a.vehicle.id]={};
-      a.rows.forEach(function(r, j){ var pos=vi*sc+j; assignments[a.vehicle.id][String(r.stationIndex+1)]={ char:r.char, code:(r.char!=="" ? ("W1P"+(pos+1)) : "") }; });
+      a.rows.forEach(function(r, j){ var pos=vi*sc+j; assignments[a.vehicle.id][String(r.stationIndex+1)]={ char:r.char, code:(r.char!=="" ? ("W1P"+(pos+1)) : ""), laufnr:j+1 }; });
     });
     var inner={
       app:"EA-Funkuebung-Planungstool", version:APP_INFO.version, generatedAt:new Date().toISOString(),
       meta:{ name:grund.name||"", date:grund.date||"", time:grund.time||"" },
       vehicles: active.map(function(v){ return { id:v.id, type:v.type, callsign:v.callsign }; }),
-      stations: stations.map(function(st,idx){ return { nr:idx+1, id:st.id, title:st.title||"", task:st.task||"", images:(Array.isArray(st.images)?st.images:[]).map(function(im){ return { url:im.url||"", title:im.title||"", vehicleIds:(Array.isArray(im.vehicleIds)?im.vehicleIds.slice():[]) }; }) }; }),
+      stations: stations.map(function(st,idx){ var p=st.position||{}; return { nr:idx+1, id:st.id, title:st.title||"", task:st.task||"", address:(p.address||""), images:(Array.isArray(st.images)?st.images:[]).map(function(im){ return { url:im.url||"", title:im.title||"", vehicleIds:(Array.isArray(im.vehicleIds)?im.vehicleIds.slice():[]) }; }) }; }),
       assignments: assignments
     };
     var wrapper={ app:"EA-Funkuebung-Planungstool", format:"b64", payload:deB64Utf8(JSON.stringify(inner)) };
