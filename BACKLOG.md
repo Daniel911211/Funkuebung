@@ -7,9 +7,19 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ---
 
-## [ ] Stationsplanung: Begriffe „Aufgabe" / „Aufgabenbeschreibung" + Pflichtfeld
+## Erledigt
 
-**Status:** offen · vorgemerkt am 2026-06-07 · umzusetzen mit dem nächsten geplanten Patch
+## [x] Stationsplanung: Begriffe „Aufgabe" / „Aufgabenbeschreibung" + Pflichtfeld
+
+**Status:** erledigt am 2026-06-07 · umgesetzt mit index.html v1.27.0 / station.html v1.0.8
+
+Umsetzung: Tabelle/Detail-Labels umbenannt („Bezeichnung"→„Aufgabe",
+„Aufgabe kurz"/„Aufgabe der Station"→„Aufgabenbeschreibung"); „Aufgabe" (intern
+`title`) ist Pflichtfeld mit `*`, Inline-Fehlermeldung „Bitte eine Aufgabe
+eintragen." und steuert die Vollständigkeit; „Aufgabenbeschreibung" (intern
+`task`) optional. station.html zieht mit (Block „Aufgabe" oben, sofern Titel
+hinterlegt; bisherige Karte heißt „Aufgabenbeschreibung"). Interne Feldnamen
+unverändert (`title`/`task`), bestehende Daten bleiben erhalten.
 
 ### Tabelle (Stationsübersicht)
 - Spalte **„Bezeichnung"** umbenennen in **„Aufgabe"**

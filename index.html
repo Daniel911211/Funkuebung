@@ -13,9 +13,17 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.26.9)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.27.0)
   ============================================================================
-  Stand 1.26.9 (Stationsplanung-Zusammenfassung gestrafft): Die Zeile zeigt jetzt
+  Stand 1.27.0 (Stationsbegriffe + Pflichtfeld "Aufgabe"): In der Stationsplanung
+  heisst die Spalte/das Feld "Bezeichnung" jetzt "Aufgabe" (kurzer Titel, intern
+  title) und "Aufgabe kurz"/"Aufgabe der Station" heisst "Aufgabenbeschreibung"
+  (ausfuehrlicher Text, intern task). "Aufgabe" ist Pflichtfeld (*, Fehlermeldung
+  "Bitte eine Aufgabe eintragen.") und steuert die Vollstaendigkeit; die
+  "Aufgabenbeschreibung" ist optional. Sidebar-Ueberschrift "PLANUNGSBEREICHE"
+  besser lesbar (groesser/kontrastreicher). Interne Feldnamen unveraendert
+  (title/task) – bestehende Daten bleiben erhalten.
+  Davor – Stand 1.26.9 (Stationsplanung-Zusammenfassung gestrafft): Die Zeile zeigt jetzt
   zuerst "Stationen vollstaendig: X von Y", danach "Lagebilder: Z". Die separate
   Gesamtzahl "Stationen: X" entfaellt (in "X von Y" bereits enthalten).
   Davor – Stand 1.26.8 (data/uebung.json: Adresse robust abbilden): Generator bildet die
@@ -533,10 +541,11 @@ body {
   overflow-y: auto;
 }
 .nav-section-label {
-  font-size: .64rem;
+  font-size: .72rem;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--text-faint);
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: var(--text-muted);
   padding: 4px 12px 10px;
 }
 .nav-btn {
@@ -781,6 +790,15 @@ body {
   line-height: 1.4;
 }
 .required-note .req { margin-left: 0; margin-right: 1px; }
+
+/* Inline-Fehlermeldung unter einem Pflichtfeld + rote Feldmarkierung */
+.field-error {
+  margin-top: 6px;
+  font-size: .78rem;
+  color: var(--red-strong);
+}
+.detail-field input.invalid,
+.detail-field textarea.invalid { border-color: var(--red-strong); }
 
 /* --- Funkkanäle (zweispaltige Matrix) ------------------------------------*/
 .radio-block {
@@ -2126,8 +2144,8 @@ body {
             <thead>
               <tr>
                 <th class="col-no">Station</th>
-                <th>Bezeichnung</th>
-                <th>Aufgabe kurz</th>
+                <th>Aufgabe</th>
+                <th>Aufgabenbeschreibung</th>
                 <th class="col-imgs">Lagebilder</th>
                 <th class="col-actions">Aktionen</th>
               </tr>
@@ -2490,7 +2508,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.26.9"
+    version: "1.27.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2761,7 +2779,9 @@ body {
      Sonderfälle: 0 Lagebilder → nur Aufgabe; 1 Lagebild → nur URL-Pflicht,
      keine Fahrzeugpflicht (vehicleIds darf leer bleiben). */
   function isStationComplete(station) {
-    if (!nonEmpty(station.task)) return false;
+    /* Pflichtfeld ist „Aufgabe" (intern title). „Aufgabenbeschreibung" (task)
+       ist optional und geht nicht in die Vollständigkeit ein. */
+    if (!nonEmpty(station.title)) return false;
 
     var images = Array.isArray(station.images) ? station.images : [];
 
@@ -2780,9 +2800,9 @@ body {
     return true;
   }
 
-  /* Eine Station gilt als „unberührt" (Standard/leer), wenn weder Bezeichnung,
-     Aufgabe, Hinweis noch Lagebilder erfasst sind. Reine Positionsdaten (Route)
-     zählen hier nicht zum Stationsinhalt. */
+  /* Eine Station gilt als „unberührt" (Standard/leer), wenn weder Aufgabe,
+     Aufgabenbeschreibung, Hinweis noch Lagebilder erfasst sind. Reine Positions-
+     daten (Route) zählen hier nicht zum Stationsinhalt. */
   function isStationEmpty(station) {
     return !nonEmpty(station.title) && !nonEmpty(station.task) &&
            !nonEmpty(station.description) &&
@@ -3339,12 +3359,13 @@ body {
     wrap.innerHTML =
       '<div class="detail-head">Station ' + (idx + 1) + ' bearbeiten</div>' +
       '<div class="detail-field">' +
-        '<label for="detTitle">Bezeichnung <span class="label-optional">(optional)</span></label>' +
-        '<input type="text" id="detTitle" value="' + escapeAttr(s.title) + '" placeholder="optional – z. B. Lageerkundung Wohnhaus">' +
+        '<label for="detTitle">Aufgabe <span class="req" title="Pflichtfeld">*</span></label>' +
+        '<input type="text" id="detTitle" value="' + escapeAttr(s.title) + '" placeholder="z. B. Lageerkundung Wohnhaus">' +
+        '<p class="field-error" id="detTitleErr">Bitte eine Aufgabe eintragen.</p>' +
       '</div>' +
       '<div class="detail-field">' +
-        '<label for="detTask">Aufgabe der Station</label>' +
-        '<textarea id="detTask" class="detail-task" rows="5" placeholder="Was ist an dieser Station zu tun?">' + escapeAttr(s.task) + '</textarea>' +
+        '<label for="detTask">Aufgabenbeschreibung</label>' +
+        '<textarea id="detTask" class="detail-task" rows="5" placeholder="Ausführlicher Aufgabentext für die Teilnehmer">' + escapeAttr(s.task) + '</textarea>' +
       '</div>' +
       '<div class="detail-field">' +
         '<label for="detDesc">Kurzbeschreibung / Hinweise</label>' +
@@ -3358,9 +3379,23 @@ body {
         '<div id="detImageList"></div>' +
       '</div>';
 
+    /* „Aufgabe" (title) ist Pflichtfeld: leer oder nur Leerzeichen → Fehlermeldung
+       unter dem Feld + rote Markierung; Station gilt dann nicht als vollständig. */
+    function syncTitleError() {
+      var inp = document.getElementById("detTitle");
+      var err = document.getElementById("detTitleErr");
+      if (!inp || !err) return;
+      var ok = nonEmpty(inp.value);
+      err.hidden = ok;
+      inp.classList.toggle("invalid", !ok);
+    }
+
     document.getElementById("detTitle").addEventListener("input", function () {
       setStationField(s.id, "title", this.value);
+      syncTitleError();
       renderStationList();
+      updateStationSummary();
+      updateStatus();
     });
     document.getElementById("detTask").addEventListener("input", function () {
       setStationField(s.id, "task", this.value);
@@ -3375,6 +3410,7 @@ body {
       addStationImage(s.id);
     });
 
+    syncTitleError();
     renderStationImages(s.id);
   }
 
