@@ -25,20 +25,20 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
   `station.html?s=<echte-station>&fhz=<fahrzeug-id>` · Laufnummer und echte
   Stationsnummer getrennt lassen · erst nach fachlicher Rückfrage umsetzen.
 
-### [ ] Positionscode-Liste für ELW / Übungsleitung
+### [ ] Positionscode-Liste für ELW / Übungsleitung — Druck/Export (Restpunkt)
 
-**Status:** offen · später fachlich ausarbeiten
+**Status:** teilweise erledigt · Anzeige mit index.html v1.28.0 umgesetzt
 
-- **Ziel:** übersichtliche Positionscode-Liste im Planungstool zum Ablesen/Drucken
-  (ELW/Übungsleitung).
-- **Inhalte (möglich):** Fahrzeug · Funkrufname · Laufnummer · echte Station ·
-  Positionscode · Lösungszeichen.
-- **Platzierung (möglich):** Bereich „Lösungssatz" (Anzeige) bzw. „Druck / Export".
-- **Vorab klären:** nach Fahrzeug oder Station gruppieren? · mit Lösungszeichen? ·
-  Druckansicht? · Kopieren/Export?
-- **Randbedingungen:** Format `W1P<n>` nicht ändern · Codes exakt passend zu
-  station.html · Lösungssatz nie im Klartext in `data/uebung.json` · nur für
-  ELW/Übungsleitung, nicht für Teilnehmer.
+- **Erledigt (v1.28.0):** Anzeige der Positionscodes je Fahrzeug/Station in den
+  Fahrzeugkarten im Bereich „Lösungssatz" (Laufnummer · Station/Aufgabe ·
+  Positionscode · Lösungszeichen).
+- **Noch offen:** kompakte **Druck-/Export-Ansicht** der Liste (z. B. im Bereich
+  „Druck / Export"), ggf. Kopieren.
+- **Vorab klären:** nach Fahrzeug oder Station gruppieren? · mit Lösungszeichen
+  drucken? · Kopieren/Export sinnvoll?
+- **Randbedingungen:** Positionscode-Format `W<Wortnummer>P<Zeichenposition>` nicht
+  ändern · Codes exakt passend zu station.html · Lösungssatz nie im Klartext in
+  `data/uebung.json` · nur für ELW/Übungsleitung, nicht für Teilnehmer.
 
 ### [ ] ELW-Koordination als eigene HTML-Seite
 

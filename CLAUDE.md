@@ -179,13 +179,19 @@ Token-Werte wie der `:root`-Block in `index.html`.
   vehicles:[{id,type,callsign}],
   stations:[{nr,id,title,task,address,images:[{url,title,vehicleIds}]}],
   assignments:{ fhzId:{ stationNr:{char,code,laufnr} } } }`.
-- **Positionscode:** Format `W1P<n>`, `n` = 1-basierte Zeichenposition im
-  Lösungssatz, `n = fahrzeugIndex*stationCount + routenIndex + 1`.
-  `station.html` schaltet das Zeichen frei, wenn die Eingabe (case-insensitiv,
-  ohne Leerzeichen) `assignments[fhz][s].code` entspricht.
+- **Positionscode:** Format `W<Wortnummer>P<Zeichenposition-im-Wort>` (beide
+  1-basiert), z. B. `W2P3`. Erzeugung über den **getrimmten** Lösungssatz (nur
+  vorne/hinten trimmen): ein Leerzeichen gehört noch zum bisherigen Wort und
+  schließt es ab; Satz-/Sonderzeichen zählen zum aktuellen Wort; **alle** Zeichen
+  erhalten einen Code. Beginnt der getrimmte Satz mit Leerzeichen/Satzzeichen →
+  Fehler, keine Verteilung, Export abgebrochen. Doppelte Leerzeichen → nur Hinweis.
+  Code-Erzeugung zentral im Planungstool (`loesungCodeMap`/`computeLoesungPlan`);
+  `station.html` schaltet frei, wenn die Eingabe (case-insensitiv, ohne Leerzeichen)
+  `assignments[fhz][s].code` entspricht (**reiner String-Vergleich, keine Berechnung**).
 - **Laufnummer:** sichtbare Nummer = Position der echten Station in der
   Fahrzeugroute (1..N). QR/URL nutzen die **echte** Stationsnummer `s=<echt>`.
-  Herleitung: `assign.laufnr`, sonst aus dem Code `((n-1) mod stationCount)+1`.
+  Herleitung: direkt aus `assign.laufnr` (wird immer exportiert); fehlt sie, zeigt
+  `station.html` eine klare Fehlermeldung.
 - **Lösungssatz wird NIE im Klartext exportiert.** `data/uebung.json` enthält
   bewusst **keinen** `loesung.phrase` – nur die pro Fahrzeug/Station verteilten
   Einzelzeichen + Codes. Diese Trennung nicht aufweichen.

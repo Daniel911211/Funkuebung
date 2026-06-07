@@ -9,8 +9,12 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.11 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.12 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.12: Positionscode-Format auf W<Wortnummer>P<Zeichenposition> umgestellt
+  (Erzeugung im Planungstool; station.html vergleicht weiterhin nur als String).
+  Obsoleten Fallback laufnrFromCode entfernt – Laufnummer kommt direkt aus
+  assign.laufnr (wird immer exportiert); fehlt sie, klare Fehlermeldung.
   Stand 1.0.11: Aufraeumung – ungenutzte CSS-Regel .code-hint entfernt (der
   Hinweistext wurde in 1.0.9 entfernt). Keine sichtbare Aenderung.
   Stand 1.0.10: Aufgabenkarte optisch feiner abgestimmt – Beschreibungstext
@@ -56,8 +60,9 @@
 
   LÖSUNGSZEICHEN: wird NICHT offen angezeigt. Es wird erst über einen
   POSITIONSCODE freigeschaltet:
-    - Format W1P<n>  (W1 = Lösungssatz, P<n> = fortlaufende Zeichenposition im
-      vollständigen Lösungssatz; ALLE Zeichen zählen, inkl. Leer-/Satzzeichen)
+    - Format W<Wortnummer>P<Zeichenposition-im-Wort> (z. B. W2P3); ALLE Zeichen
+      erhalten einen Code, inkl. Leer-/Satzzeichen. Die Code-Erzeugung erfolgt im
+      Planungstool; station.html RECHNET NICHT, sondern VERGLEICHT nur.
     - station.html VERGLEICHT die Eingabe mit dem je (Fahrzeug × Station)
       hinterlegten Feld assignments[fhz][s].code aus data/uebung.json
     - Eingabe robust: Groß-/Kleinschreibung egal, alle Leerzeichen ignoriert
@@ -138,7 +143,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.11" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.12" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -150,17 +155,6 @@
   function showError(t,d){document.getElementById("content").innerHTML='<div class="error"><h2>'+escapeHTML(t)+'</h2><p>'+d+'</p></div>';}
   /* Positionscode robust normalisieren: Großschreibung, alle Whitespaces raus. */
   function normCode(s){return String(s==null?"":s).toUpperCase().replace(/\s+/g,"");}
-  /* Laufnummer der echten Station in der Fahrzeugroute aus dem Positionscode
-     ableiten: code = W1P<n> mit n = FahrzeugIndex*Stationen + Routenposition + 1
-     → Laufnummer = ((n-1) mod Stationen) + 1. Null, wenn nicht ermittelbar. */
-  function laufnrFromCode(code, stationCount){
-    if(!(stationCount>0)) return null;
-    var m=/^W1P(\d+)$/.exec(String(code==null?"":code).toUpperCase().replace(/\s+/g,""));
-    if(!m) return null;
-    var n=parseInt(m[1],10);
-    if(!(n>=1)) return null;
-    return ((n-1)%stationCount)+1;
-  }
 
   function lagebildHtml(station, fhz){
     var images=Array.isArray(station.images)?station.images:[];
@@ -177,10 +171,9 @@
     /* Zuordnung (char + code + laufnr) für dieses Fahrzeug an dieser ECHTEN Station
        (station.nr = echte Stationsnummer aus der URL – bleibt intern erhalten). */
     var assign = (data.assignments && data.assignments[fhz]) ? data.assignments[fhz][String(station.nr)] : null;
-    var stationCount = Array.isArray(data.stations) ? data.stations.length : 0;
-    /* Sichtbare Laufnummer = Position der echten Station in der Fahrzeugroute.
-       Bevorzugt aus assign.laufnr, sonst aus dem Positionscode abgeleitet. */
-    var laufnr = (assign && typeof assign.laufnr==="number" && assign.laufnr>0) ? assign.laufnr : laufnrFromCode(assign && assign.code, stationCount);
+    /* Sichtbare Laufnummer = Position der echten Station in der Fahrzeugroute,
+       direkt aus assign.laufnr (wird vom Planungstool exportiert). */
+    var laufnr = (assign && typeof assign.laufnr==="number" && assign.laufnr>0) ? assign.laufnr : null;
     if(!laufnr){ showError("Anzeige nicht möglich","Die Laufnummer dieser Station für dieses Fahrzeug konnte nicht ermittelt werden. Bitte die Übungsdaten (data/uebung.json) im Planungstool neu exportieren und hochladen."); return; }
 
     /* Einsatzort der ECHTEN Station: Adresse → (Stationsort) → Titel → neutral. */
