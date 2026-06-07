@@ -145,6 +145,32 @@ nicht hart kodieren. `station.html` hält dieselbe Optik eigenständig.
 - **Pflichtfeld:** mit `*` kennzeichnen; Fehlermeldung kurz und konkret
   (z. B. „Bitte eine Aufgabe eintragen."). Gedeckte Töne, kein Neon.
 
+## Layout / Aufbau (festgeschrieben)
+
+**`index.html` (Planungstool):**
+- `.app-header` (Kopf) · `.app-body` (Flex) · `.app-footer` (Versionszeile).
+- `.app-body` = `.sidebar` (`--sidebar-w` 250px, Label „Planungsbereiche",
+  Buttons per JS aus der `SECTIONS`-Liste) + `.content` (`<main>`).
+- `.content` enthält mehrere `.section`-Blöcke (`display:none`, nur
+  `.section.active` sichtbar). Jede Section: `.section-head` (h2 + Beschreibung)
+  + Inhalt; das Dashboard nutzt `.card-grid` mit anklickbaren Kacheln.
+- `SECTIONS`-Reihenfolge = Navigation: Übersicht · Grunddaten · Fahrzeuge ·
+  Stationsplanung · Routenplanung · Lösungssatz · QR-Code-Plan · Druck/Export.
+
+**`station.html` (Teilnehmeransicht):**
+- `.topbar` (Flex): `.st-no` (rotes Quadrat = **Laufnummer**) + `h1`
+  (**Einsatzort/Adresse**) + `.veh` (Fahrzeug · Funkrufname).
+- `.grid` (1 Spalte mobil, ab 760px 2 Spalten): **Aufgabe**-Karte +
+  **Lagebild**-Karte. Fehlt das Lagebild, entfällt die Karte ganz (ab v1.0.7)
+  → Aufgabe spannt über die volle Breite (kein `.grid`-Wrapper).
+- `.code-card` darunter: Positionscode-Eingabe + freigeschaltetes Lösungszeichen.
+
+**Druck:** QR-Druckkarten als A4-Seiten je Fahrzeug in Routenreihenfolge
+(Label = Laufnummer, Link = echte Stationsnummer).
+
+`station.html` hält die Optik eigenständig (eigene CSS), nutzt aber dieselben
+Token-Werte wie der `:root`-Block in `index.html`.
+
 ## Datenmodell & Fachlogik (festgeschrieben)
 
 - **`data/uebung.json`-Format:** äußere Hülle
