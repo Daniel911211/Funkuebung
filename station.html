@@ -11,45 +11,7 @@
   ============================================================================
   Version: 1.0.12 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
-  Stand 1.0.12: Positionscode-Format auf W<Wortnummer>P<Zeichenposition> umgestellt
-  (Erzeugung im Planungstool; station.html vergleicht weiterhin nur als String).
-  Obsoleten Fallback laufnrFromCode entfernt – Laufnummer kommt direkt aus
-  assign.laufnr (wird immer exportiert); fehlt sie, klare Fehlermeldung.
-  Stand 1.0.11: Aufraeumung – ungenutzte CSS-Regel .code-hint entfernt (der
-  Hinweistext wurde in 1.0.9 entfernt). Keine sichtbare Aenderung.
-  Stand 1.0.10: Aufgabenkarte optisch feiner abgestimmt – Beschreibungstext
-  (station.task) etwas kleiner, ruhigere Farbe (text-muted) und mehr Abstand zum
-  hervorgehobenen Aufgabentitel (station.title). Nur Optik, keine Logikaenderung.
-  Stand 1.0.9: Aufgabe und Aufgabenbeschreibung in EINER Karte "Aufgabe" zusammen-
-  gefuehrt (Titel hervorgehoben, darunter optional der ausfuehrliche Text; kein
-  Platzhalter bei leeren Feldern). Positionscode-Hinweistext entfernt (Platzhalter
-  im Eingabefeld genuegt). Code-Pruefung/Freischaltung unveraendert.
-  Stand 1.0.8: Begriffe an das Planungstool angeglichen. Neuer Block "Aufgabe"
-  (kurzer Titel, intern title) wird oben angezeigt, sofern hinterlegt; die bisherige
-  "Aufgabe"-Karte heisst jetzt "Aufgabenbeschreibung" (ausfuehrlicher Text, intern
-  task). Fehlt der Titel, wird der Aufgabe-Block ausgeblendet.
-  Stand 1.0.7: Ist fuer das Fahrzeug kein Lagebild hinterlegt, wird der Lagebild-
-  Kartenbereich komplett ausgeblendet (statt Hinweistext); die Aufgabe-Karte nimmt
-  dann die volle Breite ein.
-  Stand 1.0.6: Stationskopf umgestellt – grosse weisse Ueberschrift zeigt jetzt die
-  Adresse/Einsatzort (aus der Routenplanung), die 2. Zeile wieder Fahrzeug + Funk-
-  rufname; rote Kachel zeigt weiterhin die Laufnummer.
-  Stand 1.0.5: Einsatzort-Fallback erweitert (address -> location -> ort -> einsatzort
-  -> title -> neutral).
-  Stand 1.0.4: Teilnehmeranzeige zeigt jetzt die LAUFNUMMER der echten Station in
-  der Fahrzeugroute (Station 1..N) statt der echten Stationsnummer/Bezeichnung; die
-  2. Kopfzeile zeigt Fahrzeug · Einsatzort/Adresse der echten Station (Fallback:
-  Adresse → Titel → neutral). Laufnummer aus assign.laufnr oder aus dem Positions-
-  code abgeleitet; ohne Ermittelbarkeit klare Fehlermeldung. Echte Stationsnummer
-  bleibt intern für Aufgabe/Lagebild/Code/Lösung erhalten.
-  Stand 1.0.3: Bildunterschrift des Lagebilds (z. B. „Lagebild 1") wird nicht mehr
-  angezeigt (title bleibt nur als alt-Text).
-  Stand 1.0.2: Titel in der Kopfzeile nicht mehr fett – gleiche Optik wie Datum
-  und Uhrzeit.
-  Stand 1.0.1: Kopfzeile wieder kompakt einzeilig (Titel · Datum · Uhrzeit), Datum
-  als TT.MM.JJJJ. Werte aus data/uebung.json → meta.
-  Stand 1.0.0: Neutraler Positionscode-Hinweis (ohne Formatbeispiel),
-  Versionsanzeige im Footer, Positionscode-Freischaltung des Lösungszeichens.
+  Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
   Aufruf per QR:  station.html?s=<Stationsnummer>&fhz=<Fahrzeug-ID>
   z. B. station.html?s=1&fhz=elw

@@ -5,6 +5,10 @@ Projekt: statische GitHub-Pages-App (kein Build-Schritt). Alles inline in
 Übungsdaten in `data/uebung.json` (Base64-verpackt). Live ausgeliefert wird
 ausschließlich der Stand auf dem Branch `main`.
 
+Die vollständige Versionshistorie steht in `CHANGELOG.md` (nicht mehr im
+Datei-Kopf). Die Datei-Köpfe enthalten nur noch die aktuelle Versionszeile +
+Kurzbeschreibung und verweisen auf `CHANGELOG.md`.
+
 ## Backlog / Vormerkungen (WICHTIG)
 
 - **Kleinere Änderungen werden nicht sofort einzeln als eigener Patch
@@ -21,12 +25,16 @@ ausschließlich der Stand auf dem Branch `main`.
 
 1. Änderung in `index.html` / `station.html` umsetzen.
 2. **Version bumpen** und synchron halten:
-   - `index.html`: `APP_INFO.version` + Kopf-Kommentar (Versionszeile + neuer
-     „Stand x.y.z"-Eintrag).
-   - `station.html`: `STATION_APP_INFO.version` + Kopf-Kommentar.
+   - `index.html`: `APP_INFO.version` + Versionszeile im Datei-Kopf
+     (`APP_INFO x.y.z`).
+   - `station.html`: `STATION_APP_INFO.version` + Versionszeile im Datei-Kopf.
+   - **Neuen „Stand x.y.z"-Eintrag in `CHANGELOG.md` ergänzen** (neueste oben,
+     im passenden Abschnitt index.html bzw. station.html) — **nicht** mehr in den
+     Datei-Kopf.
    - Reine Doku/Backlog-Änderungen ohne App-Code → kein Versions-Bump.
 3. `node --check` über den extrahierten `<script>`-Block (der echte App-Block
-   in `index.html`, nicht Beispieltext in Kommentaren).
+   in `index.html`: die Zeile mit reinem `<script>` ohne `src` bis zum
+   zugehörigen `</script>`).
 4. Commit → Push (`-u origin <branch>`, bei Netzfehlern Retry mit Backoff) →
    Draft-PR gegen `main` → mergen (= live) → von der PR-Subscription
    abmelden.
@@ -50,6 +58,7 @@ Pages liefert aus `main`.)
 
 - `CLAUDE.md`
 - `BACKLOG.md`
+- `CHANGELOG.md` (Versionshistorie / letzter Stand)
 - aktueller Stand von `index.html`
 - aktueller Stand von `station.html`, falls betroffen
 - `data/uebung.json` nur **prüfen**, nicht überschreiben
@@ -106,7 +115,9 @@ Bei Änderungen an QR-Code, Druckkarten oder `station.html` beachten:
 
 - Browser-Konsole fehlerfrei.
 - `node --check` (siehe Patch-Workflow).
-- Versionen synchron (`APP_INFO.version` / `STATION_APP_INFO.version` + Kopf).
+- Versionen synchron (`APP_INFO.version` / `STATION_APP_INFO.version` +
+  Versionszeile im Datei-Kopf).
+- `CHANGELOG.md` um den neuen Stand-Eintrag ergänzt (bei Versions-Bump).
 - Betroffene UI sichtbar geprüft.
 - Keine ungewollten Änderungen an `data/uebung.json`.
 - `BACKLOG.md` aktualisiert, falls ein vorgemerkter Punkt umgesetzt wurde.
@@ -200,11 +211,11 @@ Token-Werte wie der `:root`-Block in `index.html`.
 
 ## node --check – Hinweis
 
-Im Kopf-Kommentar von `index.html` steht beispielhafter `<script>`-Text
-(Verzeichnisbaum). Ein naives `<script>`-Regex erfasst diesen Kommentar fälschlich.
-Für die Syntaxprüfung **nur den echten App-Block** extrahieren (die Zeile
-`<script>` ohne `src`-Attribut bis zum zugehörigen `</script>`) und mit
-`node --check` prüfen.
+Für die Syntaxprüfung **nur den echten App-Block** extrahieren: die Zeile mit
+reinem `<script>` ohne `src`-Attribut bis zum zugehörigen `</script>` (die andere
+`<script>`-Zeile lädt Leaflet per `src` und ist auszulassen). Der frühere Stolper-
+stein – beispielhafter `<script>`-Text im Kopf-Kommentar – ist entfallen, seit die
+Versionshistorie in `CHANGELOG.md` ausgelagert ist.
 
 ## Konventionen
 
