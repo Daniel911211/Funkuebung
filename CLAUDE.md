@@ -117,6 +117,63 @@ Bei Widersprüchen zwischen Nutzerwunsch, `CLAUDE.md`, `BACKLOG.md`, aktuellem
 Code oder GitHub-Branch/Pages-Branch: **immer zuerst Rückfrage** stellen,
 keine Annahmen treffen.
 
+## Styleguide (Design-Tokens)
+
+Alle Farben/Maße kommen aus dem `:root`-Block in `index.html` – dort ändern,
+nicht hart kodieren. `station.html` hält dieselbe Optik eigenständig.
+
+- **Flächen:** `--bg` #16181c (Seite), `--bg-2` #1b1e23 (Inhalt),
+  `--surface` #23272e (Karten), `--surface-2` #2a2f37 (Hover/erhöht).
+- **Linien:** `--line` #353b44, `--line-soft` #2c313a.
+- **Text:** `--text` #e8eaed, `--text-muted` #99a0aa, `--text-faint` #6b727c
+  (Hinweise/Labels).
+- **Akzent (Feuerwehr-Rot):** `--red` #861619, `--red-strong` #a11f27 (Hover),
+  `--red-soft` rgba(134,22,25,.18).
+- **Statusfarben:** Offen `--status-open` #6b727c · In Bearbeitung
+  `--status-prog` #e0a32e · Vollständig `--status-done` #3fae6b.
+- **Buttons (Semantik → Farbe):**
+  - primary = Rot (`--red`): Haupt/Speichern/Hinzufügen
+  - secondary = Anthrazit (`--btn-neutral` #2a2f37): neutral
+  - warning = Gelb (`--btn-warn` #d29a2b, dunkle Schrift `--btn-warn-fg` #18190d):
+    Hinweis/Prüfen
+  - success = Grün (`--btn-ok` #2f9e60)
+  - danger = Rot-Outline: destruktiv · disabled = Grau
+- **Maße/Form:** `--radius` 10px, `--radius-sm` 7px, `--shadow`
+  0 2px 10px rgba(0,0,0,.35), `--sidebar-w` 250px.
+- **Schrift:** `--font` Segoe UI/Roboto/system-ui; `--font-mono`
+  Consolas/SF Mono (Codes/Positionscode).
+- **Pflichtfeld:** mit `*` kennzeichnen; Fehlermeldung kurz und konkret
+  (z. B. „Bitte eine Aufgabe eintragen."). Gedeckte Töne, kein Neon.
+
+## Datenmodell & Fachlogik (festgeschrieben)
+
+- **`data/uebung.json`-Format:** äußere Hülle
+  `{ app:"EA-Funkuebung-Planungstool", format:"b64", payload:<Base64(UTF-8-JSON)> }`.
+  Innen: `{ app, version, generatedAt, meta:{name,date,time},
+  vehicles:[{id,type,callsign}],
+  stations:[{nr,id,title,task,address,images:[{url,title,vehicleIds}]}],
+  assignments:{ fhzId:{ stationNr:{char,code,laufnr} } } }`.
+- **Positionscode:** Format `W1P<n>`, `n` = 1-basierte Zeichenposition im
+  Lösungssatz, `n = fahrzeugIndex*stationCount + routenIndex + 1`.
+  `station.html` schaltet das Zeichen frei, wenn die Eingabe (case-insensitiv,
+  ohne Leerzeichen) `assignments[fhz][s].code` entspricht.
+- **Laufnummer:** sichtbare Nummer = Position der echten Station in der
+  Fahrzeugroute (1..N). QR/URL nutzen die **echte** Stationsnummer `s=<echt>`.
+  Herleitung: `assign.laufnr`, sonst aus dem Code `((n-1) mod stationCount)+1`.
+- **Lösungssatz wird NIE im Klartext exportiert.** `data/uebung.json` enthält
+  bewusst **keinen** `loesung.phrase` – nur die pro Fahrzeug/Station verteilten
+  Einzelzeichen + Codes. Diese Trennung nicht aufweichen.
+- **Eigener QR-Encoder** (`QRGEN`/`QRM`, Byte-Modus, EC-Level M, v1–10) ist in
+  `index.html` eingebettet. Keine externe QR-Lib/CDN zur Laufzeit nötig.
+
+## node --check – Hinweis
+
+Im Kopf-Kommentar von `index.html` steht beispielhafter `<script>`-Text
+(Verzeichnisbaum). Ein naives `<script>`-Regex erfasst diesen Kommentar fälschlich.
+Für die Syntaxprüfung **nur den echten App-Block** extrahieren (die Zeile
+`<script>` ohne `src`-Attribut bis zum zugehörigen `</script>`) und mit
+`node --check` prüfen.
+
 ## Konventionen
 
 - Commit-Autor: `Claude <noreply@anthropic.com>`. Modell-Identifier niemals in
