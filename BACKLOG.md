@@ -9,7 +9,53 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
-_(aktuell keine offenen Punkte)_
+### [ ] GPS-Standortprüfung für Stationsoberfläche
+
+**Status:** offen · später fachlich ausarbeiten
+
+- **Ziel:** station.html prüft optional, ob das Handy/Fahrzeug im Bereich der
+  richtigen Station ist.
+- **Idee:** Button „Standort prüfen" → Browser-GPS lokal abfragen → Entfernung
+  zur echten Station → Status (innerhalb/außerhalb Radius, ungenau, verweigert,
+  keine Koordinaten).
+- **Vorab klären:** GPS nur Warnung oder Pflicht? · Aufgabe/Lagebild/Code
+  sperren oder sichtbar lassen? · akzeptable Genauigkeit? · Entfernung anzeigen? ·
+  Verhalten bei GPS-Fehlern?
+- **Randbedingungen:** keine Standortdaten speichern/übertragen · QR-Link bleibt
+  `station.html?s=<echte-station>&fhz=<fahrzeug-id>` · Laufnummer und echte
+  Stationsnummer getrennt lassen · erst nach fachlicher Rückfrage umsetzen.
+
+### [ ] Positionscode-Liste für ELW / Übungsleitung
+
+**Status:** offen · später fachlich ausarbeiten
+
+- **Ziel:** übersichtliche Positionscode-Liste im Planungstool zum Ablesen/Drucken
+  (ELW/Übungsleitung).
+- **Inhalte (möglich):** Fahrzeug · Funkrufname · Laufnummer · echte Station ·
+  Positionscode · Lösungszeichen.
+- **Platzierung (möglich):** Bereich „Lösungssatz" (Anzeige) bzw. „Druck / Export".
+- **Vorab klären:** nach Fahrzeug oder Station gruppieren? · mit Lösungszeichen? ·
+  Druckansicht? · Kopieren/Export?
+- **Randbedingungen:** Format `W1P<n>` nicht ändern · Codes exakt passend zu
+  station.html · Lösungssatz nie im Klartext in `data/uebung.json` · nur für
+  ELW/Übungsleitung, nicht für Teilnehmer.
+
+### [ ] ELW-Koordination als eigene HTML-Seite
+
+**Status:** offen · größerer späterer Ausbau
+
+- **Ziel:** eigene Seite für ELW/Übungs-/Spielleitung.
+- **Dateiname:** `elw.html` oder `elw-koordination.html` (vorab mit Nutzer
+  abstimmen).
+- **Inhalte (möglich):** Übersicht Fahrzeuge/Stationen · Routen/nächste Stationen ·
+  Status je Fahrzeug/Station · Positionscodes · Lösungssatz-/Zeichenstatus ·
+  optional Notizen/Rückmeldungen · optional Druck-/Auswertungsansicht.
+- **Vorab klären:** nur Anzeige oder aktive Statuspflege? · lokale Speicherung? ·
+  Positionscode-Liste integrieren? · GPS-Status dort anzeigen? · Datenbasis?
+- **Randbedingungen:** gleiche dunkle Leitstellen-Optik + Design-Tokens (CLAUDE.md) ·
+  keine Serverpflicht · keine Online-Übertragung ohne Entscheidung · QR-/Stations-
+  logik nicht beschädigen · `data/uebung.json` nicht ohne fachliche Entscheidung
+  erweitern.
 
 ---
 
