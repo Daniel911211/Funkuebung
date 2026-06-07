@@ -44,9 +44,14 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 **Status:** offen · Grundseite `elw.html` erledigt (siehe „Erledigt"), Ausbau später
 
-- **Positionscode erst nach korrekt eingetippter Aufgabe freischalten** (statt
-  einfachem „Code anzeigen"): ELW/Crew tippt die Aufgabe/Antwort, dann erscheint der
-  Code. Vorab klären: was genau muss eingegeben werden, Toleranz?
+- **Positionscode erst nach korrekt eingetippter Aufgabe freischalten** —
+  *in TEST umgesetzt* (Branch `claude/funny-lovelace-Ljjaw`, nicht live).
+  Variante „beide je ein Wort", symmetrischer Funkverkehr, je Fahrzeug × Station:
+  FHZ-Rätsel + FHZ-Wort (hoch) und ELW-Rätsel + ELW-Wort (runter); Antwortwörter
+  als Verschleierungs-Hash. Pflege im Planungstool unter „Rätsel (Test)". Nach dem
+  Test entscheiden: live übernehmen (Merge nach `main`) oder rückbauen. Offene
+  Fragen für die Live-Version: Rätsel-Design (nur ortsgebunden lösbar), Umfang der
+  Pflege-UI (bis 96 Wörter), Mehrfachversuch/Toleranz.
 - **Stations-Übersicht** (je Station: welche Fahrzeuge mit Laufnummer, Adresse,
   Lagebild groß per Lightbox).
 - **Link-/QR-Liste je Fahrzeug** direkt vom ELW-Gerät (station.html-Links).

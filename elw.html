@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – ELW-KOORDINATION (elw.html)
   ============================================================================
-  Version: 1.0.0 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.1.0 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in ELW_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -79,6 +79,11 @@
   .erow-code{flex:0 0 auto;min-width:128px;text-align:right;}
   .code{font-family:var(--font-mono);font-size:1.1rem;letter-spacing:.04em;color:var(--ok);font-weight:700;}
   .code.none{color:var(--text-faint);font-weight:400;font-style:italic;font-size:.85rem;}
+  .code-gate{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;justify-content:flex-end;}
+  .code-gate .gate-inp{width:118px;background:var(--bg-1);border:1px solid var(--line);border-radius:6px;color:var(--text);font:inherit;font-size:.9rem;padding:6px 8px;}
+  .code-gate .gate-inp:focus{outline:none;border-color:var(--red);}
+  .gate-msg{font-size:.78rem;color:var(--text-faint);} .gate-msg.bad{color:var(--warn);}
+  .elw-riddle{display:block;margin-top:4px;font-size:.82rem;color:var(--text-muted);font-style:italic;}
   .erow-act{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end;}
 
   .btn-mini{font:inherit;font-size:.82rem;font-weight:600;padding:7px 12px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-2);color:var(--text);cursor:pointer;transition:background .14s,border-color .14s,filter .14s;}
@@ -114,7 +119,7 @@
 (function () {
   "use strict";
   /* Eigene Version der ELW-Koordination (unabhängig vom Planungstool). */
-  var ELW_APP_INFO = { name: "ELW-Koordination", version: "1.0.0" };
+  var ELW_APP_INFO = { name: "ELW-Koordination", version: "1.1.0" };
   var STATUS_KEY = "funkuebung_elw_status_v1";
 
   var EX = null;            /* geladene Übungsdaten */
@@ -128,6 +133,21 @@
   function getParam(n){try{return new URLSearchParams(window.location.search).get(n);}catch(e){return null;}}
   function decodeBase64Utf8(b64){var bin=atob(b64),by=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)by[i]=bin.charCodeAt(i);return new TextDecoder("utf-8").decode(by);}
   function showError(t,d){document.getElementById("content").innerHTML='<div class="error"><h2>'+escapeHTML(t)+'</h2><p>'+d+'</p></div>';}
+
+  /* --- Freischalt-Wort (TESTFUNKTION) ---------------------------------------
+     Verschleierungs-Hash (cyrb53, gesalzen) – KEIN Krypto, identisch zu
+     index.html/station.html. Prüft das von der Besatzung herauf­gefunkte FHZ-Wort
+     gegen assignments[fhz][s].hashFhz, bevor der Positionscode aufgedeckt wird. */
+  function normWord(s){return String(s==null?"":s).toLowerCase().replace(/\s+/g,"");}
+  function saltFromMeta(meta){var m=meta||{};return (m.name||"")+"|"+(m.date||"");}
+  function hashWord(word,salt){
+    var str=String(salt==null?"":salt)+""+normWord(word);
+    var h1=0xdeadbeef,h2=0x41c6ce57,i,ch;
+    for(i=0;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}
+    h1=Math.imul(h1^(h1>>>16),2246822507);h1^=Math.imul(h2^(h2>>>13),3266489909);
+    h2=Math.imul(h2^(h2>>>16),2246822507);h2^=Math.imul(h1^(h1>>>13),3266489909);
+    return ("00000000"+(h2>>>0).toString(16)).slice(-8)+("00000000"+(h1>>>0).toString(16)).slice(-8);
+  }
 
   function processWrapper(w){
     var txt;
@@ -171,7 +191,17 @@
     var codeCell;
     if(!nonEmpty(r.code)) codeCell='<span class="code none">kein Code</span>';
     else if(revealed[key]) codeCell='<span class="code">'+escapeHTML(r.code)+'</span>';
+    else if(nonEmpty(r.hashFhz)) codeCell=
+      '<span class="code-gate">'+
+        '<input type="text" class="gate-inp" data-gate-inp placeholder="FHZ-Wort" autocomplete="off" spellcheck="false">'+
+        '<button type="button" class="btn-mini" data-gate-check data-fhz="'+escapeAttr(v.id)+'" data-nr="'+escapeAttr(String(r.nr))+'">Code freigeben</button>'+
+        '<span class="gate-msg"></span>'+
+      '</span>';
     else codeCell='<button type="button" class="btn-mini" data-code-show data-fhz="'+escapeAttr(v.id)+'" data-nr="'+escapeAttr(String(r.nr))+'">Code anzeigen</button>';
+
+    /* ELW-Rätsel (die ELW löst es selbst und funkt das ELW-Wort nach unten;
+       die Prüfung des ELW-Worts passiert auf station.html). */
+    var riddleLine = nonEmpty(r.riddleElw) ? '<span class="elw-riddle">ELW-Rätsel: '+escapeHTML(r.riddleElw)+'</span>' : '';
 
     var actCell;
     if(state===2) actCell='<span class="badge badge-ok">erledigt ✓</span><button type="button" class="btn-mini btn-reset" data-act data-to="0" data-fhz="'+escapeAttr(v.id)+'" data-nr="'+escapeAttr(String(r.nr))+'">zurücksetzen</button>';
@@ -180,7 +210,7 @@
 
     return '<li class="erow'+(state===2?" is-done":"")+'">'+
              '<span class="lauf">'+escapeHTML(String(r.laufnr))+'</span>'+
-             '<span class="erow-main"><span class="addr">'+escapeHTML(addr)+'</span><span class="aufg">'+escapeHTML(sub)+'</span></span>'+
+             '<span class="erow-main"><span class="addr">'+escapeHTML(addr)+'</span><span class="aufg">'+escapeHTML(sub)+'</span>'+riddleLine+'</span>'+
              '<span class="erow-code">'+codeCell+'</span>'+
              '<span class="erow-act">'+actCell+'</span>'+
            '</li>';
@@ -190,7 +220,7 @@
     var amap=(EX.assignments&&EX.assignments[v.id])?EX.assignments[v.id]:{};
     var nrs=Object.keys(amap);
     if(!nrs.length) return '<li class="muted erow-empty">Keine Stationszuordnungen für dieses Fahrzeug.</li>';
-    var rows=nrs.map(function(k){ var a=amap[k]||{}; return { nr:Number(k), laufnr:(typeof a.laufnr==="number"?a.laufnr:9999), code:a.code||"" }; });
+    var rows=nrs.map(function(k){ var a=amap[k]||{}; return { nr:Number(k), laufnr:(typeof a.laufnr==="number"?a.laufnr:9999), code:a.code||"", hashFhz:a.hashFhz||"", riddleElw:a.riddleElw||"" }; });
     rows.sort(function(a,b){ return a.laufnr-b.laufnr; });
     return rows.map(function(r){ return erowHtml(v, r); }).join("");
   }
@@ -228,17 +258,29 @@
       '<div class="elw-top"><div class="elw-title">ELW-Koordination</div>'+leaderLine+'</div>'+
       '<div class="card"><div class="label">Funkkanäle</div>'+channelsHtml(m.channels)+'</div>'+
       '<div class="card"><div class="label">Fahrzeuge &amp; Aufträge</div>'+
-        '<p class="elw-note">„Code anzeigen" blendet den Positionscode ein, den die Besatzung zur Freischaltung an der Station benötigt. Der Status (Auftrag erteilt / erledigt) wird nur auf diesem Gerät gespeichert.</p>'+
+        '<p class="elw-note">„Code anzeigen" blendet den Positionscode ein, den die Besatzung zur Freischaltung an der Station benötigt. Bei Stationen mit Freischalt-Rätsel (Testfunktion) zuerst das von der Besatzung gefunkte FHZ-Wort eingeben und „Code freigeben". Der Status (Auftrag erteilt / erledigt) wird nur auf diesem Gerät gespeichert.</p>'+
         '<div id="fhzList"></div>'+
       '</div>';
     renderVehicles();
   }
 
   function onContentClick(e){
-    var t=e.target.closest("[data-code-show],[data-act],[data-vreset]");
+    var t=e.target.closest("[data-code-show],[data-gate-check],[data-act],[data-vreset]");
     if(!t) return;
     var fhz=t.getAttribute("data-fhz");
     if(t.hasAttribute("data-code-show")){ revealed[fhz+"/"+t.getAttribute("data-nr")]=true; renderVehicles(); return; }
+    if(t.hasAttribute("data-gate-check")){
+      var nr=t.getAttribute("data-nr");
+      var wrap=t.closest(".code-gate");
+      var inp=wrap?wrap.querySelector("[data-gate-inp]"):null;
+      var msg=wrap?wrap.querySelector(".gate-msg"):null;
+      var amap=(EX.assignments&&EX.assignments[fhz])?EX.assignments[fhz]:{};
+      var a=amap[nr]||{};
+      if(inp&&normWord(inp.value)&&hashWord(inp.value, saltFromMeta(EX.meta))===a.hashFhz){
+        revealed[fhz+"/"+nr]=true; renderVehicles();
+      } else if(msg){ msg.textContent=inp&&normWord(inp.value)?"stimmt nicht":"Wort eingeben"; msg.className="gate-msg bad"; }
+      return;
+    }
     if(t.hasAttribute("data-act")){ setRowState(fhz, t.getAttribute("data-nr"), parseInt(t.getAttribute("data-to"),10)); renderVehicles(); return; }
     if(t.hasAttribute("data-vreset")){ if(window.confirm("Status aller Stationen dieses Fahrzeugs zurücksetzen?")){ resetVehicle(fhz); renderVehicles(); } return; }
   }

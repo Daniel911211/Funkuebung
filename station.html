@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.13 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.14 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -90,6 +90,7 @@
   .btn:hover{background:var(--red-strong);border-color:var(--red-strong);}
   .code-msg{margin:12px 0 0;font-size:.95rem;min-height:1.2em;}
   .code-msg.ok{color:var(--ok);} .code-msg.warn{color:var(--warn);}
+  .gate-hint{margin:10px 0 12px;font-size:.92rem;color:var(--text-muted);}
 
   .letterbox{display:flex;align-items:center;gap:18px;margin-top:14px;}
   .letter{flex:0 0 auto;width:104px;height:104px;border-radius:var(--radius);display:grid;place-items:center;background:var(--bg-1);border:2px solid var(--ok);font-family:var(--font-mono);font-weight:800;font-size:3.4rem;color:#fff;}
@@ -118,7 +119,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.13" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.14" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -130,6 +131,22 @@
   function showError(t,d){document.getElementById("content").innerHTML='<div class="error"><h2>'+escapeHTML(t)+'</h2><p>'+d+'</p></div>';}
   /* Positionscode robust normalisieren: Großschreibung, alle Whitespaces raus. */
   function normCode(s){return String(s==null?"":s).toUpperCase().replace(/\s+/g,"");}
+
+  /* --- Freischalt-Wort (TESTFUNKTION) ---------------------------------------
+     Verschleierungs-Hash (cyrb53, gesalzen) – KEIN Krypto, identisch zu
+     index.html/elw.html. Prüft das von der ELW herunter­gefunkte ELW-Wort gegen
+     assignments[fhz][s].hashElw, bevor das Positionscode-Feld freigegeben wird.
+     normWord = Kleinschreibung, alle Whitespaces raus. Salt = name+date. */
+  function normWord(s){return String(s==null?"":s).toLowerCase().replace(/\s+/g,"");}
+  function saltFromMeta(meta){var m=meta||{};return (m.name||"")+"|"+(m.date||"");}
+  function hashWord(word,salt){
+    var str=String(salt==null?"":salt)+""+normWord(word);
+    var h1=0xdeadbeef,h2=0x41c6ce57,i,ch;
+    for(i=0;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}
+    h1=Math.imul(h1^(h1>>>16),2246822507);h1^=Math.imul(h2^(h2>>>13),3266489909);
+    h2=Math.imul(h2^(h2>>>16),2246822507);h2^=Math.imul(h1^(h1>>>13),3266489909);
+    return ("00000000"+(h2>>>0).toString(16)).slice(-8)+("00000000"+(h1>>>0).toString(16)).slice(-8);
+  }
 
   function lagebildHtml(station, fhz){
     var images=Array.isArray(station.images)?station.images:[];
@@ -183,12 +200,37 @@
       ? '<div class="grid">'+aufgabeCard+'<div class="card"><div class="label">Lagebild</div>'+imgsHtml+'</div></div>'
       : aufgabeCard;
 
+    /* Freischalt-Vor-Gate (TESTFUNKTION): FHZ-Rätsel anzeigen (Besatzung löst es
+       vor Ort, funkt das FHZ-Wort hoch) und – falls hinterlegt – das von der ELW
+       herunter­gefunkte ELW-Wort abfragen, bevor das Positionscode-Feld erscheint.
+       Fehlt hashElw → kein Gate, Code-Feld direkt sichtbar (rückwärtskompatibel). */
+    var riddleFhz = assign && typeof assign.riddleFhz==="string" ? assign.riddleFhz : "";
+    var hashElw   = assign && typeof assign.hashElw==="string"   ? assign.hashElw   : "";
+    var needWordGate = nonEmpty(hashElw);
+    var gateCard = "";
+    if(needWordGate || nonEmpty(riddleFhz)){
+      gateCard =
+        '<div class="card gate-card">'+
+          '<div class="label">Freischaltung</div>'+
+          (nonEmpty(riddleFhz)?'<div class="task">'+escapeHTML(riddleFhz)+'</div>':'')+
+          (needWordGate
+            ? '<p class="gate-hint">Löse die Aufgabe und funke das Lösungswort an die Einsatzleitung. Sie funkt dir das ELW-Wort zurück – gib es hier ein, um das Positionscode-Feld freizuschalten.</p>'+
+              '<div class="code-row" id="wordRow">'+
+                '<input type="text" id="wordInput" placeholder="ELW-Wort eingeben" autocomplete="off" spellcheck="false">'+
+                '<button type="button" class="btn" id="wordBtn">Freischalten</button>'+
+              '</div>'+
+              '<p class="code-msg" id="wordMsg" role="status" aria-live="polite"></p>'
+            : '')+
+        '</div>';
+    }
+
     document.getElementById("content").innerHTML=
       '<div class="topbar"><div class="st-no">'+escapeHTML(String(laufnr))+'</div>'+
         '<div><h1>'+escapeHTML(ort)+'</h1>'+
         '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b>'+(nonEmpty(vehicle.callsign)?' · '+escapeHTML(vehicle.callsign):'')+'</div></div></div>'+
       mainArea+
-      '<div class="card code-card">'+
+      gateCard+
+      '<div class="card code-card" id="codeCard"'+(needWordGate?' style="display:none"':'')+'>'+
         '<div class="label">Lösungszeichen</div>'+
         '<div class="code-row" id="codeRow">'+
           '<input type="text" id="codeInput" placeholder="Positionscode eingeben" autocomplete="off" autocapitalize="characters" spellcheck="false">'+
@@ -227,6 +269,26 @@
     }
     btn.addEventListener("click", tryUnlock);
     input.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryUnlock(); } });
+
+    /* Vor-Gate: ELW-Wort prüfen → Positionscode-Feld freigeben. */
+    if(needWordGate){
+      var wInput=document.getElementById("wordInput");
+      var wBtn=document.getElementById("wordBtn");
+      var wMsg=document.getElementById("wordMsg");
+      var salt=saltFromMeta(data.meta);
+      function setWMsg(t,k){ wMsg.textContent=t||""; wMsg.className="code-msg"+(k?" "+k:""); }
+      function tryWord(){
+        if(!normWord(wInput.value)){ setWMsg("Bitte das ELW-Wort eingeben.","warn"); return; }
+        if(hashWord(wInput.value, salt)===hashElw){
+          setWMsg("Wort korrekt – Positionscode-Eingabe freigeschaltet.","ok");
+          var wr=document.getElementById("wordRow"); if(wr) wr.style.display="none";
+          var cc=document.getElementById("codeCard"); if(cc) cc.style.display="";
+          if(input) input.focus();
+        } else { setWMsg("Wort stimmt nicht. Bitte erneut prüfen.","warn"); }
+      }
+      if(wBtn) wBtn.addEventListener("click", tryWord);
+      if(wInput) wInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryWord(); } });
+    }
   }
 
   function processWrapper(w){

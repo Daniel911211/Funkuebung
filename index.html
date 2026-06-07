@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.31.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.32.0)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -1621,6 +1621,16 @@ body {
   .manual-toc-btn .toc-flag { margin-left: 4px; }
   .manual-content { padding: 22px 18px; }
 }
+
+  /* --- Rätsel (Testfunktion) ------------------------------------------- */
+  .raetsel-hint { margin-bottom: 18px; line-height: 1.5; }
+  .raetsel-station { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 14px 16px; margin-bottom: 14px; }
+  .raetsel-st-head { font-weight: 600; color: var(--text); margin-bottom: 12px; }
+  .raetsel-st-head .route-pos { color: var(--red); margin-right: 6px; }
+  .raetsel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+  .raetsel-grid .field { margin: 0; }
+  .raetsel-grid textarea { min-height: 60px; resize: vertical; }
+  @media (max-width: 760px) { .raetsel-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -1987,6 +1997,37 @@ body {
       </div>
     </section>
 
+    <!-- ----- 6b) RÄTSEL (TESTFUNKTION) --------------------------------- -->
+    <section class="section" id="sec-raetsel">
+      <div class="section-head">
+        <h2>Rätsel (Test)</h2>
+        <p>Freischalt-Rätsel je Fahrzeug und Station für den ELW↔FHZ-Funkverkehr. Testfunktion – kann jederzeit rückgebaut werden.</p>
+      </div>
+
+      <div class="panel">
+        <div class="field-hint raetsel-hint">
+          <b>So funktioniert es:</b> Pro Fahrzeug und Station gibt es zwei Rätsel.
+          Die <b>Besatzung</b> löst das <b>FHZ-Rätsel</b> an der Station und funkt das
+          <b>FHZ-Wort</b> nach oben → die ELW gibt es auf <code>elw.html</code> ein und sieht
+          den Positionscode. Die <b>ELW</b> löst das <b>ELW-Rätsel</b> und funkt das
+          <b>ELW-Wort</b> nach unten → die Besatzung gibt es auf <code>station.html</code> ein
+          und schaltet damit das Positionscode-Feld frei.<br>
+          <b>Wichtig:</b> Beide Seiten laden dieselbe Datei. Nur die Antwortwörter sind
+          verschleiert – die Rätseltexte stehen in der Datei. Damit der Funkverkehr nicht
+          umgangen wird, sollten die Rätsel nur mit <b>Wissen vor Ort</b> (Station) bzw.
+          <b>Wissen der ELW</b> lösbar sein. Felder leer lassen → kein Gate (alter Ablauf).
+        </div>
+        <div class="field">
+          <label for="raetselVehSel">Fahrzeug</label>
+          <select id="raetselVehSel"></select>
+        </div>
+        <div id="raetselList"><!-- per JS gefüllt --></div>
+        <div class="loes-actions">
+          <span class="save-hint" id="raetselSaveHint">Automatische Speicherung aktiv</span>
+        </div>
+      </div>
+    </section>
+
     <!-- ----- 7) QR-CODE-PLAN ------------------------------------------- -->
     <!-- → später: qr/qr-codes.html -->
     <section class="section" id="sec-qr">
@@ -2229,7 +2270,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.31.0"
+    version: "1.32.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2241,6 +2282,7 @@ body {
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Aufgabe, Aufgabenbeschreibung und Lagebilder je Station festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
     { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf Fahrzeuge und Stationen verteilen." },
+    { id: "raetsel",    label: "Rätsel (Test)",   icon: "key",     nav: true,  card: false, desc: "Freischalt-Rätsel je Fahrzeug und Station für den ELW↔FHZ-Funkverkehr (Testfunktion)." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
@@ -2359,6 +2401,32 @@ body {
 
   function num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
   function nonEmpty(v) { return v != null && String(v).trim() !== ""; }
+
+  /* --- Freischalt-Rätsel (TESTFUNKTION) ---------------------------------
+     Verschleierungs-Hash (cyrb53, gesalzen) – KEIN Krypto, nur damit das
+     Antwortwort nicht im Klartext in data/uebung.json steht (gleiches Niveau
+     wie der Base64-Payload). Identisch in index.html, station.html, elw.html.
+     normWord = Kleinschreibung, alle Whitespaces raus (wie normCode-Logik).   */
+  function normWord(s){ return String(s==null?"":s).toLowerCase().replace(/\s+/g,""); }
+  function saltFromMeta(name, date){ return (name||"") + "|" + (date||""); }
+  function hashWord(word, salt){
+    var str = String(salt==null?"":salt) + "" + normWord(word);
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57, i, ch;
+    for (i = 0; i < str.length; i++) {
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507); h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507); h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return ("00000000" + (h2 >>> 0).toString(16)).slice(-8) + ("00000000" + (h1 >>> 0).toString(16)).slice(-8);
+  }
+  /* Lokaler Speicher der Rätsel (Klartext-Wörter NUR lokal; Export nur Hash).
+     Eigener Key mit „test" im Namen → leicht wieder zu entfernen. Struktur:
+     { "<fhzId>/<echteStationNr>": { riddleFhz, wordFhz, riddleElw, wordElw } } */
+  var RIDDLE_STORAGE_KEY = "funkuebung_raetsel_test_v1";
+  function loadRiddles(){ try { return JSON.parse(localStorage.getItem(RIDDLE_STORAGE_KEY)) || {}; } catch (e) { return {}; } }
+  function saveRiddles(o){ try { localStorage.setItem(RIDDLE_STORAGE_KEY, JSON.stringify(o)); return true; } catch (e) { return false; } }
 
   /* Anzeigename einer Station. Die StationsNUMMER ist die Pflicht-Identität;
      die Bezeichnung (title) ist optional und darf leer sein. Für Anzeigen
@@ -2572,6 +2640,9 @@ body {
     /* Lösungssatz beim Öffnen neu aufbauen (Fahrzeuge/Stationen können sich
        geändert haben → SOLL/Zuordnung neu berechnen). */
     if (id === "loesung") renderLoesung();
+    /* Rätsel (Test) beim Öffnen neu aufbauen (Fahrzeuge/Stationen/Routen können
+       sich geändert haben). */
+    if (id === "raetsel") renderRaetsel();
     /* QR-Übersicht beim Öffnen neu aufbauen (Fahrzeuge/Stationen können sich
        geändert haben). */
     if (id === "qr") renderQr();
@@ -4392,6 +4463,85 @@ body {
   }
 
   /* ======================================================================
+     RÄTSEL (TESTFUNKTION)
+     ----------------------------------------------------------------------
+     Pflege je Fahrzeug × echte Station: FHZ-Rätsel + FHZ-Wort, ELW-Rätsel +
+     ELW-Wort. Speicherung lokal (loadRiddles/saveRiddles), Export hasht die
+     Wörter (exportUebungJson). Route/Reihenfolge unabhängig vom Lösungssatz
+     direkt aus buildAutoRouteForVehicle – damit auch ohne gültigen Satz nutzbar.
+     ====================================================================== */
+  function raetselVehIndex(active, id) {
+    for (var i = 0; i < active.length; i++) { if (active[i].id === id) return i; }
+    return -1;
+  }
+  function raetselField(key, field, label, type, value) {
+    var v = value == null ? "" : String(value);
+    var inner = (type === "textarea")
+      ? '<textarea data-key="' + escapeAttr(key) + '" data-field="' + field + '" rows="2">' + escapeHTML(v) + '</textarea>'
+      : '<input type="text" data-key="' + escapeAttr(key) + '" data-field="' + field + '" value="' + escapeAttr(v) + '" autocomplete="off">';
+    return '<div class="field"><label>' + escapeHTML(label) + '</label>' + inner + '</div>';
+  }
+  function raetselRowHtml(key, laufnr, realNr, st, rd) {
+    var name = stationDisplayName(st, realNr - 1);
+    return '<div class="raetsel-station">' +
+             '<div class="raetsel-st-head"><span class="route-pos">' + laufnr + '.</span>' +
+               'Laufnummer ' + laufnr + ' · echte Station ' + realNr + ' · ' + escapeHTML(name) + '</div>' +
+             '<div class="raetsel-grid">' +
+               raetselField(key, "riddleFhz", "FHZ-Rätsel (Besatzung löst es vor Ort)", "textarea", rd.riddleFhz) +
+               raetselField(key, "wordFhz", "FHZ-Wort (wird nach oben gefunkt)", "text", rd.wordFhz) +
+               raetselField(key, "riddleElw", "ELW-Rätsel (ELW löst es)", "textarea", rd.riddleElw) +
+               raetselField(key, "wordElw", "ELW-Wort (wird nach unten gefunkt)", "text", rd.wordElw) +
+             '</div>' +
+           '</div>';
+  }
+  function renderRaetsel() {
+    var sel = document.getElementById("raetselVehSel");
+    var host = document.getElementById("raetselList");
+    if (!sel || !host) return;
+    var active = loadVehicles().filter(function (v) { return v.active; });
+    var stations = loadStations();
+    var prev = sel.value;
+    sel.innerHTML = "";
+    active.forEach(function (v) {
+      var o = document.createElement("option");
+      o.value = v.id; o.textContent = v.type + " · " + v.callsign;
+      sel.appendChild(o);
+    });
+    if (prev && active.some(function (v) { return v.id === prev; })) sel.value = prev;
+    if (!active.length) { host.innerHTML = '<p class="detail-empty">Keine aktiven Fahrzeuge. Fahrzeuge werden im Bereich „Fahrzeuge" aktiviert.</p>'; return; }
+    if (!stations.length) { host.innerHTML = '<p class="detail-empty">Keine Stationen vorhanden. Stationen werden in der Stationsplanung angelegt.</p>'; return; }
+    var vid = sel.value;
+    var route = buildAutoRouteForVehicle(raetselVehIndex(active, vid), stations);
+    var store = loadRiddles();
+    host.innerHTML = route.map(function (st, routeIndex) {
+      var realNr = indexOfId(stations, st.id) + 1;
+      var key = vid + "/" + realNr;
+      return raetselRowHtml(key, routeIndex + 1, realNr, st, store[key] || {});
+    }).join("");
+  }
+  function onRaetselInput(e) {
+    var el = e.target;
+    var k = el.getAttribute && el.getAttribute("data-key");
+    var f = el.getAttribute && el.getAttribute("data-field");
+    if (!k || !f) return;
+    var store = loadRiddles();
+    var rd = store[k] || {};
+    rd[f] = el.value;
+    /* Leere Zelle ganz entfernen, damit der Speicher schlank bleibt. */
+    if (!nonEmpty(rd.riddleFhz) && !nonEmpty(rd.wordFhz) && !nonEmpty(rd.riddleElw) && !nonEmpty(rd.wordElw)) delete store[k];
+    else store[k] = rd;
+    saveRiddles(store);
+    var hint = document.getElementById("raetselSaveHint");
+    if (hint) flashHint(hint, "Gespeichert");
+  }
+  function initRaetsel() {
+    var sel = document.getElementById("raetselVehSel");
+    var host = document.getElementById("raetselList");
+    if (sel) sel.addEventListener("change", renderRaetsel);
+    if (host) host.addEventListener("input", onRaetselInput);
+  }
+
+  /* ======================================================================
      SATZSAMMLUNG (Overlay)
      ----------------------------------------------------------------------
      Einfache lokale Sammlung guter Lösungssätze (Array aus Strings) im
@@ -5139,10 +5289,25 @@ body {
     if(stations.length===0){ deMsg("uebungMsg","Keine Stationen – nichts zu exportieren.","warn"); return; }
     var grund=loadData(); var plan=computeLoesungPlan();
     if(plan.status==="invalid-start"){ deMsg("uebungMsg","Lösungssatz beginnt mit Leerzeichen/Satzzeichen – bitte korrigieren. Export abgebrochen.","warn"); return; }
+    /* Rätsel-Testfunktion: lokal gepflegte Rätsel/Wörter in die Zellen mergen.
+       Rätseltexte als Klartext, Antwortwörter NUR als Hash (gesalzen mit
+       name+date). Leere Felder bleiben weg → kein Gate, alter Ablauf. */
+    var riddles=loadRiddles();
+    var rsalt=saltFromMeta(grund.name, grund.date);
     var assignments={};
     plan.vehicleAssignments.forEach(function(a){
       assignments[a.vehicle.id]={};
-      a.rows.forEach(function(r, j){ assignments[a.vehicle.id][String(r.stationIndex+1)]={ char:r.char, code:r.code, laufnr:j+1 }; });
+      a.rows.forEach(function(r, j){
+        var cell={ char:r.char, code:r.code, laufnr:j+1 };
+        var rd=riddles[a.vehicle.id+"/"+(r.stationIndex+1)];
+        if(rd){
+          if(nonEmpty(rd.riddleFhz)) cell.riddleFhz=String(rd.riddleFhz).trim();
+          if(nonEmpty(rd.riddleElw)) cell.riddleElw=String(rd.riddleElw).trim();
+          if(nonEmpty(rd.wordFhz))   cell.hashFhz=hashWord(rd.wordFhz, rsalt);
+          if(nonEmpty(rd.wordElw))   cell.hashElw=hashWord(rd.wordElw, rsalt);
+        }
+        assignments[a.vehicle.id][String(r.stationIndex+1)]=cell;
+      });
     });
     var inner={
       app:"EA-Funkuebung-Planungstool", version:APP_INFO.version, generatedAt:new Date().toISOString(),
@@ -5381,6 +5546,7 @@ body {
     initStations();
     initRoutes();
     initLoesung();
+    initRaetsel();
     initSatzsammlung();
     initBildersammlung();
     initQr();

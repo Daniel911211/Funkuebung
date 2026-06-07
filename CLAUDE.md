@@ -170,7 +170,9 @@ nicht hart kodieren. `station.html` hält dieselbe Optik eigenständig.
   `.section.active` sichtbar). Jede Section: `.section-head` (h2 + Beschreibung)
   + Inhalt; das Dashboard nutzt `.card-grid` mit anklickbaren Kacheln.
 - `SECTIONS`-Reihenfolge = Navigation: Übersicht · Grunddaten · Fahrzeuge ·
-  Stationsplanung · Routenplanung · Lösungssatz · QR-Code-Plan · Druck/Export.
+  Stationsplanung · Routenplanung · Lösungssatz · **Rätsel (Test)** · QR-Code-Plan ·
+  Druck/Export. („Rätsel (Test)" = Freischalt-Rätsel-Testfunktion, siehe unten;
+  rückbaubar – nur auf dem Testbranch, nicht zwingend live.)
 
 **`station.html` (Teilnehmeransicht):**
 - `.topbar` (Flex): `.st-no` (rotes Quadrat = **Laufnummer**) + `h1`
@@ -179,6 +181,11 @@ nicht hart kodieren. `station.html` hält dieselbe Optik eigenständig.
   **Lagebild**-Karte. Fehlt das Lagebild, entfällt die Karte ganz (ab v1.0.7)
   → Aufgabe spannt über die volle Breite (kein `.grid`-Wrapper).
 - `.code-card` darunter: Positionscode-Eingabe + freigeschaltetes Lösungszeichen.
+- **Freischalt-Vor-Gate (Testfunktion, ab v1.0.14):** Bei hinterlegtem FHZ-Rätsel
+  und/oder ELW-Wort (`assignments[fhz][s].riddleFhz`/`hashElw`) erscheint oberhalb
+  der `.code-card` eine `.gate-card`: FHZ-Rätsel + Eingabe des herunter­gefunkten
+  ELW-Worts; erst bei korrektem Wort (Hash-Vergleich) wird die `.code-card`
+  sichtbar. Ohne `hashElw` unverändert.
 
 **Druck:** QR-Druckkarten als A4-Seiten je Fahrzeug in Routenreihenfolge
 (Label = Laufnummer, Link = echte Stationsnummer).
@@ -197,6 +204,11 @@ Token-Werte wie der `:root`-Block in `index.html`.
   (verdeckt, „Code anzeigen") · Status **Auftrag erteilt → erledigt**.
 - Status nur **lokal** (localStorage `funkuebung_elw_status_v1`, je Übung über
   name+datum getrennt), keine Online-Übertragung. **Kein Lösungssatz/`char`.**
+- **FHZ-Wort-Gate (Testfunktion, ab v1.1.0):** Bei hinterlegtem `hashFhz` ersetzt
+  ein Eingabefeld „FHZ-Wort" + „Code freigeben" das „Code anzeigen"; der
+  Positionscode erscheint erst bei korrektem (herauf­gefunktem) FHZ-Wort
+  (Hash-Vergleich). `riddleElw` wird je Route-Eintrag als „ELW-Rätsel" gezeigt.
+  Ohne `hashFhz` unverändert. Weiterhin **kein** `char`/Lösungssatz.
 
 ## Datenmodell & Fachlogik (festgeschrieben)
 
@@ -209,6 +221,18 @@ Token-Werte wie der `:root`-Block in `index.html`.
   assignments:{ fhzId:{ stationNr:{char,code,laufnr} } } }`. `meta.leader`
   (Übungsleitung) und `meta.channels` (befüllte Funkkanäle, ohne interne id) ab
   index v1.31.0 für `elw.html`; ältere Exporte ohne `channels` → Fallback-Hinweis.
+- **Rätsel-Felder (Testfunktion, ab index v1.32.0):** je `assignments`-Zelle
+  optional `riddleFhz`, `riddleElw` (Rätseltexte, Klartext) und `hashFhz`, `hashElw`
+  (Antwortwörter als **Verschleierungs-Hash** cyrb53, gesalzen mit `name+date` –
+  KEIN Krypto, gleiches Niveau wie der Base64-Payload). Alle vier **optional** →
+  fehlen sie, gibt es kein Gate (alter Ablauf). `hashFhz` prüft `elw.html` (FHZ-Wort
+  rauf), `hashElw` prüft `station.html` (ELW-Wort runter). `normWord` = Kleinschrift
+  + alle Whitespaces raus; `hashWord` identisch in index/station/elw. **Wichtig:**
+  Die Rätsel*texte* stehen für beide Seiten in der Datei – nur die Antwortwörter
+  sind verschleiert. Rätsel müssen daher so gebaut sein, dass sie nur mit Wissen
+  **vor Ort** (FHZ) bzw. **der ELW** lösbar sind, sonst lässt sich der Funkverkehr
+  umgehen. Pflege im Bereich „Rätsel (Test)" (lokal `funkuebung_raetsel_test_v1`,
+  Klartext-Wörter nur lokal). **Antwortwörter nie im Klartext exportieren.**
 - **Positionscode:** Format `W<Wortnummer>P<Zeichenposition-im-Wort>` (beide
   1-basiert), z. B. `W2P3`. Erzeugung über den **getrimmten** Lösungssatz (nur
   vorne/hinten trimmen): ein Leerzeichen gehört noch zum bisherigen Wort und

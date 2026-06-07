@@ -11,6 +11,20 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.32.0 (Rätsel-Freischaltung – TESTFUNKTION, nicht live): Neuer Bereich
+„Rätsel (Test)" zwischen „Lösungssatz" und „QR-Code-Plan". Pro Fahrzeug × echte
+Station lassen sich vier Felder pflegen – FHZ-Rätsel + FHZ-Wort und ELW-Rätsel +
+ELW-Wort (Auswahl je Fahrzeug, Stationen in Routenreihenfolge; lokal gespeichert
+unter eigenem Key `funkuebung_raetsel_test_v1`). Der Export ergänzt je Zelle
+optional `riddleFhz`/`riddleElw` (Klartext) und `hashFhz`/`hashElw`
+(Verschleierungs-Hash cyrb53, gesalzen mit name+date – KEIN Krypto, gleiches
+Niveau wie der Base64-Payload; Antwortwörter stehen NICHT im Klartext in
+data/uebung.json). Zweck: symmetrischer ELW↔FHZ-Funkverkehr – Besatzung funkt das
+FHZ-Wort hoch (ELW gibt es auf elw.html ein → Positionscode), ELW funkt das
+ELW-Wort runter (Besatzung gibt es auf station.html ein → Code-Feld frei). Alle
+neuen Felder optional → fehlen sie, bleibt der bisherige Ablauf unverändert
+(rückwärtskompatibel). loesung.phrase weiterhin NICHT exportiert; char unverändert.
+
 Stand 1.31.0 (Export um Funkkanäle/Übungsleitung erweitert + ELW-Link):
 data/uebung.json enthält jetzt in meta zusätzlich `leader` (Übungsleitung) und
 `channels` (befüllte Funkkanäle TMO/DMO, ohne interne id) – Grundlage für die neue
@@ -468,6 +482,17 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
 
+Stand 1.0.14 (Freischalt-Vor-Gate – TESTFUNKTION, nur bei gepflegten Rätseln):
+Ist für eine Fahrzeug-/Stationskombination ein FHZ-Rätsel und/oder ein ELW-Wort
+hinterlegt (`assignments[fhz][s].riddleFhz` / `hashElw` aus data/uebung.json),
+zeigt station.html oberhalb des Lösungszeichens eine Karte „Freischaltung": das
+FHZ-Rätsel (die Besatzung löst es vor Ort und funkt das FHZ-Wort an die ELW) und
+ein Eingabefeld für das von der ELW herunter­gefunkte ELW-Wort. Erst wenn dieses
+Wort stimmt (Verschleierungs-Hash-Vergleich, case-/leerzeichen-tolerant), wird das
+bisherige Positionscode-Feld sichtbar. Fehlt `hashElw`, erscheint das Code-Feld
+direkt wie bisher (rückwärtskompatibel). Lösungszeichen-Logik unverändert; kein
+Lösungssatz im Klartext.
+
 Stand 1.0.13: Lagebild-Lightbox – Tipp/Klick auf ein Lagebild öffnet es als
 Vollbild (max. Bildschirmgröße, dunkler Hintergrund). Schließen per Tipp/Klick
 irgendwo im Overlay, ×-Button oder Escape. Funktioniert auf Tablet/Handy (Tap =
@@ -533,6 +558,15 @@ Versionsanzeige im Footer, Positionscode-Freischaltung des Lösungszeichens.
 > Eigene Versionierung (zentral in `ELW_APP_INFO.version`, im Footer sichtbar).
 > Lesende Schwesterseite zu station.html für ELW/Übungsleitung; lädt
 > data/uebung.json. Zeigt NIEMALS Lösungssatz/Lösungszeichen (nur Positionscodes).
+
+Stand 1.1.0 (FHZ-Wort-Gate vor dem Positionscode – TESTFUNKTION): Ist für eine
+Fahrzeug-/Stationskombination ein `hashFhz` hinterlegt, erscheint statt „Code
+anzeigen" ein kleines Eingabefeld „FHZ-Wort" + „Code freigeben". Erst wenn das von
+der Besatzung herauf­gefunkte FHZ-Wort stimmt (Verschleierungs-Hash, case-/
+leerzeichen-tolerant), wird der Positionscode eingeblendet. Zusätzlich wird – falls
+vorhanden – das `riddleElw` als „ELW-Rätsel" je Route-Eintrag angezeigt (die ELW
+löst es selbst und funkt das ELW-Wort an die Besatzung; geprüft auf station.html).
+Ohne `hashFhz` bleibt „Code anzeigen" wie bisher. Weiterhin KEIN Lösungssatz/`char`.
 
 Stand 1.0.0: Neue Koordinationsseite. Übungskopf (Name/Datum/Uhrzeit, Übungsleitung)
 + Funkkanäle (TMO/DMO aus meta.channels; Fallback-Hinweis, wenn der Export älter als
