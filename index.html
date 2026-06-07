@@ -13,9 +13,13 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.28.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.28.1)
   ============================================================================
-  Stand 1.28.0 (Positionscode-Logik Wort/Zeichen + Anzeige im Loesungssatz):
+  Stand 1.28.1 (Loesungssatz – Beschreibungstext gekuerzt): Hinweis ueber der
+  Zeichen-Zuordnung je Fahrzeug lautet jetzt "Je aktivem Fahrzeug die Stations-
+  reihenfolge mit Loesungszeichen und Positionscode." (nennt den neuen Positions-
+  code; Funktion unveraendert). Nur Textaenderung, keine Logikaenderung.
+  Davor – Stand 1.28.0 (Positionscode-Logik Wort/Zeichen + Anzeige im Loesungssatz):
   Positionscode ist jetzt W<Wortnummer>P<Zeichenposition-im-Wort> (1-basiert)
   statt fortlaufender Gesamtposition. Leerzeichen gehoert zum bisherigen Wort und
   schliesst es ab; Satz-/Sonderzeichen zaehlen zum aktuellen Wort; alle Zeichen
@@ -2301,7 +2305,7 @@ body {
       <!-- 3) Fahrzeug-/Stations-Zuordnung -->
       <div class="panel">
         <h3 class="subsection-title">Zeichen-Zuordnung je Fahrzeug</h3>
-        <p class="field-hint" style="margin-bottom:14px">Je aktivem Fahrzeug die Stationsreihenfolge (wie in der Routenplanung) mit dem automatisch zugeordneten Lösungszeichen. „–" = keine Zuordnung (Satz zu kurz). Satzzeichen und das Leerzeichen werden zusätzlich benannt (z. B. „!" = Ausrufezeichen).</p>
+        <p class="field-hint" style="margin-bottom:14px">Je aktivem Fahrzeug die Stationsreihenfolge mit Lösungszeichen und Positionscode.</p>
         <div class="loes-veh-list" id="loesVehicleList"><!-- per JS gefüllt --></div>
       </div>
     </section>
@@ -2524,7 +2528,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.28.0"
+    version: "1.28.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
