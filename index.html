@@ -13,9 +13,12 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.27.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.27.2)
   ============================================================================
-  Stand 1.27.1 (Text-/UI-Aufraeumung): Bereichstexte gekuerzt/aktualisiert
+  Stand 1.27.2 (Export-Button gekuerzt): Button im Block "Stationsdaten" heisst
+  jetzt "Stationsdaten exportieren" (Funktion unveraendert, Datei bleibt
+  data/uebung.json).
+  Davor – Stand 1.27.1 (Text-/UI-Aufraeumung): Bereichstexte gekuerzt/aktualisiert
   (Stationsplanung, Routenplanung, Loesungssatz), Hinweistext unter "Automatische
   Fahrzeugrouten" und QR-Hinweisblock entfernt, Export-Button heisst jetzt
   "Stationsdaten fuer QR-Seite exportieren" (Funktion unveraendert, Datei bleibt
@@ -2361,7 +2364,7 @@ body {
       <div class="panel de-card">
         <div class="de-card-head"><span class="de-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.7-7-11a7 7 0 0 1 14 0c0 5.3-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><h3 class="subsection-title">Stationsdaten</h3></div>
         <div class="de-actions">
-          <button type="button" class="btn btn-secondary" id="uebungExportBtn">Stationsdaten für QR-Seite exportieren</button>
+          <button type="button" class="btn btn-secondary" id="uebungExportBtn">Stationsdaten exportieren</button>
         </div>
         <p class="de-msg" id="uebungMsg" role="status" aria-live="polite"></p>
       </div>
@@ -2508,7 +2511,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.27.1"
+    version: "1.27.2"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
