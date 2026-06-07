@@ -13,9 +13,13 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.26.3)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.26.4)
   ============================================================================
-  Stand 1.26.3 (Druck/Export – Abstand zwischen den Karten): 18px-Abstand zwischen
+  Stand 1.26.4 (Druck/Export – Planung zurücksetzen): Im Block „Planung" gibt es
+  jetzt „Planung zurücksetzen" (btn-danger) mit Sicherheitsabfrage („Zurücksetzen
+  bestätigen"/„Abbrechen"). Beim Bestätigen werden ALLE funkuebung_*-localStorage-
+  Keys gelöscht (fremde Daten bleiben) und die Seite neu geladen → leerer Start.
+  Davor – Stand 1.26.3 (Druck/Export – Abstand zwischen den Karten): 18px-Abstand zwischen
   den Bloecken ergaenzt (wie andere Bereiche). Nur CSS.
   Davor – Stand 1.26.2 (Druck/Export optisch als Karten): Die drei Blöcke (Planung,
   Stationsdaten, QR-Code-Karten) haben jetzt roten Seitenakzent + Icon-Chip neben
@@ -2294,6 +2298,7 @@ body {
         <div class="de-actions">
           <button type="button" class="btn btn-secondary" id="planExportBtn">Planung exportieren</button>
           <button type="button" class="btn btn-warning" id="planImportBtn">Planung importieren</button>
+          <button type="button" class="btn btn-danger" id="planResetBtn">Planung zurücksetzen</button>
           <input type="file" id="planImportFile" accept=".json,application/json" hidden>
         </div>
         <div class="de-confirm" id="planImportConfirm" hidden>
@@ -2301,6 +2306,13 @@ body {
           <div class="de-actions">
             <button type="button" class="btn btn-danger" id="planImportConfirmBtn">Import bestätigen – Planung überschreiben</button>
             <button type="button" class="btn btn-secondary" id="planImportCancelBtn">Abbrechen</button>
+          </div>
+        </div>
+        <div class="de-confirm" id="planResetConfirm" hidden>
+          <p class="de-confirm-text">Alle lokal gespeicherten Planungsdaten werden gelöscht.</p>
+          <div class="de-actions">
+            <button type="button" class="btn btn-danger" id="planResetConfirmBtn">Zurücksetzen bestätigen</button>
+            <button type="button" class="btn btn-secondary" id="planResetCancelBtn">Abbrechen</button>
           </div>
         </div>
         <p class="de-msg" id="planMsg" role="status" aria-live="polite"></p>
@@ -2457,7 +2469,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.26.3"
+    version: "1.26.4"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -5063,6 +5075,22 @@ body {
   }
   function deCancelImport(){ dePendingImport=null; var c=document.getElementById("planImportConfirm"); if(c) c.hidden=true; deMsg("planMsg","Import abgebrochen.",""); }
 
+  /* (1b) Planung zurücksetzen – erst Bestätigung, dann alle funkuebung_*-Keys löschen + Reload */
+  function deResetPlanning(){
+    var ci=document.getElementById("planImportConfirm"); if(ci) ci.hidden=true; dePendingImport=null;
+    var c=document.getElementById("planResetConfirm"); if(c) c.hidden=false;
+    deMsg("planMsg","");
+  }
+  function deCancelReset(){ var c=document.getElementById("planResetConfirm"); if(c) c.hidden=true; deMsg("planMsg","Zurücksetzen abgebrochen.",""); }
+  function deConfirmReset(){
+    try{
+      deAllLocalFunkKeys().forEach(function(k){ try{localStorage.removeItem(k);}catch(e){} });
+      var c=document.getElementById("planResetConfirm"); if(c) c.hidden=true;
+      deMsg("planMsg","Planung wurde zurückgesetzt. Die Seite wird neu geladen …","ok");
+      setTimeout(function(){ location.reload(); }, 500);
+    }catch(e){ deMsg("planMsg","Zurücksetzen fehlgeschlagen.","warn"); }
+  }
+
   /* (2) data/uebung.json für station.html – nur benötigte Felder, ohne phrase */
   function exportUebungJson(){
     var stations=loadStations(); var active=loadVehicles().filter(function(v){return v.active;});
@@ -5125,7 +5153,7 @@ body {
     window.print();
   }
 
-  function renderDruck(){ populatePrintVehicleSel(); var c=document.getElementById("planImportConfirm"); if(c) c.hidden=true; dePendingImport=null; deMsg("planMsg",""); deMsg("uebungMsg",""); deMsg("printMsg",""); }
+  function renderDruck(){ populatePrintVehicleSel(); var c=document.getElementById("planImportConfirm"); if(c) c.hidden=true; var rc=document.getElementById("planResetConfirm"); if(rc) rc.hidden=true; dePendingImport=null; deMsg("planMsg",""); deMsg("uebungMsg",""); deMsg("printMsg",""); }
   function initDruck(){
     var ex=document.getElementById("planExportBtn"); if(ex) ex.addEventListener("click", exportFullPlanning);
     var imp=document.getElementById("planImportBtn"); var impFile=document.getElementById("planImportFile");
@@ -5134,6 +5162,9 @@ body {
     var ok=document.getElementById("planImportConfirmBtn"); if(ok) ok.addEventListener("click", deConfirmImport);
     var ca=document.getElementById("planImportCancelBtn"); if(ca) ca.addEventListener("click", deCancelImport);
     var ue=document.getElementById("uebungExportBtn"); if(ue) ue.addEventListener("click", exportUebungJson);
+    var rs=document.getElementById("planResetBtn"); if(rs) rs.addEventListener("click", deResetPlanning);
+    var rok=document.getElementById("planResetConfirmBtn"); if(rok) rok.addEventListener("click", deConfirmReset);
+    var rca=document.getElementById("planResetCancelBtn"); if(rca) rca.addEventListener("click", deCancelReset);
     var pr=document.getElementById("printQrBtn"); if(pr) pr.addEventListener("click", printQrCards);
     populatePrintVehicleSel();
   }
