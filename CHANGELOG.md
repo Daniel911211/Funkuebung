@@ -11,6 +11,19 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.30.0 (Bildersammlung – Lagebilder live aus GitHub-Repo):
+Neue „Bildersammlung" in der Stationsplanung (Button im Lagebild-Kopf, analog zur
+Satzsammlung als Overlay). Lädt die Bilder live aus dem öffentlichen Repository
+Daniel911211/Bilder über die GitHub-Contents-API (im Browser, In-Memory-Cache
+10 min gegen das unauth. Limit von 60 Abrufen/Stunde; Button „Aktualisieren"
+erzwingt einen Neuabruf). Thumbnail-Raster; Klick/„Übernehmen" fügt das Bild als
+Lagebild zur Station hinzu (raw-URL aus GitHub) – ist bereits ein leeres Lagebild
+vorhanden, wird dessen URL gefüllt, sonst ein neues angelegt. Das manuelle
+Bild-URL-Feld bleibt unabhängig nutzbar; bei Limit/Offline klare Fallback-Meldung.
+Bilder werden NICHT lokal gespeichert. Neue Funktionen bildFetchList/renderBildGrid/
+bildTake/openBildOverlay/closeBildOverlay/addStationImageWithUrl; kein eigener
+Bereich/Tab. station.html und data/uebung.json unverändert.
+
 Stand 1.29.0 (QR-Code-Plan – Vollständigkeitsprüfung + Dashboard-Pill, aktiv-basiert):
 Der QR-Code-Plan hat jetzt einen eigenen Status (vorher dauerhaft „Offen", zählte
 nie zur Fortschrittsleiste → 100 % unmöglich). SOLL = vorhandene Stationen × AKTIVE
