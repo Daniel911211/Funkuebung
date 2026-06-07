@@ -9,8 +9,10 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.2 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.3 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.3: Bildunterschrift des Lagebilds (z. B. „Lagebild 1") wird nicht mehr
+  angezeigt (title bleibt nur als alt-Text).
   Stand 1.0.2: Titel in der Kopfzeile nicht mehr fett – gleiche Optik wie Datum
   und Uhrzeit.
   Stand 1.0.1: Kopfzeile wieder kompakt einzeilig (Titel · Datum · Uhrzeit), Datum
@@ -71,7 +73,6 @@
   .imgs{display:flex;flex-direction:column;gap:12px;}
   .imgfig{margin:0;}
   .imgfig img{display:block;width:100%;height:auto;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-1);}
-  .imgfig figcaption{margin-top:6px;font-size:.86rem;color:var(--text-faint);}
   .muted{font-size:.95rem;color:var(--text-faint);font-style:italic;}
 
   /* Lösungszeichen – Freischaltung per Positionscode */
@@ -109,7 +110,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.2" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.3" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -126,9 +127,10 @@
     var images=Array.isArray(station.images)?station.images:[];
     var shown=images.length<=1?images:images.filter(function(im){return Array.isArray(im.vehicleIds)&&im.vehicleIds.indexOf(fhz)!==-1;});
     if(!shown.length) return '<p class="muted">Für dieses Fahrzeug ist kein Lagebild hinterlegt.</p>';
+    /* Bildunterschrift (im.title, z. B. „Lagebild 1") wird bewusst NICHT angezeigt;
+       title bleibt als alt-Text für Barrierefreiheit erhalten. */
     return '<div class="imgs">'+shown.map(function(im){
-      var cap=nonEmpty(im.title)?'<figcaption>'+escapeHTML(im.title)+'</figcaption>':'';
-      return '<figure class="imgfig"><img src="'+escapeAttr(im.url)+'" alt="'+escapeAttr(im.title||"Lagebild")+'" loading="lazy">'+cap+'</figure>';
+      return '<figure class="imgfig"><img src="'+escapeAttr(im.url)+'" alt="'+escapeAttr(im.title||"Lagebild")+'" loading="lazy"></figure>';
     }).join("")+'</div>';
   }
 
