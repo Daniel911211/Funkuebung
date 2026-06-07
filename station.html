@@ -9,8 +9,11 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.5 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.6 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.6: Stationskopf umgestellt – grosse weisse Ueberschrift zeigt jetzt die
+  Adresse/Einsatzort (aus der Routenplanung), die 2. Zeile wieder Fahrzeug + Funk-
+  rufname; rote Kachel zeigt weiterhin die Laufnummer.
   Stand 1.0.5: Einsatzort-Fallback erweitert (address -> location -> ort -> einsatzort
   -> title -> neutral).
   Stand 1.0.4: Teilnehmeranzeige zeigt jetzt die LAUFNUMMER der echten Station in
@@ -118,7 +121,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.5" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.6" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -182,8 +185,8 @@
 
     document.getElementById("content").innerHTML=
       '<div class="topbar"><div class="st-no">'+escapeHTML(String(laufnr))+'</div>'+
-        '<div><h1>Station '+escapeHTML(String(laufnr))+'</h1>'+
-        '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b> · '+escapeHTML(ort)+'</div></div></div>'+
+        '<div><h1>'+escapeHTML(ort)+'</h1>'+
+        '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b>'+(nonEmpty(vehicle.callsign)?' · '+escapeHTML(vehicle.callsign):'')+'</div></div></div>'+
       '<div class="grid">'+
         '<div class="card"><div class="label">Aufgabe</div>'+taskHtml+'</div>'+
         '<div class="card"><div class="label">Lagebild</div>'+lagebildHtml(station,fhz)+'</div>'+
