@@ -9,8 +9,11 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.6 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.7 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.7: Ist fuer das Fahrzeug kein Lagebild hinterlegt, wird der Lagebild-
+  Kartenbereich komplett ausgeblendet (statt Hinweistext); die Aufgabe-Karte nimmt
+  dann die volle Breite ein.
   Stand 1.0.6: Stationskopf umgestellt – grosse weisse Ueberschrift zeigt jetzt die
   Adresse/Einsatzort (aus der Routenplanung), die 2. Zeile wieder Fahrzeug + Funk-
   rufname; rote Kachel zeigt weiterhin die Laufnummer.
@@ -121,7 +124,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.6" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.7" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -148,7 +151,7 @@
   function lagebildHtml(station, fhz){
     var images=Array.isArray(station.images)?station.images:[];
     var shown=images.length<=1?images:images.filter(function(im){return Array.isArray(im.vehicleIds)&&im.vehicleIds.indexOf(fhz)!==-1;});
-    if(!shown.length) return '<p class="muted">Für dieses Fahrzeug ist kein Lagebild hinterlegt.</p>';
+    if(!shown.length) return '';  /* Kein Lagebild → Kartenbereich wird in render() komplett ausgeblendet. */
     /* Bildunterschrift (im.title, z. B. „Lagebild 1") wird bewusst NICHT angezeigt;
        title bleibt als alt-Text für Barrierefreiheit erhalten. */
     return '<div class="imgs">'+shown.map(function(im){
@@ -183,14 +186,19 @@
 
     var taskHtml=nonEmpty(station.task)?'<div class="task">'+escapeHTML(station.task)+'</div>':'<p class="muted">Keine Aufgabe hinterlegt.</p>';
 
+    /* Aufgabe + Lagebild: Ist kein Lagebild hinterlegt, wird der Lagebild-Kartenbereich
+       komplett ausgeblendet und die Aufgabe-Karte nimmt die volle Breite ein. */
+    var aufgabeCard='<div class="card"><div class="label">Aufgabe</div>'+taskHtml+'</div>';
+    var imgsHtml=lagebildHtml(station,fhz);
+    var mainArea = imgsHtml
+      ? '<div class="grid">'+aufgabeCard+'<div class="card"><div class="label">Lagebild</div>'+imgsHtml+'</div></div>'
+      : aufgabeCard;
+
     document.getElementById("content").innerHTML=
       '<div class="topbar"><div class="st-no">'+escapeHTML(String(laufnr))+'</div>'+
         '<div><h1>'+escapeHTML(ort)+'</h1>'+
         '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b>'+(nonEmpty(vehicle.callsign)?' · '+escapeHTML(vehicle.callsign):'')+'</div></div></div>'+
-      '<div class="grid">'+
-        '<div class="card"><div class="label">Aufgabe</div>'+taskHtml+'</div>'+
-        '<div class="card"><div class="label">Lagebild</div>'+lagebildHtml(station,fhz)+'</div>'+
-      '</div>'+
+      mainArea+
       '<div class="card code-card">'+
         '<div class="label">Lösungszeichen</div>'+
         '<p class="code-hint">Geben Sie den von der Übungsleitung übermittelten Positionscode ein, um das Lösungszeichen anzuzeigen.</p>'+
