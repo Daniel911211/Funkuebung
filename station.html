@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.12 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.13 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -68,8 +68,17 @@
 
   .imgs{display:flex;flex-direction:column;gap:12px;}
   .imgfig{margin:0;}
-  .imgfig img{display:block;width:100%;height:auto;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-1);}
+  .imgfig img{display:block;width:100%;height:auto;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-1);cursor:zoom-in;}
+  .imgfig img:focus-visible{outline:2px solid var(--red);outline-offset:2px;}
   .muted{font-size:.95rem;color:var(--text-faint);font-style:italic;}
+
+  /* Lagebild-Lightbox: Tipp/Klick aufs Lagebild → große Vollbild-Ansicht.
+     Schließt per Tipp/Klick irgendwo, ×-Button oder Escape (Tablet/Handy/Desktop). */
+  .lb{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(8,9,11,.92);}
+  .lb.open{display:flex;}
+  .lb img{max-width:100%;max-height:100%;width:auto;height:auto;border-radius:var(--radius-sm);box-shadow:0 12px 44px rgba(0,0,0,.6);cursor:zoom-out;}
+  .lb-close{position:absolute;top:12px;right:14px;width:46px;height:46px;display:grid;place-items:center;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:50%;color:#fff;font-size:1.9rem;line-height:1;cursor:pointer;}
+  .lb-close:hover{background:rgba(0,0,0,.7);}
 
   /* Lösungszeichen – Freischaltung per Positionscode */
   .code-card{margin-top:16px;}
@@ -100,12 +109,16 @@
     <div id="content"><p class="muted">Lade Stationsdaten …</p></div>
     <div class="foot" id="stFoot">Stationsoberfläche</div>
   </div>
+  <div class="lb" id="lb" aria-hidden="true" role="dialog" aria-label="Lagebild groß">
+    <button type="button" class="lb-close" id="lbClose" aria-label="Schließen">&times;</button>
+    <img id="lbImg" alt="">
+  </div>
 <script>
 (function () {
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.12" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.13" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -125,7 +138,7 @@
     /* Bildunterschrift (im.title, z. B. „Lagebild 1") wird bewusst NICHT angezeigt;
        title bleibt als alt-Text für Barrierefreiheit erhalten. */
     return '<div class="imgs">'+shown.map(function(im){
-      return '<figure class="imgfig"><img src="'+escapeAttr(im.url)+'" alt="'+escapeAttr(im.title||"Lagebild")+'" loading="lazy"></figure>';
+      return '<figure class="imgfig"><img class="lb-trigger" src="'+escapeAttr(im.url)+'" alt="'+escapeAttr(im.title||"Lagebild")+'" loading="lazy" tabindex="0" role="button" aria-label="Lagebild vergrößern"></figure>';
     }).join("")+'</div>';
   }
 
@@ -235,8 +248,43 @@
     if(!vehicle){showError("Fahrzeug nicht gefunden","Für <code>fhz="+escapeHTML(String(fhz))+"</code> gibt es kein Fahrzeug in den Übungsdaten.");return;}
     render(data, station, vehicle, fhz);
   }
+  /* --- Lagebild-Lightbox ----------------------------------------------------
+     Öffnet das angetippte/angeklickte Lagebild als Vollbild. Tap auf Tablet/
+     Handy löst denselben click aus → funktioniert touch wie Maus. Schließen:
+     Tipp/Klick irgendwo im Overlay, ×-Button oder Escape. */
+  function openLightbox(src, alt){
+    var lb=document.getElementById("lb"), img=document.getElementById("lbImg");
+    if(!lb||!img||!nonEmpty(src)) return;
+    img.src=src; img.alt=alt||"Lagebild";
+    lb.classList.add("open"); lb.setAttribute("aria-hidden","false");
+    document.body.style.overflow="hidden";
+  }
+  function closeLightbox(){
+    var lb=document.getElementById("lb"), img=document.getElementById("lbImg");
+    if(!lb||!lb.classList.contains("open")) return;
+    lb.classList.remove("open"); lb.setAttribute("aria-hidden","true");
+    if(img) img.removeAttribute("src");
+    document.body.style.overflow="";
+  }
+  function initLightbox(){
+    var lb=document.getElementById("lb");
+    if(!lb) return;
+    lb.addEventListener("click", closeLightbox); /* Tipp/Klick irgendwo im Overlay schließt */
+    /* Delegation: übersteht das Neu-Rendern des Inhalts. */
+    document.addEventListener("click", function(e){
+      var t=e.target;
+      if(t&&t.classList&&t.classList.contains("lb-trigger")) openLightbox(t.getAttribute("src"), t.getAttribute("alt"));
+    });
+    document.addEventListener("keydown", function(e){
+      var t=e.target;
+      if((e.key==="Enter"||e.key===" ")&&t&&t.classList&&t.classList.contains("lb-trigger")){ e.preventDefault(); openLightbox(t.getAttribute("src"), t.getAttribute("alt")); return; }
+      if(e.key==="Escape") closeLightbox();
+    });
+  }
+
   function start(){
     var ft=document.getElementById("stFoot"); if(ft) ft.textContent="Stationsoberfläche · Version "+STATION_APP_INFO.version;
+    initLightbox();
     if(typeof fetch==="undefined"){showError("Nicht unterstützt","Dieser Browser kann die Übungsdaten nicht laden.");return;}
     fetch("data/uebung.json",{cache:"no-store"})
       .then(function(r){if(!r.ok)throw new Error("http "+r.status);return r.json();})
