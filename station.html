@@ -9,8 +9,12 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.7 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.8 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
+  Stand 1.0.8: Begriffe an das Planungstool angeglichen. Neuer Block "Aufgabe"
+  (kurzer Titel, intern title) wird oben angezeigt, sofern hinterlegt; die bisherige
+  "Aufgabe"-Karte heisst jetzt "Aufgabenbeschreibung" (ausfuehrlicher Text, intern
+  task). Fehlt der Titel, wird der Aufgabe-Block ausgeblendet.
   Stand 1.0.7: Ist fuer das Fahrzeug kein Lagebild hinterlegt, wird der Lagebild-
   Kartenbereich komplett ausgeblendet (statt Hinweistext); die Aufgabe-Karte nimmt
   dann die volle Breite ein.
@@ -37,9 +41,9 @@
   Aufruf per QR:  station.html?s=<Stationsnummer>&fhz=<Fahrzeug-ID>
   z. B. station.html?s=1&fhz=elw
 
-  Zeigt die Grunddaten der Station (Übungskopf, Station + Bezeichnung, Fahrzeug,
-  Aufgabe, Lagebild passend zum Fahrzeug). Tablet: zweispaltig (Aufgabe | Lagebild),
-  Handy: einspaltig.
+  Zeigt die Grunddaten der Station (Übungskopf, Einsatzort, Fahrzeug, Aufgabe,
+  Aufgabenbeschreibung, Lagebild passend zum Fahrzeug). Tablet: zweispaltig
+  (Aufgabenbeschreibung | Lagebild), Handy: einspaltig.
 
   LÖSUNGSZEICHEN: wird NICHT offen angezeigt. Es wird erst über einen
   POSITIONSCODE freigeschaltet:
@@ -83,6 +87,8 @@
   .card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
   .label{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;}
   .task{font-size:1.3rem;line-height:1.5;color:var(--text);}
+  .aufgabe-card{margin-bottom:16px;}
+  .aufgabe-text{font-size:1.3rem;line-height:1.4;color:var(--text);font-weight:600;}
 
   .imgs{display:flex;flex-direction:column;gap:12px;}
   .imgfig{margin:0;}
@@ -124,7 +130,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.7" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.8" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -184,20 +190,30 @@
     if(nonEmpty(meta.time)) ex.push(escapeHTML(meta.time)+' Uhr');
     document.getElementById("exMeta").innerHTML=ex.join(' · ');
 
-    var taskHtml=nonEmpty(station.task)?'<div class="task">'+escapeHTML(station.task)+'</div>':'<p class="muted">Keine Aufgabe hinterlegt.</p>';
+    /* Aufgabe = kurzer Titel der Station. Nur anzeigen, wenn hinterlegt – sonst
+       wird der Block ausgeblendet (kein Platzhalter). */
+    var aufgabeHtml=nonEmpty(station.title)
+      ? '<div class="card aufgabe-card"><div class="label">Aufgabe</div><div class="aufgabe-text">'+escapeHTML(station.title)+'</div></div>'
+      : '';
 
-    /* Aufgabe + Lagebild: Ist kein Lagebild hinterlegt, wird der Lagebild-Kartenbereich
-       komplett ausgeblendet und die Aufgabe-Karte nimmt die volle Breite ein. */
-    var aufgabeCard='<div class="card"><div class="label">Aufgabe</div>'+taskHtml+'</div>';
+    /* Aufgabenbeschreibung = ausführlicher Aufgabentext für die Teilnehmer. */
+    var beschrHtml=nonEmpty(station.task)
+      ? '<div class="task">'+escapeHTML(station.task)+'</div>'
+      : '<p class="muted">Keine Aufgabenbeschreibung hinterlegt.</p>';
+    var beschrCard='<div class="card"><div class="label">Aufgabenbeschreibung</div>'+beschrHtml+'</div>';
+
+    /* Aufgabenbeschreibung + Lagebild nebeneinander; fehlt das Lagebild, wird der
+       Kartenbereich ausgeblendet und die Beschreibung nimmt die volle Breite ein. */
     var imgsHtml=lagebildHtml(station,fhz);
     var mainArea = imgsHtml
-      ? '<div class="grid">'+aufgabeCard+'<div class="card"><div class="label">Lagebild</div>'+imgsHtml+'</div></div>'
-      : aufgabeCard;
+      ? '<div class="grid">'+beschrCard+'<div class="card"><div class="label">Lagebild</div>'+imgsHtml+'</div></div>'
+      : beschrCard;
 
     document.getElementById("content").innerHTML=
       '<div class="topbar"><div class="st-no">'+escapeHTML(String(laufnr))+'</div>'+
         '<div><h1>'+escapeHTML(ort)+'</h1>'+
         '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b>'+(nonEmpty(vehicle.callsign)?' · '+escapeHTML(vehicle.callsign):'')+'</div></div></div>'+
+      aufgabeHtml+
       mainArea+
       '<div class="card code-card">'+
         '<div class="label">Lösungszeichen</div>'+
