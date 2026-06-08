@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.16 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.17 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -101,6 +101,10 @@
   .gate-opt.wrong{border-color:var(--warn);}
   .mc-card{margin-top:16px;}
   .mc-q .task{margin-bottom:10px;}
+  .relay-send-card{margin-top:16px;border-left:3px solid var(--status-prog);}
+  .relay-send + .relay-send{border-top:1px solid var(--line-soft);margin-top:10px;padding-top:10px;}
+  .relay-word{font-family:var(--font-mono);font-size:1.8rem;font-weight:800;letter-spacing:.06em;color:var(--text);background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 14px;margin-top:6px;word-break:break-word;}
+  .relay-recv-card{margin-top:16px;}
 
   /* Mastercode der Übungsleitung: bewusst zurückhaltend, kein auffälliges Feld. */
   .master-card{margin-top:18px;text-align:center;}
@@ -135,7 +139,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.16" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.17" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -242,7 +246,13 @@
        dezenten Button einblendbar. Korrekt → Lösungszeichen direkt, ohne Gate/Code. */
     var masterHash = (data.meta && typeof data.meta.masterCode==="string") ? data.meta.masterCode : "";
     var needMaster = nonEmpty(masterHash);
-    var needGate  = needFhz || needElw || needMc;
+    /* Funkaufträge: relaySend = Wörter, die DIESE Besatzung an andere funkt (Anzeige,
+       kein Gate). relayRecv = Wörter, die ihr von anderen gefunkt werden und hier zur
+       Freischaltung des Codes eingegeben werden müssen (Gate, nur Hash hinterlegt). */
+    var relaySend = (assign && Array.isArray(assign.relaySend)) ? assign.relaySend.filter(function(x){ return x && nonEmpty(x.word); }) : [];
+    var relayRecv = (assign && Array.isArray(assign.relayRecv)) ? assign.relayRecv.filter(function(x){ return x && nonEmpty(x.hash); }) : [];
+    var needRelay = relayRecv.length>0;
+    var needGate  = needFhz || needElw || needMc || needRelay;
     var gateCard = "";
     if(needGate){
       var fhzPart = "";
@@ -301,6 +311,41 @@
         '</div>';
     }
 
+    /* Funkauftrag-Sender-Karte: zeigt das/die Wörter, die diese Besatzung an andere
+       durchfunken soll (parallel zur Aufgabe, kein Gate). */
+    var relaySendCard = "";
+    if(relaySend.length){
+      relaySendCard =
+        '<div class="card relay-send-card">'+
+          '<div class="label">Funkauftrag</div>'+
+          relaySend.map(function(rs){
+            return '<div class="relay-send">'+
+              '<p class="gate-hint">Gib folgendes Wort per Funk an <b>'+escapeHTML(rs.to||"den Empfänger")+'</b> durch:</p>'+
+              '<div class="relay-word">'+escapeHTML(rs.word)+'</div>'+
+            '</div>';
+          }).join("")+
+        '</div>';
+    }
+
+    /* Funkauftrag-Empfänger-Karte (Gate): das per Funk erhaltene Wort eingeben. */
+    var relayCard = "";
+    if(needRelay){
+      relayCard =
+        '<div class="card relay-recv-card" id="relayCard">'+
+          '<div class="label">Funkwort eingeben</div>'+
+          relayRecv.map(function(rr,ri){
+            return '<div class="gate-part">'+
+              '<p class="gate-hint">Welches Wort wurde dir von <b>'+escapeHTML(rr.from||"einem anderen Fahrzeug")+'</b> gefunkt?</p>'+
+              '<div class="code-row">'+
+                '<input type="text" data-relayinput="'+ri+'" placeholder="Gefunktes Wort" autocomplete="off" spellcheck="false">'+
+                '<button type="button" class="btn" data-relaybtn="'+ri+'">Prüfen</button>'+
+              '</div>'+
+              '<p class="code-msg" data-relaymsg="'+ri+'" role="status" aria-live="polite"></p>'+
+            '</div>';
+          }).join("")+
+        '</div>';
+    }
+
     /* Mastercode-Karte: nur ein dezenter Button; das Eingabefeld bleibt verborgen,
        bis die Übungsleitung den Button antippt. */
     var masterCard = "";
@@ -323,8 +368,10 @@
         '<div><h1>'+escapeHTML(ort)+'</h1>'+
         '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b>'+(nonEmpty(vehicle.callsign)?' · '+escapeHTML(vehicle.callsign):'')+'</div></div></div>'+
       mainArea+
+      relaySendCard+
       gateCard+
       mcCard+
+      relayCard+
       '<div class="card code-card" id="codeCard"'+(needGate?' style="display:none"':'')+'>'+
         '<div class="label">Lösungszeichen</div>'+
         '<div class="code-row" id="codeRow">'+
@@ -371,9 +418,9 @@
     /* Vor-Gate: „Antwort der Besatzung" (FHZ), „Rückwort des ELW" (ELW) und/oder
        Multiple-Choice-Fragen. Erst wenn alles stimmt → Positionscode-Feld. */
     if(needGate){
-      var fhzOK=!needFhz, elwOK=!needElw, mcOK=!needMc;
+      var fhzOK=!needFhz, elwOK=!needElw, mcOK=!needMc, relayOK=!needRelay;
       function revealCode(){
-        if(!(fhzOK&&elwOK&&mcOK)) return;
+        if(!(fhzOK&&elwOK&&mcOK&&relayOK)) return;
         var cc=document.getElementById("codeCard"); if(cc) cc.style.display="";
         if(input) input.focus();
       }
@@ -441,6 +488,30 @@
           });
         });
       }
+      if(needRelay){
+        var relaySolved = relayRecv.map(function(){ return false; });
+        function checkAllRelay(){
+          for(var i=0;i<relaySolved.length;i++){ if(!relaySolved[i]) return; }
+          relayOK=true; revealCode();
+        }
+        relayRecv.forEach(function(rr,ri){
+          var rInput=document.querySelector('[data-relayinput="'+ri+'"]');
+          var rBtn=document.querySelector('[data-relaybtn="'+ri+'"]');
+          var rMsg=document.querySelector('[data-relaymsg="'+ri+'"]');
+          function setRMsg(t,k){ if(rMsg){ rMsg.textContent=t||""; rMsg.className="code-msg"+(k?" "+k:""); } }
+          function tryRelay(){
+            if(relaySolved[ri]) return;
+            if(!normWord(rInput.value)){ setRMsg("Bitte das gefunkte Wort eingeben.","warn"); return; }
+            if(hashWord(rInput.value, salt)===rr.hash){
+              relaySolved[ri]=true; setRMsg("Wort korrekt.","ok");
+              rInput.disabled=true; if(rBtn) rBtn.disabled=true;
+              checkAllRelay();
+            } else { setRMsg("Wort stimmt nicht. Bitte erneut prüfen.","warn"); }
+          }
+          if(rBtn) rBtn.addEventListener("click", tryRelay);
+          if(rInput) rInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryRelay(); } });
+        });
+      }
     }
 
     /* Mastercode-Override der Übungsleitung: dezenter Button blendet das Eingabefeld
@@ -463,6 +534,7 @@
           setMasterMsg("Freigeschaltet – Lösungszeichen sichtbar.","ok");
           var gc=document.getElementById("gateCard"); if(gc) gc.style.display="none";
           var mcc=document.getElementById("mcCard"); if(mcc) mcc.style.display="none";
+          var rc=document.getElementById("relayCard"); if(rc) rc.style.display="none";
           var cc=document.getElementById("codeCard"); if(cc) cc.style.display="";
           revealLetter();
         } else { setMasterMsg("Mastercode stimmt nicht.","warn"); }

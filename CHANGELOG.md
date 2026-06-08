@@ -11,6 +11,19 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.35.0 (Funkaufträge / Funkwort-Weitergabe – TESTFUNKTION, nicht live): Neuer
+Bereich **„Funkaufträge"** (in der Navigation zwischen „Lösungssatz" und „QR-Code-Plan").
+Damit lässt sich ein **Funkwort** definieren, das ein Fahrzeug (**Von**, Fahrzeug +
+Station) einem anderen Fahrzeug **oder dem ELW** (**An**) per Funk durchgibt. Der
+Empfänger gibt das Wort an seiner Station ein → das schaltet dort den **Positionscode**
+frei (echter Funkverkehr erzwungen). Speicherung lokal unter neuem Key
+`funkuebung_funkauftraege_v1` (Liste `{word, from, to}`). Export mergt je Auftrag in die
+`assignments`-Zellen: **Sender-Zelle** `relaySend:[{to,word}]` (Wort im **Klartext**, der
+Sender muss es lesen), **Empfänger-Zelle (FHZ)** `relayRecv:[{from,hash}]` bzw.
+**Empfänger ELW** `relayElw:{from,hash}` (Wort nur als **Verschleierungs-Hash** cyrb53,
+gesalzen mit name+date). Alle Felder optional → ohne Funkaufträge unverändertes
+Verhalten. `loesung.phrase`/`char` weiterhin NICHT exportiert.
+
 Stand 1.34.0 (Aufgabentyp Multiple-Choice + Mastercode + Detail-Überarbeitung –
 TESTFUNKTION, nicht live): Neuer **Aufgabentyp „Multiple-Choice-Fragen"** je Station
 (zusätzlich zu „Text"/„Rätsel"): ein Quiz aus **mehreren Fragen**, je Frage Text +
@@ -516,6 +529,15 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
 
+Stand 1.0.17 (Funkauftrag-Karten – TESTFUNKTION, nicht live): Zwei neue Karten je
+Station (parallel zur Aufgabe). **Funkauftrag-Sender:** bei hinterlegtem `relaySend`
+zeigt die Station das/die **Funkwörter** im Klartext mit dem Empfänger-Hinweis („an HLF
+durchgeben") – reine Anzeige, kein Gate. **Funkwort-Empfänger:** bei `relayRecv` ein
+**Gate** „Welches Wort kam von <Fahrzeug>?" – stimmt der Hash (case-/leerzeichen-tolerant),
+zählt es zur Freischaltung; erst wenn alle hinterlegten Gates (FHZ/ELW/MC/Funkwort)
+erfüllt sind, erscheint das Positionscode-Feld. Mastercode-Override blendet auch die
+Funkwort-Karte aus. Felder optional → ohne `relaySend`/`relayRecv` unverändert.
+
 Stand 1.0.16 (Multiple-Choice-Fragen-Gate + Mastercode-Override – TESTFUNKTION,
 nicht live): Neben dem Rätsel-Gate gibt es jetzt ein **Fragen-Gate**: bei einer
 Station mit `mc.questions` zeigt die Stationsseite die Fragen mit Antwort-Buttons;
@@ -614,6 +636,14 @@ Versionsanzeige im Footer, Positionscode-Freischaltung des Lösungszeichens.
 > Eigene Versionierung (zentral in `ELW_APP_INFO.version`, im Footer sichtbar).
 > Lesende Schwesterseite zu station.html für ELW/Übungsleitung; lädt
 > data/uebung.json. Zeigt NIEMALS Lösungssatz/Lösungszeichen (nur Positionscodes).
+
+Stand 1.3.0 (Funkauftrag-Empfänger / Code-Gate – TESTFUNKTION, nicht live): Hat eine
+Station ein `relayElw` (Besatzung funkt ein Wort hoch), zeigt `elw.html` in der
+Code-Spalte statt „Code anzeigen" ein **Eingabefeld** „Wort von <Fahrzeug> eingeben". Erst
+wenn die ELW das hochgefunkte Wort einträgt (Hash-Vergleich, case-/leerzeichen-tolerant),
+wird der **Positionscode** der Zeile sichtbar (zum Runterfunken). `relayElw` hat Vorrang
+vor „Code direkt". Dafür Hash-Helfer (`normWord`/`saltFromMeta`/`hashWord`, identisch zu
+index/station) ergänzt. Weiterhin **kein** Lösungssatz/`char`.
 
 Stand 1.2.0 (kein Wort-Gate mehr, ELW-Rätsel als Overlay, Code direkt, neue Optik):
 Das FHZ-Wort-Gate entfällt – die Freischalt-Wörter werden ausschließlich auf

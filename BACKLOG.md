@@ -55,6 +55,21 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## In Test (nicht live)
 
+### [~] Funkaufträge (Funkwort-Weitergabe zwischen Beteiligten)
+
+**Status:** in Test · index v1.35.0 / station v1.0.17 / elw v1.3.0 · Branch
+`claude/funny-lovelace-Ljjaw` (Draft-PR, **nicht** gemergt → nicht live).
+
+- Neuer Bereich „Funkaufträge": ein **Funkwort**, das **Von** (FHZ + Station) **An**
+  (anderes FHZ + Station **oder** ELW) per Funk durchgegeben wird. Empfänger gibt es an
+  seiner Station ein → **Positionscode** frei (echter Funkverkehr erzwungen).
+- Export: Sender-Zelle `relaySend` (Klartext), Empfänger `relayRecv`/`relayElw` (nur
+  Hash). station.html: Sender-Karte + Empfänger-Gate. elw.html: ELW-Empfänger-Gate
+  (Code erst nach Eingabe des hochgefunkten Worts).
+- **Bewusste Aufweichung:** das Funkwort steht im Klartext beim Sender in der Datei
+  (muss er lesen) – Obfuscation-Niveau wie der Base64-Payload, der Mechanik inhärent.
+- **Offen vor Live:** Praxistest des Gesamtablaufs; danach über Live-Gang entscheiden.
+
 ### [~] Aufgabentyp Multiple-Choice + Mastercode + Detail-Überarbeitung
 
 **Status:** in Test · index v1.34.0 / station v1.0.16 · Branch

@@ -13,6 +13,17 @@ Die vollständige Versionshistorie steht in `CHANGELOG.md` (nicht mehr im
 Datei-Kopf). Die Datei-Köpfe enthalten nur noch die aktuelle Versionszeile +
 Kurzbeschreibung und verweisen auf `CHANGELOG.md`.
 
+## Test-Features (NICHT live, Branch `claude/funny-lovelace-Ljjaw`)
+
+Auf dem Branch liegen Testfunktionen, die bewusst **nicht** auf `main`/live sind
+(Draft-PRs, nicht gemergt). Details in `CHANGELOG.md`/`BACKLOG.md`:
+- **Aufgabentyp Multiple-Choice + Mastercode-Override** (index v1.34.0 / station v1.0.16).
+- **Funkaufträge (Funkwort-Weitergabe)** (index v1.35.0 / station v1.0.17 / elw v1.3.0):
+  Funkwort „Von" FHZ+Station „An" FHZ+Station oder ELW; Empfänger gibt es ein → Code frei.
+  Export `relaySend` (Klartext beim Sender) / `relayRecv`/`relayElw` (nur Hash).
+
+Diese Punkte erst nach Freigabe des Nutzers nach `main` übernehmen.
+
 ## Backlog / Vormerkungen (WICHTIG)
 
 - **Kleinere Änderungen werden nicht sofort einzeln als eigener Patch

@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.34.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.35.0)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -1666,6 +1666,18 @@ body {
   .mc-q-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
   .mc-q-no { font-weight: 600; color: var(--text); font-size: .95rem; }
   .mc-opt-label { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint); margin-bottom: 6px; }
+
+  /* --- Funkauftrag-Editor --------------------------------------------- */
+  .badge-test { display: inline-block; vertical-align: middle; font-size: .62rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--btn-warn-fg); background: var(--btn-warn); border-radius: 999px; padding: 2px 8px; margin-left: 8px; }
+  .funk-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .funk-head .subsection-title { margin: 0; }
+  .funk-row { position: relative; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 12px 44px 12px 14px; margin-bottom: 12px; }
+  .funk-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) { .funk-grid { grid-template-columns: 1fr; } }
+  .funk-grid .detail-field { margin-bottom: 0; }
+  .funk-party { display: flex; flex-direction: column; gap: 6px; }
+  .funk-elw-note { font-size: .8rem; color: var(--text-faint); line-height: 1.4; }
+  .funk-del { position: absolute; top: 10px; right: 10px; }
 </style>
 </head>
 <body>
@@ -2039,6 +2051,23 @@ body {
 
     <!-- ----- 7) QR-CODE-PLAN ------------------------------------------- -->
     <!-- → später: qr/qr-codes.html -->
+    <section class="section" id="sec-funkauftraege">
+      <div class="section-head">
+        <h2>Funkaufträge <span class="badge-test">Test</span></h2>
+        <p>Funkwörter, die ein Fahrzeug einem anderen Fahrzeug oder dem ELW <b>per Funk</b> durchgibt. Der Empfänger gibt das Wort an seiner Station ein – das schaltet dort den <b>Positionscode</b> frei. So entsteht echter Funkverkehr (die Lösung kommt nur über Funk, nicht allein am Gerät).</p>
+      </div>
+
+      <div class="panel">
+        <div class="funk-head">
+          <h3 class="subsection-title">Funkaufträge</h3>
+          <button type="button" class="btn btn-primary" id="funkAdd">+ Funkauftrag</button>
+        </div>
+        <p class="field-hint">„<b>Von</b>" sieht das Wort an seiner Station und funkt es; „<b>An</b>" gibt es an seiner Station ein → Code frei. Bei „An = ELW" gibt die ELW das hochgefunkte Wort auf <code>elw.html</code> ein und der Code der „Von"-Station wird frei. Das Funkwort wird für den Empfänger nur <b>verschleiert (Hash)</b> exportiert.</p>
+        <div id="funkList"></div>
+        <p class="field-hint" id="funkMsg" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
     <section class="section" id="sec-qr">
       <div class="section-head">
         <h2>QR-Code-Plan</h2>
@@ -2279,7 +2308,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.34.0"
+    version: "1.35.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2291,6 +2320,7 @@ body {
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Aufgabe, Aufgabenbeschreibung und Lagebilder je Station festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
     { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf Fahrzeuge und Stationen verteilen." },
+    { id: "funkauftraege", label: "Funkaufträge",  icon: "loop",    nav: true,  card: false, desc: "Funkwörter zwischen Fahrzeugen/ELW (Test)." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
@@ -2632,6 +2662,49 @@ body {
     catch (e) { return false; }
   }
 
+  /* ----------------------------------------------------------------------
+     Funkaufträge (Funkwort-Weitergabe): zentrale Liste. Je Auftrag ein Wort,
+     das eine Partei (Sender) einer anderen (Empfänger) per Funk durchgibt; der
+     Empfänger gibt es an seiner Station ein → schaltet dort den Code frei.
+     Sender ist immer eine FHZ (ELW→FHZ deckt das bestehende ELW-Rätsel ab);
+     Empfänger = FHZ oder ELW. Klartext NUR lokal; Export hasht das Wort.
+     ---------------------------------------------------------------------- */
+  var FUNK_STORAGE_KEY = "funkuebung_funkauftraege_v1";
+  function newFunkId() {
+    return "funk_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+  }
+  function normalizeFunkParty(p) {
+    p = p || {};
+    return {
+      role: p.role === "elw" ? "elw" : "fhz",
+      vehId: p.vehId != null ? String(p.vehId) : "",
+      stationNr: (p.stationNr != null && p.stationNr !== "") ? String(p.stationNr) : ""
+    };
+  }
+  function defaultFunkauftrag() {
+    return { id: newFunkId(), word: "", from: { role: "fhz", vehId: "", stationNr: "" }, to: { role: "fhz", vehId: "", stationNr: "" } };
+  }
+  function normalizeFunkauftrag(f) {
+    f = f || {};
+    return {
+      id: f.id || newFunkId(),
+      word: f.word != null ? String(f.word) : "",
+      from: normalizeFunkParty(f.from),
+      to: normalizeFunkParty(f.to)
+    };
+  }
+  function loadFunkauftraege() {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(FUNK_STORAGE_KEY)); }
+    catch (e) { raw = null; }
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normalizeFunkauftrag);
+  }
+  function saveFunkauftraege(list) {
+    try { localStorage.setItem(FUNK_STORAGE_KEY, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
+  }
+
   /* Eine AKTIVE Station gilt als vollständig, wenn:
      1. die Aufgabe ausgefüllt ist,
      2. alle vorhandenen Lagebilder eine ausgefüllte URL haben,
@@ -2722,6 +2795,7 @@ body {
     if (id === "loesung") renderLoesung();
     /* QR-Übersicht beim Öffnen neu aufbauen (Fahrzeuge/Stationen können sich
        geändert haben). */
+    if (id === "funkauftraege") renderFunkauftraege();
     if (id === "qr") renderQr();
     /* Druck/Export beim Öffnen: Fahrzeugauswahl neu füllen, Status zurücksetzen. */
     if (id === "druck") renderDruck();
@@ -4890,6 +4964,104 @@ body {
     });
   }
 
+  /* ----------------------------------------------------------------------
+     Funkauftrag-Editor (Bereich „Funkaufträge")
+     ---------------------------------------------------------------------- */
+  function updateFunk(id, fn) {
+    var list = loadFunkauftraege();
+    for (var i = 0; i < list.length; i++) { if (list[i].id === id) { fn(list[i]); break; } }
+    saveFunkauftraege(list);
+  }
+  function funkStationOptions(sel, stations) {
+    return '<option value="">— Station —</option>' + stations.map(function (s, i) {
+      var nr = String(i + 1);
+      return '<option value="' + nr + '"' + (sel === nr ? " selected" : "") + '>' + escapeHTML("Station " + nr + (nonEmpty(s.title) ? " – " + s.title : "")) + '</option>';
+    }).join("");
+  }
+  function funkVehicleOptions(sel, vehicles) {
+    return '<option value="">— Fahrzeug —</option>' + vehicles.map(function (v) {
+      return '<option value="' + escapeAttr(v.id) + '"' + (sel === v.id ? " selected" : "") + '>' + escapeHTML(v.type || v.id) + (nonEmpty(v.callsign) ? " · " + escapeHTML(v.callsign) : "") + '</option>';
+    }).join("");
+  }
+  function funkRowHtml(f, vehicles, stations) {
+    var toIsElw = f.to.role === "elw";
+    var toBlock = toIsElw
+      ? '<span class="funk-elw-note">Die ELW gibt das Wort auf <code>elw.html</code> ein → der Code der „Von"-Station wird frei.</span>'
+      : '<select data-fpart="to" data-ffield="vehId">' + funkVehicleOptions(f.to.vehId, vehicles) + '</select>' +
+        '<select data-fpart="to" data-ffield="stationNr">' + funkStationOptions(f.to.stationNr, stations) + '</select>';
+    return '<div class="funk-row" data-fid="' + escapeAttr(f.id) + '">' +
+      '<div class="funk-grid">' +
+        '<div class="detail-field"><label>Funkwort <span class="req" title="Pflichtfeld">*</span></label>' +
+          '<input type="text" data-fword value="' + escapeAttr(f.word) + '" placeholder="z. B. NEUHOF" autocomplete="off"></div>' +
+        '<div class="detail-field"><label>Von (sieht &amp; funkt das Wort)</label>' +
+          '<div class="funk-party">' +
+            '<select data-fpart="from" data-ffield="vehId">' + funkVehicleOptions(f.from.vehId, vehicles) + '</select>' +
+            '<select data-fpart="from" data-ffield="stationNr">' + funkStationOptions(f.from.stationNr, stations) + '</select>' +
+          '</div></div>' +
+        '<div class="detail-field"><label>An (gibt das Wort ein)</label>' +
+          '<div class="funk-party">' +
+            '<select data-ftorole><option value="fhz"' + (!toIsElw ? " selected" : "") + '>Fahrzeug</option><option value="elw"' + (toIsElw ? " selected" : "") + '>ELW</option></select>' +
+            toBlock +
+          '</div></div>' +
+      '</div>' +
+      '<button type="button" class="icon-btn danger funk-del" data-fdel title="Funkauftrag entfernen" aria-label="Funkauftrag entfernen">' + stationIcon("trash") + '</button>' +
+    '</div>';
+  }
+  function initFunk() {
+    var add = document.getElementById("funkAdd");
+    if (add) add.addEventListener("click", function () {
+      var list = loadFunkauftraege();
+      list.push(defaultFunkauftrag());
+      saveFunkauftraege(list);
+      renderFunkauftraege();
+      updateStatus();
+    });
+    renderFunkauftraege();
+  }
+  function renderFunkauftraege() {
+    var host = document.getElementById("funkList");
+    if (!host) return;
+    var vehicles = loadVehicles().filter(function (v) { return v.active; });
+    var stations = loadStations();
+    var list = loadFunkauftraege();
+    if (!vehicles.length || !stations.length) {
+      host.innerHTML = '<p class="detail-empty">Erst aktive Fahrzeuge und Stationen anlegen, dann lassen sich Funkaufträge erstellen.</p>';
+      return;
+    }
+    host.innerHTML = list.length
+      ? list.map(function (f) { return funkRowHtml(f, vehicles, stations); }).join("")
+      : '<p class="detail-empty">Noch keine Funkaufträge. Mit „+ Funkauftrag" anlegen.</p>';
+
+    host.querySelectorAll("[data-fword]").forEach(function (el) {
+      el.addEventListener("input", function () {
+        var id = this.closest(".funk-row").dataset.fid, val = this.value;
+        updateFunk(id, function (f) { f.word = val; });
+        updateStatus();
+      });
+    });
+    host.querySelectorAll("[data-fpart]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = this.closest(".funk-row").dataset.fid, part = this.dataset.fpart, field = this.dataset.ffield, val = this.value;
+        updateFunk(id, function (f) { f[part][field] = val; });
+      });
+    });
+    host.querySelectorAll("[data-ftorole]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = this.closest(".funk-row").dataset.fid, val = this.value === "elw" ? "elw" : "fhz";
+        updateFunk(id, function (f) { f.to.role = val; });
+        renderFunkauftraege();
+      });
+    });
+    host.querySelectorAll("[data-fdel]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = this.closest(".funk-row").dataset.fid;
+        saveFunkauftraege(loadFunkauftraege().filter(function (x) { return x.id !== id; }));
+        renderFunkauftraege();
+        updateStatus();
+      });
+    });
+  }
+
   /* ======================================================================
      SATZSAMMLUNG (Overlay)
      ----------------------------------------------------------------------
@@ -5685,6 +5857,32 @@ body {
         assignments[a.vehicle.id][String(r.stationIndex+1)]=cell;
       });
     });
+    /* Funkaufträge in die Zellen mergen: Sender-Zelle bekommt das Wort im KLARTEXT
+       (der Sender muss es lesen, um es zu funken), Empfänger-Zelle nur den HASH.
+       Sender ist immer eine FHZ; Empfänger = FHZ (relayRecv) oder ELW (relayElw,
+       gated auf der Sender-Station-Zeile in elw.html). */
+    function funkVehLabel(id){ var v=active.filter(function(x){return x.id===id;})[0]; return v?(v.type||v.id):id; }
+    loadFunkauftraege().forEach(function(f){
+      if(!nonEmpty(f.word)) return;
+      if(f.from.role!=="fhz" || !nonEmpty(f.from.vehId) || !nonEmpty(f.from.stationNr)) return;
+      var fromMap=assignments[f.from.vehId]; if(!fromMap) return;
+      var fromCell=fromMap[String(f.from.stationNr)]; if(!fromCell) return;
+      var fromLabel=funkVehLabel(f.from.vehId);
+      var wordHash=hashWord(f.word, rsalt);
+      if(f.to.role==="elw"){
+        if(!fromCell.relaySend) fromCell.relaySend=[];
+        fromCell.relaySend.push({ to:"ELW", word:f.word });
+        fromCell.relayElw={ from:fromLabel, hash:wordHash };
+      } else {
+        if(!nonEmpty(f.to.vehId) || !nonEmpty(f.to.stationNr)) return;
+        var toMap=assignments[f.to.vehId]; if(!toMap) return;
+        var toCell=toMap[String(f.to.stationNr)]; if(!toCell) return;
+        if(!fromCell.relaySend) fromCell.relaySend=[];
+        fromCell.relaySend.push({ to:funkVehLabel(f.to.vehId), word:f.word });
+        if(!toCell.relayRecv) toCell.relayRecv=[];
+        toCell.relayRecv.push({ from:fromLabel, hash:wordHash });
+      }
+    });
     var inner={
       app:"EA-Funkuebung-Planungstool", version:APP_INFO.version, generatedAt:new Date().toISOString(),
       meta:{ name:grund.name||"", date:grund.date||"", time:grund.time||"", leader:grund.leader||"", channels:(Array.isArray(grund.radioChannels)?grund.radioChannels:[]).filter(function(c){return nonEmpty(c.tmo)||nonEmpty(c.dmo);}).map(function(c){return { tmo:c.tmo||"", dmo:c.dmo||"" };}) },
@@ -5940,6 +6138,7 @@ body {
     initStations();
     initRoutes();
     initLoesung();
+    initFunk();
     initSatzsammlung();
     initBildersammlung();
     initQr();
