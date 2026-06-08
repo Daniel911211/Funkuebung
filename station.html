@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.14 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.0.16 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -99,6 +99,14 @@
   .gate-opt:disabled{cursor:default;opacity:.85;}
   .gate-opt.correct{border-color:var(--ok);background:rgba(63,174,107,.15);color:var(--ok);font-weight:600;}
   .gate-opt.wrong{border-color:var(--warn);}
+  .mc-card{margin-top:16px;}
+  .mc-q .task{margin-bottom:10px;}
+
+  /* Mastercode der Übungsleitung: bewusst zurückhaltend, kein auffälliges Feld. */
+  .master-card{margin-top:18px;text-align:center;}
+  .master-toggle{font:inherit;font-size:.82rem;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:6px 10px;text-decoration:underline;text-underline-offset:3px;}
+  .master-toggle:hover{color:var(--text-muted);}
+  .master-box{max-width:360px;margin:10px auto 0;text-align:left;}
 
   .letterbox{display:flex;align-items:center;gap:18px;margin-top:14px;}
   .letter{flex:0 0 auto;width:104px;height:104px;border-radius:var(--radius);display:grid;place-items:center;background:var(--bg-1);border:2px solid var(--ok);font-family:var(--font-mono);font-weight:800;font-size:3.4rem;color:#fff;}
@@ -127,7 +135,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.15" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.16" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -222,7 +230,19 @@
     var hashElw   = assign && typeof assign.hashElw==="string"  ? assign.hashElw  : "";
     var needFhz   = nonEmpty(hashFhz);
     var needElw   = nonEmpty(hashElw);
-    var needGate  = needFhz || needElw;
+    /* Multiple-Choice-Fragen (Aufgabentyp „mc"): an der Station beantwortet die
+       Besatzung alle Fragen; erst dann erscheint das Positionscode-Feld. Die Fragen
+       stehen am Stations-Objekt (station.mc.questions), je Frage Optionen (Klartext)
+       + Hash der richtigen Option. */
+    var mcQuestions = (station.mc && Array.isArray(station.mc.questions))
+      ? station.mc.questions.filter(function(q){ return q && nonEmpty(q.q) && Array.isArray(q.options) && q.options.length>0 && nonEmpty(q.hash); })
+      : [];
+    var needMc    = mcQuestions.length>0;
+    /* Mastercode der Übungsleitung (Override): nicht offen sichtbar, erst über einen
+       dezenten Button einblendbar. Korrekt → Lösungszeichen direkt, ohne Gate/Code. */
+    var masterHash = (data.meta && typeof data.meta.masterCode==="string") ? data.meta.masterCode : "";
+    var needMaster = nonEmpty(masterHash);
+    var needGate  = needFhz || needElw || needMc;
     var gateCard = "";
     if(needGate){
       var fhzPart = "";
@@ -256,9 +276,45 @@
           '</div>';
       }
       gateCard =
-        '<div class="card gate-card">'+
+        '<div class="card gate-card" id="gateCard">'+
           '<div class="label">Freischaltung</div>'+
           fhzPart+elwPart+
+        '</div>';
+    }
+
+    /* Multiple-Choice-Fragen-Karte (eigenes Gate). */
+    var mcCard = "";
+    if(needMc){
+      mcCard =
+        '<div class="card mc-card" id="mcCard">'+
+          '<div class="label">Fragen</div>'+
+          '<p class="gate-hint">Beantworte alle Fragen richtig, um den Positionscode freizuschalten.</p>'+
+          mcQuestions.map(function(q,qi){
+            return '<div class="gate-part mc-q" data-qi="'+qi+'">'+
+              '<div class="task">'+escapeHTML(q.q)+'</div>'+
+              '<div class="gate-opts" data-qi="'+qi+'">'+
+                q.options.map(function(o){ return '<button type="button" class="gate-opt" data-opt="'+escapeAttr(o)+'">'+escapeHTML(o)+'</button>'; }).join("")+
+              '</div>'+
+              '<p class="code-msg" data-qmsg="'+qi+'" role="status" aria-live="polite"></p>'+
+            '</div>';
+          }).join("")+
+        '</div>';
+    }
+
+    /* Mastercode-Karte: nur ein dezenter Button; das Eingabefeld bleibt verborgen,
+       bis die Übungsleitung den Button antippt. */
+    var masterCard = "";
+    if(needMaster){
+      masterCard =
+        '<div class="master-card" id="masterCard">'+
+          '<button type="button" class="master-toggle" id="masterToggle" aria-expanded="false">Übungsleitung</button>'+
+          '<div class="master-box" id="masterBox" hidden>'+
+            '<div class="code-row">'+
+              '<input type="password" id="masterInput" placeholder="Mastercode" autocomplete="off" spellcheck="false">'+
+              '<button type="button" class="btn" id="masterBtn">Freischalten</button>'+
+            '</div>'+
+            '<p class="code-msg" id="masterMsg" role="status" aria-live="polite"></p>'+
+          '</div>'+
         '</div>';
     }
 
@@ -268,6 +324,7 @@
         '<div class="veh"><b>'+escapeHTML(vehicle.type||vehicle.id)+'</b>'+(nonEmpty(vehicle.callsign)?' · '+escapeHTML(vehicle.callsign):'')+'</div></div></div>'+
       mainArea+
       gateCard+
+      mcCard+
       '<div class="card code-card" id="codeCard"'+(needGate?' style="display:none"':'')+'>'+
         '<div class="label">Lösungszeichen</div>'+
         '<div class="code-row" id="codeRow">'+
@@ -276,7 +333,8 @@
         '</div>'+
         '<p class="code-msg" id="codeMsg" role="status" aria-live="polite"></p>'+
         '<div id="letterReveal"></div>'+
-      '</div>';
+      '</div>'+
+      masterCard;
 
     var expected = normCode(assign && assign.code);
 
@@ -308,13 +366,14 @@
     btn.addEventListener("click", tryUnlock);
     input.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryUnlock(); } });
 
-    /* Vor-Gate: „Antwort der Besatzung" (FHZ) und/oder „Rückwort des ELW" (ELW)
-       prüfen. Erst wenn alle hinterlegten Wörter stimmen → Positionscode-Feld. */
+    var salt=saltFromMeta(data.meta);
+
+    /* Vor-Gate: „Antwort der Besatzung" (FHZ), „Rückwort des ELW" (ELW) und/oder
+       Multiple-Choice-Fragen. Erst wenn alles stimmt → Positionscode-Feld. */
     if(needGate){
-      var salt=saltFromMeta(data.meta);
-      var fhzOK=!needFhz, elwOK=!needElw;
+      var fhzOK=!needFhz, elwOK=!needElw, mcOK=!needMc;
       function revealCode(){
-        if(!(fhzOK&&elwOK)) return;
+        if(!(fhzOK&&elwOK&&mcOK)) return;
         var cc=document.getElementById("codeCard"); if(cc) cc.style.display="";
         if(input) input.focus();
       }
@@ -362,6 +421,54 @@
         if(eBtn) eBtn.addEventListener("click", tryElw);
         if(eInput) eInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryElw(); } });
       }
+      if(needMc){
+        var mcSolved = mcQuestions.map(function(){ return false; });
+        function checkAllMc(){
+          for(var i=0;i<mcSolved.length;i++){ if(!mcSolved[i]) return; }
+          mcOK=true; revealCode();
+        }
+        mcQuestions.forEach(function(q,qi){
+          var optsEl=document.querySelector('.gate-opts[data-qi="'+qi+'"]');
+          var qMsg=document.querySelector('[data-qmsg="'+qi+'"]');
+          function setQMsg(t,k){ if(qMsg){ qMsg.textContent=t||""; qMsg.className="code-msg"+(k?" "+k:""); } }
+          if(optsEl) optsEl.addEventListener("click", function(e){
+            var b=e.target.closest(".gate-opt"); if(!b||mcSolved[qi]) return;
+            if(hashWord(b.getAttribute("data-opt"), salt)===q.hash){
+              b.classList.add("correct");
+              var all=optsEl.querySelectorAll(".gate-opt"); for(var i=0;i<all.length;i++){ all[i].disabled=true; }
+              mcSolved[qi]=true; setQMsg("Richtig.","ok"); checkAllMc();
+            } else { b.classList.add("wrong"); setQMsg("Das stimmt nicht. Bitte erneut versuchen.","warn"); }
+          });
+        });
+      }
+    }
+
+    /* Mastercode-Override der Übungsleitung: dezenter Button blendet das Eingabefeld
+       ein; korrekter Code → Lösungszeichen direkt (überspringt Gate + Positionscode). */
+    if(needMaster){
+      var mToggle=document.getElementById("masterToggle");
+      var mBox=document.getElementById("masterBox");
+      var mInput=document.getElementById("masterInput");
+      var mBtn=document.getElementById("masterBtn");
+      var mMsg=document.getElementById("masterMsg");
+      function setMasterMsg(t,k){ if(mMsg){ mMsg.textContent=t||""; mMsg.className="code-msg"+(k?" "+k:""); } }
+      if(mToggle) mToggle.addEventListener("click", function(){
+        var open=mBox.hasAttribute("hidden");
+        if(open){ mBox.removeAttribute("hidden"); mToggle.setAttribute("aria-expanded","true"); if(mInput) mInput.focus(); }
+        else { mBox.setAttribute("hidden",""); mToggle.setAttribute("aria-expanded","false"); }
+      });
+      function tryMaster(){
+        if(!nonEmpty(mInput.value)){ setMasterMsg("Bitte den Mastercode eingeben.","warn"); return; }
+        if(hashWord(mInput.value, salt)===masterHash){
+          setMasterMsg("Freigeschaltet – Lösungszeichen sichtbar.","ok");
+          var gc=document.getElementById("gateCard"); if(gc) gc.style.display="none";
+          var mcc=document.getElementById("mcCard"); if(mcc) mcc.style.display="none";
+          var cc=document.getElementById("codeCard"); if(cc) cc.style.display="";
+          revealLetter();
+        } else { setMasterMsg("Mastercode stimmt nicht.","warn"); }
+      }
+      if(mBtn) mBtn.addEventListener("click", tryMaster);
+      if(mInput) mInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); tryMaster(); } });
     }
   }
 

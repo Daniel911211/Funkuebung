@@ -11,6 +11,20 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.34.0 (Aufgabentyp Multiple-Choice + Mastercode + Detail-Überarbeitung –
+TESTFUNKTION, nicht live): Neuer **Aufgabentyp „Multiple-Choice-Fragen"** je Station
+(zusätzlich zu „Text"/„Rätsel"): ein Quiz aus **mehreren Fragen**, je Frage Text +
+Antwortmöglichkeiten + richtige Option; die Besatzung beantwortet sie an der Station,
+alle richtig → Positionscode frei. Speicherung im Station-Objekt (`mc.questions[]`);
+Export je `stations[]` optional `mc` mit **Optionen im Klartext** (zum Anzeigen) +
+**Hash der richtigen Option** (cyrb53, gesalzen mit name+date – richtige Option NIE als
+Index/Klartext). Neu in den Grunddaten: **Mastercode der Übungsleitung** (Override) –
+Export als `meta.masterCode` (nur Hash, nie Klartext); leer = aus. Das **Stations-Detail**
+ist in aufklappbare Abschnitte gegliedert (Aufgabe · Lagebilder · Aufgabentyp &
+Freischaltung), die langen Hilfetexte sind gekürzt. Außerdem Platzhalter im
+TMO-Funkkanal „z. B. E18" → „z. B. EG18". Alle neuen Felder optional →
+rückwärtskompatibel. `loesung.phrase`/`char` unverändert (nie im Klartext).
+
 Stand 1.33.0 (Rätsel-Freischaltung in die Stationsplanung integriert, jetzt live):
 Der eigene Bereich „Rätsel (Test)" entfällt; Freischalt-Rätsel werden nun **direkt
 je Station** im Stations-Detail gepflegt (Aufgabentyp „Text"/„Rätsel"). Ein Rätsel
@@ -501,6 +515,17 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
+
+Stand 1.0.16 (Multiple-Choice-Fragen-Gate + Mastercode-Override – TESTFUNKTION,
+nicht live): Neben dem Rätsel-Gate gibt es jetzt ein **Fragen-Gate**: bei einer
+Station mit `mc.questions` zeigt die Stationsseite die Fragen mit Antwort-Buttons;
+erst wenn **alle** Fragen richtig beantwortet sind (Hash-Vergleich der gewählten
+Option), erscheint das Positionscode-Feld. Zusätzlich der **Mastercode der
+Übungsleitung**: ein **dezenter Button „Übungsleitung"** blendet ein verstecktes
+Eingabefeld ein (standardmäßig verborgen); bei korrektem Mastercode
+(`meta.masterCode`-Hash) wird das **Lösungszeichen direkt** angezeigt – Gate und
+Positionscode werden übersprungen. Beide Funktionen optional → ohne die Felder
+unverändertes Verhalten. Weiterhin **kein** Lösungssatz im Klartext.
 
 Stand 1.0.15 (Freischalt-Gate flexibler + verständliche Begriffe + Lagebild
 ausblenden): Die Freischalt-Karte prüft jetzt – je nach hinterlegten Hashes – zwei

@@ -53,6 +53,27 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ---
 
+## In Test (nicht live)
+
+### [~] Aufgabentyp Multiple-Choice + Mastercode + Detail-Überarbeitung
+
+**Status:** in Test · index v1.34.0 / station v1.0.16 · Branch
+`claude/funny-lovelace-Ljjaw` (Draft-PR, **nicht** gemergt → nicht live).
+
+- **Multiple-Choice-Fragen** als dritter Aufgabentyp je Station (mehrere Fragen,
+  Antwortmöglichkeiten + richtige Option). station.html: Fragen-Gate, alle richtig →
+  Positionscode frei. Export `stations[].mc` (Optionen Klartext, richtige Option nur
+  als Hash).
+- **Mastercode der Übungsleitung** (Grunddaten): Override, Export `meta.masterCode`
+  (nur Hash). station.html: dezenter Button „Übungsleitung" blendet das Eingabefeld
+  ein (sonst verborgen) → korrekter Code zeigt das Lösungszeichen direkt.
+- **Stations-Detail** in aufklappbare Abschnitte gegliedert, Hilfetexte gekürzt.
+- Platzhalter TMO-Funkkanal „z. B. E18" → „z. B. EG18" (erledigt).
+- **Offen vor Live:** Annahmen prüfen (MC schaltet Code frei; Mastercode = voller
+  Override bis Lösungszeichen); nach Test über Live-Gang entscheiden.
+
+---
+
 ## Erledigt
 
 ### [x] Rätsel-Freischaltung (ELW↔FHZ-Funkverkehr) – live
