@@ -9,6 +9,23 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
+### [ ] Stations-Detail: Pflichtfeld „ELW zeigt Positionscode direkt" entfernen
+
+**Status:** offen · vorgemerkt am 2026-06-09 · **noch NICHT umsetzen** (Nutzer: „merken, warten")
+
+- **Ziel:** Das Auswahlfeld **„ELW zeigt Positionscode direkt"** (ja/nein) im
+  Stations-Detail (Rätsel-Editor, `detElwDirect`) vorerst **aus der UI entfernen**.
+- **Vor dem Umsetzen klären:**
+  - Soll das Datenfeld `stations[].elwCodeDirect` ganz raus oder nur das
+    Eingabefeld verschwinden und `elwCodeDirect` intern fest auf einen Wert
+    (z. B. `false` = erst nach Klick „Code anzeigen")?
+  - Verhalten in `elw.html`: ohne das Feld immer „Code anzeigen"-Button (kein
+    direkter Code) – ist das gewünscht?
+  - Validierung/Pflichtfeld-Logik (`detElwDirect` ist aktuell Pflicht) mit anpassen.
+- **Randbedingungen:** kein Lösungssatz/`char` auf `elw.html` · Export
+  rückwärtskompatibel halten (Feld optional) · Versions-Bump erst beim
+  tatsächlichen Umsetzen.
+
 ### [ ] GPS-Standortprüfung für Stationsoberfläche
 
 **Status:** offen · später fachlich ausarbeiten
