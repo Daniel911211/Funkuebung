@@ -11,6 +11,19 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.35.2 (Stationsplanung überarbeitet: Stationsüberschrift + typgebundene
+Aufgabenbeschreibung – TESTBRANCH): Das Pflichtfeld „Aufgabe" heißt sichtbar jetzt
+**„Stationsüberschrift"** (intern weiterhin `title`; Tabellen-Spalte,
+Detail-Label, Fehlermeldung und Bereichsbeschreibungen angepasst). Die
+**Aufgabenbeschreibung** (intern `task`) gehört zum **Aufgabentyp „Text"**: Das
+Feld ist im Stations-Detail nur bei Typ „Text" sichtbar (Reihenfolge jetzt
+Stationsüberschrift · Aufgabentyp · Aufgabenbeschreibung bzw. Rätsel-/MC-Editor)
+und wird **nur dann nach `stations[].task` exportiert** – bei „Rätsel"/„MC"
+bleibt der gespeicherte Text lokal erhalten, `task` geht leer raus →
+station.html zeigt dann nur die Stationsüberschrift (keine Code-Änderung an
+station.html nötig). Zusätzlich entfällt der doppelte Label-Text in der Karte
+„Notiz für die Übungsleitung" (Kartentitel reicht, Textfeld mit aria-label).
+
 Stand 1.35.1 (Stations-Detail: Kartenbereiche neu gegliedert – TESTBRANCH): Die
 Klapp-Karten „Aufgabe" und „Aufgabentyp & Freischaltung" sind zu **einer** Karte
 „Aufgabe" zusammengeführt (Aufgabe · Aufgabenbeschreibung · Aufgabentyp · ggf.

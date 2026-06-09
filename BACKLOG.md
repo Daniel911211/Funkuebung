@@ -83,6 +83,10 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
   (nur Hash). station.html: dezenter Button „Übungsleitung" blendet das Eingabefeld
   ein (sonst verborgen) → korrekter Code zeigt das Lösungszeichen direkt.
 - **Stations-Detail** in aufklappbare Abschnitte gegliedert, Hilfetexte gekürzt.
+  Mit v1.35.1/v1.35.2 weiter überarbeitet: Karten „Aufgabe" + „Aufgabentyp &
+  Freischaltung" zusammengeführt, eigene Karte „Notiz für die Übungsleitung",
+  Pflichtfeld heißt **„Stationsüberschrift"**, Aufgabenbeschreibung nur bei
+  Aufgabentyp „Text" sichtbar und nur dann exportiert.
 - Platzhalter TMO-Funkkanal „z. B. E18" → „z. B. EG18" (erledigt).
 - **Offen vor Live:** Annahmen prüfen (MC schaltet Code frei; Mastercode = voller
   Override bis Lösungszeichen); nach Test über Live-Gang entscheiden.
