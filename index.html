@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.35.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.35.1)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -2308,7 +2308,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.35.0"
+    version: "1.35.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -3319,9 +3319,15 @@ body {
             '<textarea id="detTask" class="detail-task" rows="5" placeholder="Ausführlicher Aufgabentext für die Teilnehmer">' + escapeAttr(s.task) + '</textarea>' +
           '</div>' +
           '<div class="detail-field">' +
-            '<label for="detDesc">Notiz für die Übungsleitung</label>' +
-            '<textarea id="detDesc" rows="3" placeholder="Nur intern – für Teilnehmer nicht sichtbar">' + escapeAttr(s.description) + '</textarea>' +
+            '<label for="detTaskType">Aufgabentyp</label>' +
+            '<select id="detTaskType">' +
+              '<option value="text">Text (normale Aufgabe)</option>' +
+              '<option value="riddle">Rätsel (Freischaltung)</option>' +
+              '<option value="mc">Multiple-Choice-Fragen</option>' +
+            '</select>' +
           '</div>' +
+          '<div id="detRiddleWrap"></div>' +
+          '<div id="detMcWrap"></div>' +
         '</div>' +
       '</details>' +
       '<details class="detail-group" open>' +
@@ -3347,18 +3353,12 @@ body {
         '</div>' +
       '</details>' +
       '<details class="detail-group" open>' +
-        '<summary>Aufgabentyp &amp; Freischaltung</summary>' +
+        '<summary>Notiz für die Übungsleitung</summary>' +
         '<div class="detail-group-body">' +
           '<div class="detail-field">' +
-            '<label for="detTaskType">Aufgabentyp</label>' +
-            '<select id="detTaskType">' +
-              '<option value="text">Text (normale Aufgabe)</option>' +
-              '<option value="riddle">Rätsel (Freischaltung)</option>' +
-              '<option value="mc">Multiple-Choice-Fragen</option>' +
-            '</select>' +
+            '<label for="detDesc">Notiz für die Übungsleitung</label>' +
+            '<textarea id="detDesc" rows="3" placeholder="Nur intern – für Teilnehmer nicht sichtbar">' + escapeAttr(s.description) + '</textarea>' +
           '</div>' +
-          '<div id="detRiddleWrap"></div>' +
-          '<div id="detMcWrap"></div>' +
         '</div>' +
       '</details>';
 

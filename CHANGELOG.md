@@ -11,6 +11,13 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.35.1 (Stations-Detail: Kartenbereiche neu gegliedert – TESTBRANCH): Die
+Klapp-Karten „Aufgabe" und „Aufgabentyp & Freischaltung" sind zu **einer** Karte
+„Aufgabe" zusammengeführt (Aufgabe · Aufgabenbeschreibung · Aufgabentyp · ggf.
+Rätsel-/MC-Editor). Die „Notiz für die Übungsleitung" hat dafür einen **eigenen
+neuen Kartenbereich** (eigene `details`-Karte unterhalb der Lagebilder). Nur
+UI-Gliederung, keine Daten-/Exportänderung.
+
 Stand 1.35.0 (Funkaufträge / Funkwort-Weitergabe – TESTFUNKTION, nicht live): Neuer
 Bereich **„Funkaufträge"** (in der Navigation zwischen „Lösungssatz" und „QR-Code-Plan").
 Damit lässt sich ein **Funkwort** definieren, das ein Fahrzeug (**Von**, Fahrzeug +
