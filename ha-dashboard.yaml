@@ -1,0 +1,719 @@
+views:
+  # ─── HOME ──────────────────────────────────────────────────────────────────
+  - type: sections
+    title: Home
+    path: home
+    icon: mdi:home
+    max_columns: 2
+    sections:
+
+      # Alarm-Banner (nur bei aktivem Alarm sichtbar)
+      - type: grid
+        column_span: 2
+        cards:
+          - type: markdown
+            content: |2+
+
+                🚨 ACHTUNG EINSATZ! 🚨
+
+        visibility:
+          - condition: state
+            entity: binary_sensor.ccu3_webui_sv_alarm_feuerwehralarm_aktiv
+            state: "on"
+
+      # Energie (kompakte Tiles statt großer Flowkarte)
+      - type: grid
+        cards:
+          - type: heading
+            heading: Energie
+            heading_style: title
+            icon: mdi:solar-panel
+          - type: tile
+            entity: sensor.hostname_scb_54dddb_solar_power
+            name: Solar
+            icon: mdi:solar-power-variant
+            vertical: true
+          - type: tile
+            entity: sensor.hostname_scb_54dddb_battery_soc
+            name: Batterie
+            icon: mdi:battery
+            vertical: true
+          - type: tile
+            entity: sensor.hostname_scb_54dddb_grid_power
+            name: Netz
+            icon: mdi:transmission-tower
+            vertical: true
+          - type: tile
+            entity: sensor.hostname_scb_54dddb_home_power
+            name: Verbrauch
+            icon: mdi:home-lightning-bolt
+            vertical: true
+
+      # Anwesenheit
+      - type: grid
+        cards:
+          - type: heading
+            heading: Anwesenheit
+            heading_style: title
+            icon: mdi:account-group
+          - type: tile
+            entity: device_tracker.daniel_handy
+            name: Daniel
+            vertical: true
+            features_position: bottom
+          - type: tile
+            entity: person.domi
+            name: Domi
+            vertical: true
+            features_position: bottom
+          - type: tile
+            entity: binary_sensor.hermann
+            name: Hermann
+            icon: mdi:account
+            vertical: true
+          - type: tile
+            entity: binary_sensor.192_168_178_21
+            name: Anwesend
+            icon: mdi:account
+            vertical: true
+
+      # Raum-Kacheln (je Raum: Icon + Temperatur + Navigation)
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Räume
+            heading_style: title
+            icon: mdi:floor-plan
+          - type: button
+            name: Wohnzimmer
+            icon: mdi:sofa-single-outline
+            entity: sensor.og_wohn_heizungsthermostat_temperatur
+            show_state: true
+            show_name: true
+            show_icon: true
+            tap_action:
+              action: navigate
+              navigation_path: /dashborad-daniel/wohnzimmer
+          - type: button
+            name: Küche
+            icon: mdi:fridge-top
+            entity: sensor.og_kuche_heizungsthermostat_temperatur
+            show_state: true
+            show_name: true
+            show_icon: true
+            tap_action:
+              action: navigate
+              navigation_path: /dashborad-daniel/kuche
+          - type: button
+            name: Schlafzimmer
+            icon: mdi:bed
+            entity: sensor.og_schlaf_heizungsthermostat_temperatur
+            show_state: true
+            show_name: true
+            show_icon: true
+            tap_action:
+              action: navigate
+              navigation_path: /dashborad-daniel/schlafzimmer
+          - type: button
+            name: Bad
+            icon: mdi:bathtub-outline
+            entity: sensor.og_bad_heizungsthermostat_temperatur
+            show_state: true
+            show_name: true
+            show_icon: true
+            tap_action:
+              action: navigate
+              navigation_path: /dashborad-daniel/bad
+          - type: button
+            name: Flur
+            icon: mdi:floor-plan
+            show_name: true
+            show_icon: true
+            tap_action:
+              action: navigate
+              navigation_path: /dashborad-daniel/flur
+          - type: button
+            name: Garage
+            icon: mdi:garage
+            entity: binary_sensor.garagentor_ford
+            show_name: true
+            show_icon: true
+            tap_action:
+              action: navigate
+              navigation_path: /dashborad-daniel/garage
+
+      # Urgent-Block: Müll & Waschmaschine – nur wenn relevant sichtbar
+      - type: grid
+        column_span: 2
+        cards:
+          - type: heading
+            heading: Achtung
+            heading_style: title
+            icon: mdi:alert-circle-outline
+          - type: conditional
+            conditions:
+              - condition: or
+                conditions:
+                  - entity: sensor.papier
+                    state: Morgen
+                  - entity: sensor.papier
+                    state: morgen
+            card:
+              type: tile
+              entity: sensor.papier
+              name: Papier morgen rausstellen
+              icon: mdi:delete-clock-outline
+          - type: conditional
+            conditions:
+              - condition: or
+                conditions:
+                  - entity: sensor.bioabfall
+                    state: Morgen
+                  - entity: sensor.bioabfall
+                    state: morgen
+            card:
+              type: tile
+              entity: sensor.bioabfall
+              name: Bioabfall morgen rausstellen
+              icon: mdi:delete-clock-outline
+          - type: conditional
+            conditions:
+              - condition: or
+                conditions:
+                  - entity: sensor.gelbe
+                    state: Morgen
+                  - entity: sensor.gelbe
+                    state: morgen
+            card:
+              type: tile
+              entity: sensor.gelbe
+              name: Gelbe Tonne morgen rausstellen
+              icon: mdi:delete-clock-outline
+          - type: conditional
+            conditions:
+              - condition: or
+                conditions:
+                  - entity: sensor.restmull
+                    state: Morgen
+                  - entity: sensor.restmull
+                    state: morgen
+            card:
+              type: tile
+              entity: sensor.restmull
+              name: Restmüll morgen rausstellen
+              icon: mdi:delete-clock-outline
+          - type: conditional
+            conditions:
+              - entity: switch.ccu3_webui_sv_waschmaschine_1_fertig
+                state: "on"
+            card:
+              type: tile
+              entity: switch.ccu3_webui_sv_waschmaschine_1_fertig
+              name: Waschmaschine 1 fertig
+              icon: mdi:washing-machine-alert
+              color: green
+          - type: conditional
+            conditions:
+              - entity: switch.ccu3_webui_sv_waschmaschine_2_fertig
+                state: "on"
+            card:
+              type: tile
+              entity: switch.ccu3_webui_sv_waschmaschine_2_fertig
+              name: Waschmaschine 2 fertig
+              icon: mdi:washing-machine-alert
+              color: green
+        visibility:
+          - condition: or
+            conditions:
+              - condition: state
+                entity: sensor.papier
+                state: Morgen
+              - condition: state
+                entity: sensor.papier
+                state: morgen
+              - condition: state
+                entity: sensor.bioabfall
+                state: Morgen
+              - condition: state
+                entity: sensor.bioabfall
+                state: morgen
+              - condition: state
+                entity: sensor.gelbe
+                state: Morgen
+              - condition: state
+                entity: sensor.gelbe
+                state: morgen
+              - condition: state
+                entity: sensor.restmull
+                state: Morgen
+              - condition: state
+                entity: sensor.restmull
+                state: morgen
+              - condition: state
+                entity: switch.ccu3_webui_sv_waschmaschine_1_fertig
+                state: "on"
+              - condition: state
+                entity: switch.ccu3_webui_sv_waschmaschine_2_fertig
+                state: "on"
+    cards: []
+
+  # ─── WOHNZIMMER ────────────────────────────────────────────────────────────
+  - type: sections
+    max_columns: 2
+    title: Wohnzimmer
+    path: wohnzimmer
+    icon: mdi:sofa-single-outline
+    sections:
+      - type: grid
+        cards:
+          - type: thermostat
+            name: Heizung
+            entity: climate.og_wohnzimmer_og_wohn_heizungsthermostat
+          - type: entity
+            entity: binary_sensor.og_wohn_fensterkontakt
+            name: Fenster
+            state_color: true
+      - type: grid
+        cards:
+          - type: heading
+            heading: Beleuchtung
+            heading_style: title
+            icon: mdi:lightbulb
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.og_wohn_schalter_aktor
+            name: Deckenlicht
+            tap_action:
+              action: toggle
+            icon: mdi:lightbulb-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: light.led_tv
+            name: LED TV
+            tap_action:
+              action: toggle
+            icon: mdi:led-strip-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: light.pc_licht
+            name: LED PC
+            tap_action:
+              action: toggle
+            icon: mdi:led-strip-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: light.led_sofa
+            name: LED Sofa
+            tap_action:
+              action: toggle
+            icon: mdi:led-strip-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: cover.og_wohn_rollladen_og_wohn_rolladen
+            name: Rolladen
+      - type: grid
+        cards:
+          - type: heading
+            heading: Medien
+            heading_style: title
+            icon: mdi:television
+          - type: tile
+            entity: media_player.daniel_tv_lg
+            show_entity_picture: false
+            vertical: true
+            features_position: bottom
+    cards: []
+
+  # ─── KÜCHE ─────────────────────────────────────────────────────────────────
+  - type: sections
+    max_columns: 2
+    title: Küche
+    path: kuche
+    icon: mdi:fridge-top
+    sections:
+      - type: grid
+        cards:
+          - type: thermostat
+            entity: climate.og_kuche_heizungsthermostat
+            name: Heizung
+          - type: entity
+            entity: binary_sensor.og_kuche_fensterkontakt
+            name: Fenster
+            state_color: true
+      - type: grid
+        cards:
+          - type: heading
+            heading: Beleuchtung
+            heading_style: title
+            icon: mdi:lightbulb
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.og_kuche_schalter_aktor
+            name: Deckenlicht
+            tap_action:
+              action: toggle
+            icon: mdi:lightbulb-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: light.led_kuche
+            name: LED
+            tap_action:
+              action: toggle
+            icon: mdi:led-strip-variant
+    cards: []
+
+  # ─── SCHLAFZIMMER ──────────────────────────────────────────────────────────
+  - type: sections
+    max_columns: 2
+    title: Schlafzimmer
+    path: schlafzimmer
+    icon: mdi:bed
+    sections:
+      - type: grid
+        cards:
+          - type: thermostat
+            entity: climate.og_schlaf_heizungsthermostat
+            name: Heizung
+          - type: entity
+            entity: binary_sensor.og_schlaf_fensterkontakt
+            name: Fenster
+            state_color: true
+      - type: grid
+        cards:
+          - type: heading
+            heading: Beleuchtung & Geräte
+            heading_style: title
+            icon: mdi:lightbulb
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.og_schlaf_schalter_aktor
+            name: Deckenlicht
+            tap_action:
+              action: toggle
+            icon: mdi:lightbulb-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: light.led_schlafzimmer
+            name: LED TV
+            tap_action:
+              action: toggle
+            icon: mdi:led-strip-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.og_schlaf_tv_steckdose_aktor
+            name: TV
+            tap_action:
+              action: toggle
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.og_schlaf_steckdose_alexa_aktor
+            name: Alexa
+            tap_action:
+              action: toggle
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: cover.og_schlaf_rolladen
+            name: Rolladen
+    cards: []
+
+  # ─── BAD ───────────────────────────────────────────────────────────────────
+  - type: sections
+    max_columns: 2
+    title: Bad
+    path: bad
+    icon: mdi:bathtub-outline
+    sections:
+      - type: grid
+        cards:
+          - type: thermostat
+            entity: climate.og_bad_heizungsthermostat
+            name: Heizung
+          - type: entity
+            entity: binary_sensor.og_bad_fensterkontakt
+            name: Fenster Bad
+            state_color: true
+          - type: entity
+            entity: binary_sensor.og_gaste_bad_fensterkontakt
+            name: Fenster Gästebad
+            state_color: true
+      - type: grid
+        cards:
+          - type: heading
+            heading: Beleuchtung
+            heading_style: title
+            icon: mdi:lightbulb
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.og_bad_schalter_aktor
+            name: Deckenlicht
+            tap_action:
+              action: toggle
+            icon: mdi:lightbulb-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: light.led_bad
+            name: LED
+            tap_action:
+              action: toggle
+            icon: mdi:led-strip-variant
+    cards: []
+
+  # ─── FLUR ──────────────────────────────────────────────────────────────────
+  - type: sections
+    max_columns: 2
+    title: Flur
+    path: flur
+    icon: mdi:floor-plan
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: OG Flur
+            heading_style: title
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.og_flur_stromstossrelai_aktor
+            name: Deckenlicht
+            tap_action:
+              action: toggle
+            icon: mdi:lightbulb-variant
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: cover.og_flur_rolladen
+            name: Rolladen
+      - type: grid
+        cards:
+          - type: heading
+            heading: EG Flur
+            heading_style: title
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: switch.eg_flur_stromstossrelai_aktor
+            name: Deckenlicht
+            tap_action:
+              action: toggle
+            icon: mdi:lightbulb-variant
+    cards: []
+
+  # ─── GARAGE ────────────────────────────────────────────────────────────────
+  - type: sections
+    max_columns: 2
+    title: Garage
+    path: garage
+    icon: mdi:garage
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Garagentore
+            heading_style: title
+            icon: mdi:garage
+          - type: button
+            entity: switch.shelly1_tor_2
+            name: Garage Audi auf/zu
+            icon: mdi:garage-alert
+            tap_action:
+              action: toggle
+            show_state: false
+          - type: button
+            entity: binary_sensor.garagentor_audi
+            name: Status Audi
+            show_state: true
+            tap_action:
+              action: none
+            state:
+              - value: "on"
+                icon: mdi:garage-open-variant
+                color: red
+                name: Offen
+              - value: "off"
+                icon: mdi:garage-variant
+                color: green
+                name: Geschlossen
+          - type: button
+            entity: switch.shelly1_tor_1
+            name: Garage Ford auf/zu
+            icon: mdi:garage-alert
+            tap_action:
+              action: toggle
+            show_state: false
+          - type: button
+            entity: binary_sensor.garagentor_ford
+            name: Status Ford
+            show_state: true
+            tap_action:
+              action: none
+            state:
+              - value: "on"
+                icon: mdi:garage-open-variant
+                color: red
+                name: Offen
+              - value: "off"
+                icon: mdi:garage-variant
+                color: green
+                name: Geschlossen
+      - type: grid
+        cards:
+          - type: heading
+            heading: Außentür
+            heading_style: title
+            icon: mdi:door
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: lock.schloss
+            show_state: false
+            tap_action:
+              action: toggle
+            name: aufschließen / zuschließen
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: button.schloss_unlatch
+            tap_action:
+              action: toggle
+            name: Tür öffnen
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: button.schloss_lock_n_go
+            name: rausgehen & automatisch zusperren
+            tap_action:
+              action: toggle
+    cards: []
+
+  # ─── HELFER ────────────────────────────────────────────────────────────────
+  - type: sections
+    max_columns: 4
+    title: Helfer
+    path: helfer
+    icon: mdi:tools
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Variablen Waschmaschinen
+            heading_style: title
+          - type: tile
+            entity: input_boolean.waschmaschine_1_rot
+            vertical: false
+            tap_action:
+              action: none
+            icon_tap_action:
+              action: none
+            features_position: bottom
+          - type: tile
+            entity: input_boolean.waschmaschine_2_rot
+            vertical: false
+            tap_action:
+              action: none
+            icon_tap_action:
+              action: none
+            features_position: bottom
+          - type: tile
+            entity: input_boolean.waschmaschine_1_rot_gesendet
+            vertical: false
+            tap_action:
+              action: none
+            icon_tap_action:
+              action: none
+            features_position: bottom
+          - type: tile
+            entity: input_boolean.waschmaschine_2_rot_gesendet
+            vertical: false
+            tap_action:
+              action: none
+            icon_tap_action:
+              action: none
+            features_position: bottom
+          - type: tile
+            entity: input_boolean.waschmaschine_benachrichtigung_daniel
+            name: Waschen - Nachricht aktiv
+            vertical: false
+            tap_action:
+              action: toggle
+            features_position: bottom
+          - type: heading
+            heading: TEST-Schalter
+            heading_style: title
+          - type: tile
+            entity: input_boolean.test
+            vertical: false
+            tap_action:
+              action: toggle
+            features_position: bottom
+      - type: grid
+        cards:
+          - type: heading
+            heading: Feuerwehr
+            heading_style: title
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: input_boolean.dashboard_probealarm_feuerwehr_alarmlicht
+            name: Probealarm Feuerwehr-Alarmlicht
+            color: none
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: input_boolean.feuerwehr_homematic_programme
+            name: Feuerwehr-Alarmlicht ein / aus
+            icon_height: 60px
+            tap_action:
+              action: toggle
+            icon: mdi:gesture-tap-button
+            color: none
+          - type: tile
+            entity: switch.ccu3_webui_sv_alarm_feuerwehralarm_aktiv
+            name: FFW-Alarm aktiv - CCU
+            vertical: false
+            tap_action:
+              action: none
+            icon_tap_action:
+              action: none
+            features_position: bottom
+          - type: tile
+            entity: input_boolean.lichter_an
+            vertical: false
+            tap_action:
+              action: toggle
+            features_position: bottom
+      - type: grid
+        cards:
+          - type: heading
+            heading: Homematic Programme
+            heading_style: title
+          - show_name: true
+            show_icon: true
+            type: button
+            entity: input_boolean.waschmaschine_zurucksetzen
+            color: none
+            icon: mdi:gesture-tap-button
+            name: Waschmaschine zurücksetzen
+      - type: grid
+        cards:
+          - type: heading
+            heading: Backup
+            heading_style: title
+            icon: mdi:cloud-upload-outline
+          - type: tile
+            entity: input_button.backup_auslosen
+    cards: []
