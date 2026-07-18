@@ -11,7 +11,7 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
-Stand 1.36.0 (Mehrere Aufgaben-Blöcke je Station – TESTBRANCH): Der Kartenbereich
+Stand 1.36.0 (Mehrere Aufgaben-Blöcke je Station – seit 2026-07-18 live): Der Kartenbereich
 „Aufgabe" im Stations-Detail besteht jetzt aus **1..n Aufgaben-Blöcken**
 (`station.tasks[]`): Block 1 mit **Geltungsbereich** „Alle Fahrzeuge" /
 „Ausgewählte Fahrzeuge"; bei „Ausgewählte" verteilen weitere Blöcke (Button
@@ -577,7 +577,7 @@ Multiple-Choice-Gate hat (diese haben eigene Karten). Sie wird jetzt nur noch
 gebaut, wenn FHZ-Rätsel oder ELW-Rückwort hinterlegt sind; die Gate-Logik
 (Code-Feld erst nach allen Freischaltungen) ist unverändert.
 
-Stand 1.1.0 (Aufgaben je Fahrzeug-Zelle – TESTBRANCH): Passend zu den
+Stand 1.1.0 (Aufgaben je Fahrzeug-Zelle – seit 2026-07-18 live): Passend zu den
 Aufgaben-Blöcken in index.html 1.36.0 liest die Station **Aufgabenbeschreibung**
 und **Multiple-Choice-Fragen** jetzt bevorzugt aus der eigenen Fahrzeug-Zelle
 (`assign.task` bzw. `assign.mc.questions`); die Stations-Ebene
@@ -693,7 +693,7 @@ Versionsanzeige im Footer, Positionscode-Freischaltung des Lösungszeichens.
 > Lesende Schwesterseite zu station.html für ELW/Übungsleitung; lädt
 > data/uebung.json. Zeigt NIEMALS Lösungssatz/Lösungszeichen (nur Positionscodes).
 
-Stand 1.3.0 (Funkauftrag-Empfänger / Code-Gate – TESTFUNKTION, nicht live): Hat eine
+Stand 1.3.0 (Funkauftrag-Empfänger / Code-Gate – seit 2026-07-18 live): Hat eine
 Station ein `relayElw` (Besatzung funkt ein Wort hoch), zeigt `elw.html` in der
 Code-Spalte statt „Code anzeigen" ein **Eingabefeld** „Wort von <Fahrzeug> eingeben". Erst
 wenn die ELW das hochgefunkte Wort einträgt (Hash-Vergleich, case-/leerzeichen-tolerant),
