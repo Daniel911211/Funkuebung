@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.36.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.36.1)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -1673,14 +1673,17 @@ body {
   .mc-opt-label { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint); margin-bottom: 6px; }
 
   /* --- Funkauftrag-Editor --------------------------------------------- */
-  .badge-test { display: inline-block; vertical-align: middle; font-size: .62rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--btn-warn-fg); background: var(--btn-warn); border-radius: 999px; padding: 2px 8px; margin-left: 8px; }
   .funk-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
   .funk-head .subsection-title { margin: 0; }
   .funk-row { position: relative; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 12px 44px 12px 14px; margin-bottom: 12px; }
   .funk-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   @media (max-width: 760px) { .funk-grid { grid-template-columns: 1fr; } }
   .funk-grid .detail-field { margin-bottom: 0; }
-  .funk-party { display: flex; flex-direction: column; gap: 6px; }
+  .funk-party { display: flex; flex-direction: column; gap: 8px; }
+  /* Sub-Label je Auswahlfeld (Fahrzeug/Station/Empfänger); Label umschließt
+     das Select → implizite Zuordnung, Optik wie .detail-field-Label, nur kleiner. */
+  .funk-sub { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint); }
+  .funk-sub select { margin-top: 3px; }
   .funk-elw-note { font-size: .8rem; color: var(--text-faint); line-height: 1.4; }
   .funk-del { position: absolute; top: 10px; right: 10px; }
 </style>
@@ -2054,11 +2057,10 @@ body {
       </div>
     </section>
 
-    <!-- ----- 7) QR-CODE-PLAN ------------------------------------------- -->
-    <!-- → später: qr/qr-codes.html -->
+    <!-- ----- 7) FUNKAUFTRÄGE ------------------------------------------- -->
     <section class="section" id="sec-funkauftraege">
       <div class="section-head">
-        <h2>Funkaufträge <span class="badge-test">Test</span></h2>
+        <h2>Funkaufträge</h2>
         <p>Funkwörter, die ein Fahrzeug einem anderen Fahrzeug oder dem ELW <b>per Funk</b> durchgibt. Der Empfänger gibt das Wort an seiner Station ein – das schaltet dort den <b>Positionscode</b> frei. So entsteht echter Funkverkehr (die Lösung kommt nur über Funk, nicht allein am Gerät).</p>
       </div>
 
@@ -2073,6 +2075,8 @@ body {
       </div>
     </section>
 
+    <!-- ----- 8) QR-CODE-PLAN ------------------------------------------- -->
+    <!-- → später: qr/qr-codes.html -->
     <section class="section" id="sec-qr">
       <div class="section-head">
         <h2>QR-Code-Plan</h2>
@@ -2104,7 +2108,7 @@ body {
       </div>
     </section>
 
-    <!-- ----- 8) DRUCK / EXPORT ----------------------------------------- -->
+    <!-- ----- 9) DRUCK / EXPORT ----------------------------------------- -->
     <!-- → später: print/druckansicht.html -->
     <section class="section" id="sec-druck">
       <div class="section-head">
@@ -2313,7 +2317,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.36.0"
+    version: "1.36.1"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2325,7 +2329,7 @@ body {
     { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Stationsüberschrift, Aufgabe und Lagebilder je Station festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
     { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf Fahrzeuge und Stationen verteilen." },
-    { id: "funkauftraege", label: "Funkaufträge",  icon: "loop",    nav: true,  card: false, desc: "Funkwörter zwischen Fahrzeugen/ELW (Test)." },
+    { id: "funkauftraege", label: "Funkaufträge",  icon: "loop",    nav: true,  card: true,  optional: true, desc: "Funkwörter zwischen Fahrzeugen und ELW – erzwingt echten Funkverkehr." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
@@ -2773,6 +2777,22 @@ body {
     try { localStorage.setItem(FUNK_STORAGE_KEY, JSON.stringify(list)); return true; }
     catch (e) { return false; }
   }
+  /* Vollständig = Funkwort + Von-Fahrzeug/-Station gefüllt; bei „An = Fahrzeug"
+     zusätzlich An-Fahrzeug/-Station (bei „An = ELW" entfallen die Felder).
+     Unvollständige Aufträge fallen beim Export einfach weg (siehe dort). */
+  function funkAuftragComplete(f) {
+    if (!nonEmpty(f.word) || !nonEmpty(f.from.vehId) || !nonEmpty(f.from.stationNr)) return false;
+    if (f.to.role === "elw") return true;
+    return nonEmpty(f.to.vehId) && nonEmpty(f.to.stationNr);
+  }
+  /* Status der Funkaufträge-Karte: der Bereich ist OPTIONAL. Ohne Aufträge →
+     "open" (Pill-Text „Optional"); mit Aufträgen "done", wenn alle vollständig
+     sind, sonst "prog". Zählt NICHT in die Fortschrittsleiste (s. updateStatus). */
+  function computeFunkStatus() {
+    var list = loadFunkauftraege();
+    if (!list.length) return "open";
+    return list.every(funkAuftragComplete) ? "done" : "prog";
+  }
 
   /* Eine AKTIVE Station gilt als vollständig, wenn:
      1. die Aufgabe ausgefüllt ist,
@@ -2966,10 +2986,17 @@ body {
     setPill("qr", qrStatus,
       qrStatus === "done" ? "Vollständig" : (qrStatus === "prog" ? "In Bearbeitung" : "Offen"));
 
+    /* Funkaufträge-Statuskarte (optionaler Bereich): ohne Aufträge neutral
+       „Optional", sonst Vollständig/In Bearbeitung je Auftragsfeldern. */
+    var funkStatus = computeFunkStatus();
+    setPill("funkauftraege", funkStatus,
+      funkStatus === "done" ? "Vollständig" : (funkStatus === "prog" ? "In Bearbeitung" : "Optional"));
+
     /* Fortschrittsleiste: Anzahl vollständiger Karten-Bereiche.
        Bewertet werden Grunddaten, Fahrzeuge, Stationen, Routenplanung,
-       Lösungssatz und QR-Code-Plan. */
-    var cardSections = SECTIONS.filter(function (s) { return s.card; });
+       Lösungssatz und QR-Code-Plan. Optionale Bereiche (Funkaufträge)
+       zählen nicht mit, damit sie den Fortschritt nicht blockieren. */
+    var cardSections = SECTIONS.filter(function (s) { return s.card && !s.optional; });
     var doneCount = (complete ? 1 : 0) + (vehStatus === "done" ? 1 : 0) + (staStatus === "done" ? 1 : 0) + (routeStatus === "done" ? 1 : 0) + (loesStatus === "done" ? 1 : 0) + (qrStatus === "done" ? 1 : 0);
     document.getElementById("progressDone").textContent  = doneCount;
     document.getElementById("progressTotal").textContent = cardSections.length;
@@ -5134,22 +5161,29 @@ body {
   }
   function funkRowHtml(f, vehicles, stations) {
     var toIsElw = f.to.role === "elw";
+    /* Jedes Auswahlfeld bekommt ein sichtbares Sub-Label (implizite Zuordnung:
+       <label> umschließt das <select>); title erklärt kurz die Rolle des Felds. */
     var toBlock = toIsElw
       ? '<span class="funk-elw-note">Die ELW gibt das Wort auf <code>elw.html</code> ein → der Code der „Von"-Station wird frei.</span>'
-      : '<select data-fpart="to" data-ffield="vehId">' + funkVehicleOptions(f.to.vehId, vehicles) + '</select>' +
-        '<select data-fpart="to" data-ffield="stationNr">' + funkStationOptions(f.to.stationNr, stations) + '</select>';
+      : '<label class="funk-sub" title="Fahrzeug, das das Wort an seiner Station eingibt">Fahrzeug' +
+          '<select data-fpart="to" data-ffield="vehId">' + funkVehicleOptions(f.to.vehId, vehicles) + '</select></label>' +
+        '<label class="funk-sub" title="Station, an der das Wort eingegeben wird und den Positionscode freischaltet">Station' +
+          '<select data-fpart="to" data-ffield="stationNr">' + funkStationOptions(f.to.stationNr, stations) + '</select></label>';
     return '<div class="funk-row" data-fid="' + escapeAttr(f.id) + '">' +
       '<div class="funk-grid">' +
         '<div class="detail-field"><label>Funkwort <span class="req" title="Pflichtfeld">*</span></label>' +
           '<input type="text" data-fword value="' + escapeAttr(f.word) + '" placeholder="z. B. NEUHOF" autocomplete="off"></div>' +
         '<div class="detail-field"><label>Von (sieht &amp; funkt das Wort)</label>' +
           '<div class="funk-party">' +
-            '<select data-fpart="from" data-ffield="vehId">' + funkVehicleOptions(f.from.vehId, vehicles) + '</select>' +
-            '<select data-fpart="from" data-ffield="stationNr">' + funkStationOptions(f.from.stationNr, stations) + '</select>' +
+            '<label class="funk-sub" title="Fahrzeug, das das Wort sieht und funkt">Fahrzeug' +
+              '<select data-fpart="from" data-ffield="vehId">' + funkVehicleOptions(f.from.vehId, vehicles) + '</select></label>' +
+            '<label class="funk-sub" title="Station, an der dem Fahrzeug das Wort angezeigt wird">Station' +
+              '<select data-fpart="from" data-ffield="stationNr">' + funkStationOptions(f.from.stationNr, stations) + '</select></label>' +
           '</div></div>' +
         '<div class="detail-field"><label>An (gibt das Wort ein)</label>' +
           '<div class="funk-party">' +
-            '<select data-ftorole><option value="fhz"' + (!toIsElw ? " selected" : "") + '>Fahrzeug</option><option value="elw"' + (toIsElw ? " selected" : "") + '>ELW</option></select>' +
+            '<label class="funk-sub" title="Empfänger: anderes Fahrzeug oder die ELW">Empfänger' +
+              '<select data-ftorole><option value="fhz"' + (!toIsElw ? " selected" : "") + '>Fahrzeug</option><option value="elw"' + (toIsElw ? " selected" : "") + '>ELW</option></select></label>' +
             toBlock +
           '</div></div>' +
       '</div>' +
@@ -5192,6 +5226,7 @@ body {
       el.addEventListener("change", function () {
         var id = this.closest(".funk-row").dataset.fid, part = this.dataset.fpart, field = this.dataset.ffield, val = this.value;
         updateFunk(id, function (f) { f[part][field] = val; });
+        updateStatus(); /* Statuskarte „Funkaufträge" live nachziehen */
       });
     });
     host.querySelectorAll("[data-ftorole]").forEach(function (el) {
@@ -5199,6 +5234,7 @@ body {
         var id = this.closest(".funk-row").dataset.fid, val = this.value === "elw" ? "elw" : "fhz";
         updateFunk(id, function (f) { f.to.role = val; });
         renderFunkauftraege();
+        updateStatus(); /* Rollenwechsel ändert die Pflichtfelder → Status neu */
       });
     });
     host.querySelectorAll("[data-fdel]").forEach(function (el) {

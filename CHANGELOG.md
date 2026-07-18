@@ -11,6 +11,25 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.36.1 (Funkaufträge: Feld-Beschriftungen, Test-Badge raus, Übersichtskarte):
+**1)** Im Funkauftrag-Editor hat jedes Auswahlfeld jetzt ein sichtbares Sub-Label
+(neues `.funk-sub`, Label umschließt das Select → implizite Zuordnung, kurzer
+`title` als Erklärung): „Von" = **Fahrzeug** (sieht und funkt das Wort) +
+**Station** (dort wird es angezeigt); „An" = **Empfänger** (Fahrzeug/ELW), bei
+Fahrzeug zusätzlich **Fahrzeug** + **Station** (dort wird das Wort eingegeben und
+schaltet den Positionscode frei). data-Attribute und Event-Logik unverändert, die
+ELW-Hinweiszeile bleibt. **2)** Das gelbe **„Test"-Badge** an der Überschrift
+„Funkaufträge" ist entfernt (Feature ist live), inkl. der nur dort genutzten
+CSS-Regel `.badge-test`. **3)** „Funkaufträge" erscheint jetzt als **Karte in der
+Übersicht** (`card: true`, neue Beschreibung ohne Test-Zusatz) mit eigener
+Status-Pille: ohne Aufträge neutral **„Optional"** (grau), sonst „In Bearbeitung"
+bzw. „Vollständig" (`computeFunkStatus`; vollständig = Funkwort + Von-Felder +
+je nach Empfänger An-Felder – wie die Export-Prüfung). Als **optionaler** Bereich
+(`optional: true` in `SECTIONS`) zählt er nicht in die Fortschrittsleiste
+(weiter x/6). Die Select-Change-Handler rufen dafür zusätzlich `updateStatus()`
+auf; nebenbei Struktur-Kommentare der Sections korrigiert (Funkaufträge waren
+noch als „QR-CODE-PLAN" überschrieben).
+
 Stand 1.36.0 (Mehrere Aufgaben-Blöcke je Station – seit 2026-07-18 live): Der Kartenbereich
 „Aufgabe" im Stations-Detail besteht jetzt aus **1..n Aufgaben-Blöcken**
 (`station.tasks[]`): Block 1 mit **Geltungsbereich** „Alle Fahrzeuge" /
