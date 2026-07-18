@@ -29,6 +29,20 @@ Mit dem Merge des Branches `claude/funny-lovelace-Ljjaw` nach `main` sind live
   → alte Leser kompatibel); station.html liest Zelle vor Station. Sichtbares Feld
   „Aufgabe" heißt seit v1.35.2 **„Stationsüberschrift"** (intern `title`).
 
+## Projekt-Agenten (`.claude/agents/`)
+
+Feste Subagenten mit klaren Rollen (Details in der jeweiligen Datei):
+- **`programmierer`** – setzt Patches um (umsetzend) · **`handbuch`** –
+  schreibt die eingebaute Bedienungsanleitung (umsetzend).
+- **`pruefer`** – Regel-/Strukturprüfung · **`design`** – Styleguide/Optik ·
+  **`test`** – Verhaltenstests per Node-Harness (alle rein prüfend/lesend).
+- **`uebungsdesigner`** – fachliche Übungsinhalte (beratend).
+
+Die Agenten dürfen miteinander reden (Vermittlung über die Hauptsitzung):
+umsetzende Agenten reichen Stände bei den Prüfenden ein und bessern nach, bis
+BESTANDEN. **Commit/Push/Merge macht ausschließlich die Hauptsitzung** nach
+Freigabe des Nutzers; kein Agent verändert `data/uebung.json`.
+
 ## Backlog / Vormerkungen (WICHTIG)
 
 - **Kleinere Änderungen werden nicht sofort einzeln als eigener Patch
