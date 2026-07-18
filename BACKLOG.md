@@ -9,6 +9,23 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
+### [ ] Stations-Detail: Pflichtfeld „ELW zeigt Positionscode direkt" entfernen
+
+**Status:** offen · vorgemerkt am 2026-06-09 · **noch NICHT umsetzen** (Nutzer: „merken, warten")
+
+- **Ziel:** Das Auswahlfeld **„ELW zeigt Positionscode direkt"** (ja/nein) im
+  Stations-Detail (Rätsel-Editor, `detElwDirect`) vorerst **aus der UI entfernen**.
+- **Vor dem Umsetzen klären:**
+  - Soll das Datenfeld `stations[].elwCodeDirect` ganz raus oder nur das
+    Eingabefeld verschwinden und `elwCodeDirect` intern fest auf einen Wert
+    (z. B. `false` = erst nach Klick „Code anzeigen")?
+  - Verhalten in `elw.html`: ohne das Feld immer „Code anzeigen"-Button (kein
+    direkter Code) – ist das gewünscht?
+  - Validierung/Pflichtfeld-Logik (`detElwDirect` ist aktuell Pflicht) mit anpassen.
+- **Randbedingungen:** kein Lösungssatz/`char` auf `elw.html` · Export
+  rückwärtskompatibel halten (Feld optional) · Versions-Bump erst beim
+  tatsächlichen Umsetzen.
+
 ### [ ] GPS-Standortprüfung für Stationsoberfläche
 
 **Status:** offen · später fachlich ausarbeiten
@@ -54,6 +71,60 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 ---
 
 ## Erledigt
+
+### [x] Mehrere Aufgaben-Blöcke je Station (fahrzeugabhängige Aufgaben) – live
+
+**Status:** erledigt/live am 2026-07-18 · index v1.36.0 / station v1.1.0
+(elw unverändert) · Branch `claude/funny-lovelace-Ljjaw` → `main` (PR #87).
+
+- Kartenbereich „Aufgabe" = **1..n Aufgaben-Blöcke** (`station.tasks[]`): Block 1
+  mit Geltungsbereich alle/ausgewählte Fahrzeuge; bei „ausgewählte" verteilen
+  weitere Blöcke („+ Weitere Aufgabe hinzufügen") die restlichen Fahrzeuge (Chips
+  bieten nur unbeanspruchte Fahrzeuge an). Jeder Block eigener Aufgabentyp
+  Text/Rätsel/MC (Nutzerentscheid); unzugeteilte aktive Fahrzeuge → Station
+  „in Bearbeitung" + Hinweis (Nutzerentscheid), Export bleibt möglich.
+- Export: Rätsel wie bisher je Zelle; NEU `cell.task`/`cell.mc` bei „ausgewählt";
+  „alle"-Fall weiter über `stations[].task`/`mc` (alte Leser kompatibel,
+  Ein-Block-Altdaten byte-identisch). station.html: Zelle vor Station (Fallback).
+- **Vermerk:** `elwCodeDirect` bewusst **stationsglobal** geblieben (siehe offener
+  Punkt „ELW zeigt Positionscode direkt entfernen").
+- **Offene Idee:** Vollständigkeit könnte zusätzlich verlangen, dass ein MC-Block
+  ≥ 1 wohlgeformte Frage bzw. ein Rätsel-Block ≥ 1 Rätselseite hat (heute wie
+  bisher ungeprüft; leere Inhalte fallen beim Export einfach weg).
+
+### [x] Funkaufträge (Funkwort-Weitergabe zwischen Beteiligten) – live
+
+**Status:** erledigt/live am 2026-07-18 · index v1.35.0 / station v1.0.17 /
+elw v1.3.0 · Branch `claude/funny-lovelace-Ljjaw` → `main` (PR #87).
+
+- Neuer Bereich „Funkaufträge": ein **Funkwort**, das **Von** (FHZ + Station) **An**
+  (anderes FHZ + Station **oder** ELW) per Funk durchgegeben wird. Empfänger gibt es an
+  seiner Station ein → **Positionscode** frei (echter Funkverkehr erzwungen).
+- Export: Sender-Zelle `relaySend` (Klartext), Empfänger `relayRecv`/`relayElw` (nur
+  Hash). station.html: Sender-Karte + Empfänger-Gate. elw.html: ELW-Empfänger-Gate
+  (Code erst nach Eingabe des hochgefunkten Worts).
+- **Bewusste Aufweichung:** das Funkwort steht im Klartext beim Sender in der Datei
+  (muss er lesen) – Obfuscation-Niveau wie der Base64-Payload, der Mechanik inhärent.
+
+### [x] Aufgabentyp Multiple-Choice + Mastercode + Detail-Überarbeitung – live
+
+**Status:** erledigt/live am 2026-07-18 · index v1.34.0 / station v1.0.16 ·
+Branch `claude/funny-lovelace-Ljjaw` → `main` (PR #87). Damit auch live:
+TMO-Platzhalter „z. B. E18" → „z. B. EG18" (Vormerkung vom 2026-06-09 erledigt).
+
+- **Multiple-Choice-Fragen** als dritter Aufgabentyp je Station (mehrere Fragen,
+  Antwortmöglichkeiten + richtige Option). station.html: Fragen-Gate, alle richtig →
+  Positionscode frei. Export `stations[].mc` (Optionen Klartext, richtige Option nur
+  als Hash).
+- **Mastercode der Übungsleitung** (Grunddaten): Override, Export `meta.masterCode`
+  (nur Hash). station.html: dezenter Button „Übungsleitung" blendet das Eingabefeld
+  ein (sonst verborgen) → korrekter Code zeigt das Lösungszeichen direkt.
+- **Stations-Detail** in aufklappbare Abschnitte gegliedert, Hilfetexte gekürzt.
+  Mit v1.35.1/v1.35.2 weiter überarbeitet: Karten „Aufgabe" + „Aufgabentyp &
+  Freischaltung" zusammengeführt, eigene Karte „Notiz für die Übungsleitung",
+  Pflichtfeld heißt **„Stationsüberschrift"**, Aufgabenbeschreibung nur bei
+  Aufgabentyp „Text" sichtbar und nur dann exportiert.
+- Platzhalter TMO-Funkkanal „z. B. E18" → „z. B. EG18" (erledigt).
 
 ### [x] Rätsel-Freischaltung (ELW↔FHZ-Funkverkehr) – live
 

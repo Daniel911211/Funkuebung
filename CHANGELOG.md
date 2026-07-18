@@ -11,6 +11,74 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.36.0 (Mehrere Aufgaben-Blöcke je Station – TESTBRANCH): Der Kartenbereich
+„Aufgabe" im Stations-Detail besteht jetzt aus **1..n Aufgaben-Blöcken**
+(`station.tasks[]`): Block 1 mit **Geltungsbereich** „Alle Fahrzeuge" /
+„Ausgewählte Fahrzeuge"; bei „Ausgewählte" verteilen weitere Blöcke (Button
+**„+ Weitere Aufgabe hinzufügen"**) die restlichen Fahrzeuge – die Fahrzeug-Chips
+bieten je Block nur Fahrzeuge an, die kein anderer Block beansprucht. **Jeder Block
+hat seinen eigenen Aufgabentyp** (Text/Rätsel/Multiple-Choice) samt Editor; der
+frühere Geltungsbereich am Rätsel ist in den Block gewandert. „ELW zeigt
+Positionscode direkt" bleibt stationsglobal (Pflicht, sobald ein Block Typ Rätsel
+hat). **Vollständigkeit:** Bei „Ausgewählte Fahrzeuge" braucht jeder Block ≥ 1
+aktives Fahrzeug und jedes aktive Fahrzeug einen Block, sonst „In Bearbeitung" +
+Hinweis mit den fehlenden Fahrzeugen (Export bleibt möglich). **Export:**
+Rätsel-Felder wie bisher je Zelle; NEU je Zelle optional `task` (Klartext) bzw.
+`mc` bei Blöcken mit Geltungsbereich „ausgewählt" – im „alle"-Fall bleiben
+`stations[].task`/`stations[].mc` wie bisher (alte Leser kompatibel; Export bei
+Ein-Block-Altdaten byte-identisch, nur version/generatedAt anders).
+**Migration:** Altes Ein-Aufgaben-Format (taskType/task/riddle/mc an der Station)
+wird beim Laden verlustfrei nach `tasks[0]` migriert (nur localStorage).
+Downgrade-Hinweis: Ein mit 1.36.0 erzeugter **Planungsdaten**-Export (Voll-Export)
+verliert beim Import in ein älteres index.html die Aufgabendaten.
+
+Stand 1.35.2 (Stationsplanung überarbeitet: Stationsüberschrift + typgebundene
+Aufgabenbeschreibung – TESTBRANCH): Das Pflichtfeld „Aufgabe" heißt sichtbar jetzt
+**„Stationsüberschrift"** (intern weiterhin `title`; Tabellen-Spalte,
+Detail-Label, Fehlermeldung und Bereichsbeschreibungen angepasst). Die
+**Aufgabenbeschreibung** (intern `task`) gehört zum **Aufgabentyp „Text"**: Das
+Feld ist im Stations-Detail nur bei Typ „Text" sichtbar (Reihenfolge jetzt
+Stationsüberschrift · Aufgabentyp · Aufgabenbeschreibung bzw. Rätsel-/MC-Editor)
+und wird **nur dann nach `stations[].task` exportiert** – bei „Rätsel"/„MC"
+bleibt der gespeicherte Text lokal erhalten, `task` geht leer raus →
+station.html zeigt dann nur die Stationsüberschrift (keine Code-Änderung an
+station.html nötig). Zusätzlich entfällt der doppelte Label-Text in der Karte
+„Notiz für die Übungsleitung" (Kartentitel reicht, Textfeld mit aria-label).
+
+Stand 1.35.1 (Stations-Detail: Kartenbereiche neu gegliedert – TESTBRANCH): Die
+Klapp-Karten „Aufgabe" und „Aufgabentyp & Freischaltung" sind zu **einer** Karte
+„Aufgabe" zusammengeführt (Aufgabe · Aufgabenbeschreibung · Aufgabentyp · ggf.
+Rätsel-/MC-Editor). Die „Notiz für die Übungsleitung" hat dafür einen **eigenen
+neuen Kartenbereich** (eigene `details`-Karte unterhalb der Lagebilder). Nur
+UI-Gliederung, keine Daten-/Exportänderung.
+
+Stand 1.35.0 (Funkaufträge / Funkwort-Weitergabe – TESTFUNKTION, nicht live): Neuer
+Bereich **„Funkaufträge"** (in der Navigation zwischen „Lösungssatz" und „QR-Code-Plan").
+Damit lässt sich ein **Funkwort** definieren, das ein Fahrzeug (**Von**, Fahrzeug +
+Station) einem anderen Fahrzeug **oder dem ELW** (**An**) per Funk durchgibt. Der
+Empfänger gibt das Wort an seiner Station ein → das schaltet dort den **Positionscode**
+frei (echter Funkverkehr erzwungen). Speicherung lokal unter neuem Key
+`funkuebung_funkauftraege_v1` (Liste `{word, from, to}`). Export mergt je Auftrag in die
+`assignments`-Zellen: **Sender-Zelle** `relaySend:[{to,word}]` (Wort im **Klartext**, der
+Sender muss es lesen), **Empfänger-Zelle (FHZ)** `relayRecv:[{from,hash}]` bzw.
+**Empfänger ELW** `relayElw:{from,hash}` (Wort nur als **Verschleierungs-Hash** cyrb53,
+gesalzen mit name+date). Alle Felder optional → ohne Funkaufträge unverändertes
+Verhalten. `loesung.phrase`/`char` weiterhin NICHT exportiert.
+
+Stand 1.34.0 (Aufgabentyp Multiple-Choice + Mastercode + Detail-Überarbeitung –
+TESTFUNKTION, nicht live): Neuer **Aufgabentyp „Multiple-Choice-Fragen"** je Station
+(zusätzlich zu „Text"/„Rätsel"): ein Quiz aus **mehreren Fragen**, je Frage Text +
+Antwortmöglichkeiten + richtige Option; die Besatzung beantwortet sie an der Station,
+alle richtig → Positionscode frei. Speicherung im Station-Objekt (`mc.questions[]`);
+Export je `stations[]` optional `mc` mit **Optionen im Klartext** (zum Anzeigen) +
+**Hash der richtigen Option** (cyrb53, gesalzen mit name+date – richtige Option NIE als
+Index/Klartext). Neu in den Grunddaten: **Mastercode der Übungsleitung** (Override) –
+Export als `meta.masterCode` (nur Hash, nie Klartext); leer = aus. Das **Stations-Detail**
+ist in aufklappbare Abschnitte gegliedert (Aufgabe · Lagebilder · Aufgabentyp &
+Freischaltung), die langen Hilfetexte sind gekürzt. Außerdem Platzhalter im
+TMO-Funkkanal „z. B. E18" → „z. B. EG18". Alle neuen Felder optional →
+rückwärtskompatibel. `loesung.phrase`/`char` unverändert (nie im Klartext).
+
 Stand 1.33.0 (Rätsel-Freischaltung in die Stationsplanung integriert, jetzt live):
 Der eigene Bereich „Rätsel (Test)" entfällt; Freischalt-Rätsel werden nun **direkt
 je Station** im Stations-Detail gepflegt (Aufgabentyp „Text"/„Rätsel"). Ein Rätsel
@@ -502,6 +570,34 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
 
+Stand 1.1.0 (Aufgaben je Fahrzeug-Zelle – TESTBRANCH): Passend zu den
+Aufgaben-Blöcken in index.html 1.36.0 liest die Station **Aufgabenbeschreibung**
+und **Multiple-Choice-Fragen** jetzt bevorzugt aus der eigenen Fahrzeug-Zelle
+(`assign.task` bzw. `assign.mc.questions`); die Stations-Ebene
+(`station.task`/`station.mc`) bleibt als **Altformat-Fallback** vollständig
+erhalten → alte Exporte verhalten sich unverändert. Rätsel-Gates waren schon
+zellenbasiert und sind unverändert.
+
+Stand 1.0.17 (Funkauftrag-Karten – TESTFUNKTION, nicht live): Zwei neue Karten je
+Station (parallel zur Aufgabe). **Funkauftrag-Sender:** bei hinterlegtem `relaySend`
+zeigt die Station das/die **Funkwörter** im Klartext mit dem Empfänger-Hinweis („an HLF
+durchgeben") – reine Anzeige, kein Gate. **Funkwort-Empfänger:** bei `relayRecv` ein
+**Gate** „Welches Wort kam von <Fahrzeug>?" – stimmt der Hash (case-/leerzeichen-tolerant),
+zählt es zur Freischaltung; erst wenn alle hinterlegten Gates (FHZ/ELW/MC/Funkwort)
+erfüllt sind, erscheint das Positionscode-Feld. Mastercode-Override blendet auch die
+Funkwort-Karte aus. Felder optional → ohne `relaySend`/`relayRecv` unverändert.
+
+Stand 1.0.16 (Multiple-Choice-Fragen-Gate + Mastercode-Override – TESTFUNKTION,
+nicht live): Neben dem Rätsel-Gate gibt es jetzt ein **Fragen-Gate**: bei einer
+Station mit `mc.questions` zeigt die Stationsseite die Fragen mit Antwort-Buttons;
+erst wenn **alle** Fragen richtig beantwortet sind (Hash-Vergleich der gewählten
+Option), erscheint das Positionscode-Feld. Zusätzlich der **Mastercode der
+Übungsleitung**: ein **dezenter Button „Übungsleitung"** blendet ein verstecktes
+Eingabefeld ein (standardmäßig verborgen); bei korrektem Mastercode
+(`meta.masterCode`-Hash) wird das **Lösungszeichen direkt** angezeigt – Gate und
+Positionscode werden übersprungen. Beide Funktionen optional → ohne die Felder
+unverändertes Verhalten. Weiterhin **kein** Lösungssatz im Klartext.
+
 Stand 1.0.15 (Freischalt-Gate flexibler + verständliche Begriffe + Lagebild
 ausblenden): Die Freischalt-Karte prüft jetzt – je nach hinterlegten Hashes – zwei
 Wörter auf der Stationsseite: die **Antwort der Besatzung** (FHZ-Rätsel, vor Ort
@@ -589,6 +685,14 @@ Versionsanzeige im Footer, Positionscode-Freischaltung des Lösungszeichens.
 > Eigene Versionierung (zentral in `ELW_APP_INFO.version`, im Footer sichtbar).
 > Lesende Schwesterseite zu station.html für ELW/Übungsleitung; lädt
 > data/uebung.json. Zeigt NIEMALS Lösungssatz/Lösungszeichen (nur Positionscodes).
+
+Stand 1.3.0 (Funkauftrag-Empfänger / Code-Gate – TESTFUNKTION, nicht live): Hat eine
+Station ein `relayElw` (Besatzung funkt ein Wort hoch), zeigt `elw.html` in der
+Code-Spalte statt „Code anzeigen" ein **Eingabefeld** „Wort von <Fahrzeug> eingeben". Erst
+wenn die ELW das hochgefunkte Wort einträgt (Hash-Vergleich, case-/leerzeichen-tolerant),
+wird der **Positionscode** der Zeile sichtbar (zum Runterfunken). `relayElw` hat Vorrang
+vor „Code direkt". Dafür Hash-Helfer (`normWord`/`saltFromMeta`/`hashWord`, identisch zu
+index/station) ergänzt. Weiterhin **kein** Lösungssatz/`char`.
 
 Stand 1.2.0 (kein Wort-Gate mehr, ELW-Rätsel als Overlay, Code direkt, neue Optik):
 Das FHZ-Wort-Gate entfällt – die Freischalt-Wörter werden ausschließlich auf

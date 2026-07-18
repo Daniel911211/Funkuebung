@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.33.0)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.36.0)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -1640,6 +1640,49 @@ body {
   .riddle-opt .ropt-del { flex: 0 0 auto; }
   .riddle-opt-hint { font-size: .8rem; color: var(--text-faint); margin: 0 0 10px; }
   .riddle-scope-veh { margin-top: 10px; }
+  /* Aufgaben-Blöcke im Stations-Detail (station.tasks[]) */
+  .task-block { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-2); padding: 14px; margin-bottom: 14px; }
+  .task-block-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .task-block-no { font-weight: 600; color: var(--text); font-size: .95rem; }
+  .task-missing-hint { margin: 0 0 12px; font-size: .85rem; color: var(--status-prog); line-height: 1.5; }
+
+  /* --- Aufklappbare Abschnitte im Stations-Detail ---------------------- */
+  .detail-group { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-2); margin-bottom: 12px; overflow: hidden; }
+  .detail-group > summary {
+    list-style: none; cursor: pointer; padding: 11px 14px; font-size: .8rem;
+    text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted);
+    font-weight: 600; background: var(--surface); user-select: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .detail-group > summary::-webkit-details-marker { display: none; }
+  .detail-group > summary::before {
+    content: "▸"; color: var(--text-faint); font-size: .85em; transition: transform .12s;
+  }
+  .detail-group[open] > summary::before { transform: rotate(90deg); }
+  .detail-group > summary:hover { color: var(--text); }
+  .detail-group > summary:focus-visible { outline: 2px solid var(--red); outline-offset: -2px; }
+  .detail-group-body { padding: 14px; }
+  .detail-group-body > .detail-field:last-child,
+  .detail-group-body > .detail-images:last-child { margin-bottom: 0; }
+
+  /* --- Multiple-Choice-Fragen-Editor ---------------------------------- */
+  .mc-editor { margin-top: 4px; }
+  .mc-question { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 12px 14px; margin-bottom: 14px; }
+  .mc-q-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .mc-q-no { font-weight: 600; color: var(--text); font-size: .95rem; }
+  .mc-opt-label { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-faint); margin-bottom: 6px; }
+
+  /* --- Funkauftrag-Editor --------------------------------------------- */
+  .badge-test { display: inline-block; vertical-align: middle; font-size: .62rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--btn-warn-fg); background: var(--btn-warn); border-radius: 999px; padding: 2px 8px; margin-left: 8px; }
+  .funk-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .funk-head .subsection-title { margin: 0; }
+  .funk-row { position: relative; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); padding: 12px 44px 12px 14px; margin-bottom: 12px; }
+  .funk-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) { .funk-grid { grid-template-columns: 1fr; } }
+  .funk-grid .detail-field { margin-bottom: 0; }
+  .funk-party { display: flex; flex-direction: column; gap: 6px; }
+  .funk-elw-note { font-size: .8rem; color: var(--text-faint); line-height: 1.4; }
+  .funk-del { position: absolute; top: 10px; right: 10px; }
 </style>
 </head>
 <body>
@@ -1756,6 +1799,11 @@ body {
             <label for="f-leader">Übungsleitung <span class="req" title="Pflichtfeld">*</span></label>
             <input type="text" id="f-leader" data-key="leader" placeholder="Name / Funktion">
           </div>
+          <div class="field full">
+            <label for="f-mastercode">Mastercode der Übungsleitung</label>
+            <input type="text" id="f-mastercode" data-key="masterCode" placeholder="Optional – Override-Code" autocomplete="off">
+            <p class="field-hint">Optional. Schaltet an der Station direkt das Lösungszeichen frei (überspringt Rätsel/Fragen und Positionscode). Leer = aus.</p>
+          </div>
         </div>
 
         <!-- ===== Funkkanäle =====
@@ -1842,7 +1890,7 @@ body {
     <section class="section" id="sec-stationen">
       <div class="section-head">
         <h2>Stationsplanung</h2>
-        <p>Aufgabe, Aufgabenbeschreibung und Lagebilder der Stationen festlegen. Einsatzort, Adresse und Koordinaten werden in der Routenplanung gepflegt.</p>
+        <p>Stationsüberschrift, Aufgabe und Lagebilder je Station festlegen. Einsatzort, Adresse und Koordinaten werden in der Routenplanung gepflegt.</p>
       </div>
 
       <!-- Flexible Stationsverwaltung: Liste (Reihenfolge, löschen) +
@@ -1866,7 +1914,7 @@ body {
             <thead>
               <tr>
                 <th class="col-no">Station</th>
-                <th>Aufgabe</th>
+                <th>Stationsüberschrift</th>
                 <th>Aufgabenbeschreibung</th>
                 <th class="col-imgs">Lagebilder</th>
                 <th class="col-actions">Aktionen</th>
@@ -2008,6 +2056,23 @@ body {
 
     <!-- ----- 7) QR-CODE-PLAN ------------------------------------------- -->
     <!-- → später: qr/qr-codes.html -->
+    <section class="section" id="sec-funkauftraege">
+      <div class="section-head">
+        <h2>Funkaufträge <span class="badge-test">Test</span></h2>
+        <p>Funkwörter, die ein Fahrzeug einem anderen Fahrzeug oder dem ELW <b>per Funk</b> durchgibt. Der Empfänger gibt das Wort an seiner Station ein – das schaltet dort den <b>Positionscode</b> frei. So entsteht echter Funkverkehr (die Lösung kommt nur über Funk, nicht allein am Gerät).</p>
+      </div>
+
+      <div class="panel">
+        <div class="funk-head">
+          <h3 class="subsection-title">Funkaufträge</h3>
+          <button type="button" class="btn btn-primary" id="funkAdd">+ Funkauftrag</button>
+        </div>
+        <p class="field-hint">„<b>Von</b>" sieht das Wort an seiner Station und funkt es; „<b>An</b>" gibt es an seiner Station ein → Code frei. Bei „An = ELW" gibt die ELW das hochgefunkte Wort auf <code>elw.html</code> ein und der Code der „Von"-Station wird frei. Das Funkwort wird für den Empfänger nur <b>verschleiert (Hash)</b> exportiert.</p>
+        <div id="funkList"></div>
+        <p class="field-hint" id="funkMsg" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
     <section class="section" id="sec-qr">
       <div class="section-head">
         <h2>QR-Code-Plan</h2>
@@ -2248,7 +2313,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.33.0"
+    version: "1.36.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2257,9 +2322,10 @@ body {
     { id: "uebersicht", label: "Übersicht",       icon: "grid",    nav: true,  card: false },
     { id: "grunddaten", label: "Grunddaten",      icon: "doc",     nav: true,  card: true,  desc: "Übungstitel, Datum, Uhrzeit, Übungsleitung sowie Funkkanäle (TMO/DMO)." },
     { id: "fahrzeuge",  label: "Fahrzeuge",      icon: "truck",   nav: true,  card: true,  desc: "Teilnehmende Fahrzeuge, Funkrufnamen und Personenrahmen als Grundlage für die spätere Routenplanung." },
-    { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Aufgabe, Aufgabenbeschreibung und Lagebilder je Station festlegen." },
+    { id: "stationen",  label: "Stationsplanung", icon: "pin",     nav: true,  card: true,  desc: "Stationsüberschrift, Aufgabe und Lagebilder je Station festlegen." },
     { id: "routen",     label: "Routenplanung",   icon: "loop",    nav: true,  card: true,  desc: "Stationspositionen pflegen und automatisch versetzte Fahrzeugrouten anzeigen." },
     { id: "loesung",    label: "Lösungssatz",     icon: "key",     nav: true,  card: true,  desc: "Lösungssatz erfassen und automatisch auf Fahrzeuge und Stationen verteilen." },
+    { id: "funkauftraege", label: "Funkaufträge",  icon: "loop",    nav: true,  card: false, desc: "Funkwörter zwischen Fahrzeugen/ELW (Test)." },
     { id: "qr",         label: "QR-Code-Plan",    icon: "qr",      nav: true,  card: true,  desc: "QR-Codes für die Stationen verwalten." },
     { id: "druck",      label: "Druck / Export",  icon: "printer", nav: true,  card: false }
   ];
@@ -2317,6 +2383,7 @@ body {
       date:   raw.date   || "",
       time:   raw.time   || "",
       leader: raw.leader || "",
+      masterCode: raw.masterCode || "",
       radioChannels: channels
     };
   }
@@ -2457,6 +2524,9 @@ body {
   function newImageId() {
     return "image_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
   }
+  function newTaskId() {
+    return "task_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+  }
 
   /* Eine Rätsel-Seite (FHZ bzw. ELW): Frage, Antwortart (Freitext/Auswahl),
      Optionen + Index der richtigen Option (für Multiple-Choice), Freitext-Antwort.
@@ -2477,26 +2547,96 @@ body {
       correct: correct
     };
   }
-  /* Ein Rätsel je Station mit Geltungsbereich (alle / ausgewählte Fahrzeuge). */
+  /* Rätsel eines Aufgaben-Blocks: nur noch die beiden Seiten FHZ/ELW. Der
+     frühere Geltungsbereich (scope/vehicleIds) liegt seit dem tasks[]-Modell am
+     Aufgaben-Block selbst; alte Daten werden in normalizeStation migriert. */
   function defaultRiddle() {
-    return { scope: "all", vehicleIds: [], fhz: defaultRiddleSide(), elw: defaultRiddleSide() };
+    return { fhz: defaultRiddleSide(), elw: defaultRiddleSide() };
   }
   function normalizeRiddle(r) {
     r = r || {};
     return {
-      scope: r.scope === "selected" ? "selected" : "all",
-      vehicleIds: Array.isArray(r.vehicleIds) ? r.vehicleIds.slice() : [],
       fhz: normalizeRiddleSide(r.fhz),
       elw: normalizeRiddleSide(r.elw)
     };
+  }
+
+  /* Multiple-Choice-Fragen (Aufgabentyp „mc"): mehrere Fragen, je Frage Text +
+     Antwortmöglichkeiten + Index der richtigen Option. Klartext NUR lokal; Export
+     hasht die richtige Option (siehe exportUebungJson). */
+  function defaultMcQuestion() {
+    return { q: "", options: ["", ""], correct: 0 };
+  }
+  function normalizeMcQuestion(x) {
+    x = x || {};
+    var opts = Array.isArray(x.options) ? x.options.map(function (o) { return o != null ? String(o) : ""; }) : [];
+    var correct = (typeof x.correct === "number" && x.correct >= 0) ? x.correct : 0;
+    if (correct >= opts.length) correct = 0;
+    return { q: x.q != null ? String(x.q) : "", options: opts, correct: correct };
+  }
+  function defaultMc() {
+    return { questions: [defaultMcQuestion()] };
+  }
+  function normalizeMc(m) {
+    m = m || {};
+    var qs = Array.isArray(m.questions) ? m.questions.map(normalizeMcQuestion) : [];
+    return { questions: qs };
+  }
+
+  /* Aufgaben-Block einer Station (tasks[]): Geltungsbereich + Aufgabentyp +
+     typabhängiger Inhalt. Block 1 darf scope "all" (gilt für alle Fahrzeuge)
+     oder "selected" haben; Blöcke ab 2 sind immer "selected" (sie verteilen die
+     restlichen Fahrzeuge). */
+  function defaultTaskBlock() {
+    return { id: newTaskId(), scope: "all", vehicleIds: [], taskType: "text",
+      task: "", riddle: defaultRiddle(), mc: defaultMc() };
+  }
+  function normalizeTaskBlock(t, isFirst) {
+    t = t || {};
+    var ids = [];
+    (Array.isArray(t.vehicleIds) ? t.vehicleIds : []).forEach(function (vid) {
+      if (vid != null && ids.indexOf(vid) < 0) ids.push(vid);
+    });
+    return {
+      id: t.id || newTaskId(),
+      scope: (isFirst && t.scope !== "selected") ? "all" : "selected",
+      vehicleIds: ids,
+      taskType: (t.taskType === "riddle" || t.taskType === "mc") ? t.taskType : "text",
+      task: t.task != null ? String(t.task) : "",
+      riddle: normalizeRiddle(t.riddle),
+      mc: normalizeMc(t.mc)
+    };
+  }
+  /* Effektive Blöcke: steht Block 1 auf "alle Fahrzeuge", zählen etwaige weitere
+     Blöcke nicht (sie bleiben aber gespeichert – Normalisierung löscht nie). */
+  function stationTaskBlocks(st) {
+    var tasks = (st && Array.isArray(st.tasks)) ? st.tasks : [];
+    if (!tasks.length) return [];
+    return tasks[0].scope === "all" ? [tasks[0]] : tasks;
+  }
+  /* Zuständiger Aufgaben-Block für ein Fahrzeug (First-Match) oder null. */
+  function taskBlockForVehicle(st, vehId) {
+    var blocks = stationTaskBlocks(st);
+    for (var i = 0; i < blocks.length; i++) {
+      if (blocks[i].scope === "all") return blocks[i];
+      if (blocks[i].vehicleIds.indexOf(vehId) >= 0) return blocks[i];
+    }
+    return null;
+  }
+  /* Namen aller aktiven Fahrzeuge, die an dieser Station keinem Block zugeteilt
+     sind (leer bei Geltungsbereich "alle Fahrzeuge"). */
+  function stationUncoveredVehicleTypes(st, activeVehicles) {
+    return (activeVehicles || [])
+      .filter(function (v) { return !taskBlockForVehicle(st, v.id); })
+      .map(function (v) { return v.type; });
   }
 
   /* Standardstart: acht vorbereitete Stationen. */
   function defaultStations() {
     var list = [];
     for (var i = 1; i <= STATION_SEED_COUNT; i++) {
-      list.push({ id: "station_" + i, title: "", task: "", description: "", images: [], position: { address: "", lat: "", lng: "" },
-        taskType: "text", hideLagebild: false, elwCodeDirect: null, riddle: defaultRiddle() });
+      list.push({ id: "station_" + i, title: "", description: "", images: [], position: { address: "", lat: "", lng: "" },
+        hideLagebild: false, elwCodeDirect: null, tasks: [defaultTaskBlock()] });
     }
     return list;
   }
@@ -2534,24 +2674,40 @@ body {
     /* Hinweis: Stationen kennen kein active mehr. Ein evtl. in alten
        localStorage-Daten vorhandenes s.active wird bewusst ignoriert und
        beim Normalisieren nicht erneut geschrieben. */
-    /* Aufgabentyp / Freischalt-Felder.
-       - taskType: "text" (normale Aufgabe) | "riddle" (Freischalt-Rätsel)
-       - hideLagebild: Lagebild-Karte auf station.html ausblenden
-       - elwCodeDirect: PFLICHT bei Rätsel-Stationen (true=Code sofort auf elw.html,
-         false=erst nach Klick). null = noch nicht gewählt. Bei Textstationen ohne
-         Bedeutung; null bleibt erhalten. */
+    /* Aufgaben-Blöcke (tasks[]) / Freischalt-Felder.
+       - tasks: 1..n Aufgaben-Blöcke (siehe defaultTaskBlock). Migration altes
+         Ein-Aufgaben-Format (taskType/task/riddle/mc direkt an der Station,
+         Geltungsbereich am Rätsel) → genau ein Block; scope/vehicleIds werden
+         nur bei Alt-Typ "riddle" aus s.riddle übernommen.
+       - hideLagebild: Lagebild-Karte auf station.html ausblenden (stationsglobal)
+       - elwCodeDirect: PFLICHT, sobald ein Block Typ "riddle" hat (true=Code
+         sofort auf elw.html, false=erst nach Klick). null = noch nicht gewählt.
+         Stationsglobal; ohne Rätsel-Block ohne Bedeutung, null bleibt erhalten. */
     var elwDirect = s.elwCodeDirect === true ? true : (s.elwCodeDirect === false ? false : null);
+    var tasks;
+    if (Array.isArray(s.tasks) && s.tasks.length) {
+      tasks = s.tasks.map(function (t, i) { return normalizeTaskBlock(t, i === 0); });
+    } else {
+      var legacyType = (s.taskType === "riddle" || s.taskType === "mc") ? s.taskType : "text";
+      var legacyRiddle = (s.riddle && typeof s.riddle === "object") ? s.riddle : {};
+      tasks = [normalizeTaskBlock({
+        scope: (legacyType === "riddle" && legacyRiddle.scope === "selected") ? "selected" : "all",
+        vehicleIds: (legacyType === "riddle" && Array.isArray(legacyRiddle.vehicleIds)) ? legacyRiddle.vehicleIds : [],
+        taskType: legacyType,
+        task: s.task,
+        riddle: legacyRiddle,
+        mc: s.mc
+      }, true)];
+    }
     return {
       id: s.id || newStationId(),
       title: title,
-      task: s.task != null ? s.task : "",
       description: s.description != null ? s.description : "",
       images: images,
       position: position,
-      taskType: s.taskType === "riddle" ? "riddle" : "text",
       hideLagebild: s.hideLagebild === true,
       elwCodeDirect: elwDirect,
-      riddle: normalizeRiddle(s.riddle)
+      tasks: tasks
     };
   }
 
@@ -2575,6 +2731,49 @@ body {
     catch (e) { return false; }
   }
 
+  /* ----------------------------------------------------------------------
+     Funkaufträge (Funkwort-Weitergabe): zentrale Liste. Je Auftrag ein Wort,
+     das eine Partei (Sender) einer anderen (Empfänger) per Funk durchgibt; der
+     Empfänger gibt es an seiner Station ein → schaltet dort den Code frei.
+     Sender ist immer eine FHZ (ELW→FHZ deckt das bestehende ELW-Rätsel ab);
+     Empfänger = FHZ oder ELW. Klartext NUR lokal; Export hasht das Wort.
+     ---------------------------------------------------------------------- */
+  var FUNK_STORAGE_KEY = "funkuebung_funkauftraege_v1";
+  function newFunkId() {
+    return "funk_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 6);
+  }
+  function normalizeFunkParty(p) {
+    p = p || {};
+    return {
+      role: p.role === "elw" ? "elw" : "fhz",
+      vehId: p.vehId != null ? String(p.vehId) : "",
+      stationNr: (p.stationNr != null && p.stationNr !== "") ? String(p.stationNr) : ""
+    };
+  }
+  function defaultFunkauftrag() {
+    return { id: newFunkId(), word: "", from: { role: "fhz", vehId: "", stationNr: "" }, to: { role: "fhz", vehId: "", stationNr: "" } };
+  }
+  function normalizeFunkauftrag(f) {
+    f = f || {};
+    return {
+      id: f.id || newFunkId(),
+      word: f.word != null ? String(f.word) : "",
+      from: normalizeFunkParty(f.from),
+      to: normalizeFunkParty(f.to)
+    };
+  }
+  function loadFunkauftraege() {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(FUNK_STORAGE_KEY)); }
+    catch (e) { raw = null; }
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normalizeFunkauftrag);
+  }
+  function saveFunkauftraege(list) {
+    try { localStorage.setItem(FUNK_STORAGE_KEY, JSON.stringify(list)); return true; }
+    catch (e) { return false; }
+  }
+
   /* Eine AKTIVE Station gilt als vollständig, wenn:
      1. die Aufgabe ausgefüllt ist,
      2. alle vorhandenen Lagebilder eine ausgefüllte URL haben,
@@ -2583,7 +2782,7 @@ body {
      Sonderfälle: 0 Lagebilder → nur Aufgabe; 1 Lagebild → nur URL-Pflicht,
      keine Fahrzeugpflicht (vehicleIds darf leer bleiben). */
   function isStationComplete(station) {
-    /* Pflichtfeld ist „Aufgabe" (intern title). „Aufgabenbeschreibung" (task)
+    /* Pflichtfeld ist die „Stationsüberschrift" (intern title). „Aufgabenbeschreibung" (task)
        ist optional und geht nicht in die Vollständigkeit ein. */
     if (!nonEmpty(station.title)) return false;
 
@@ -2601,12 +2800,21 @@ body {
       if (!allImagesAssigned) return false;
     }
 
-    /* Rätsel-Station: „ELW zeigt Code direkt" ist Pflichtfeld (ja/nein muss
-       gewählt sein). Bei „selected"-Geltungsbereich mindestens ein Fahrzeug. */
-    if (station.taskType === "riddle") {
-      if (station.elwCodeDirect !== true && station.elwCodeDirect !== false) return false;
-      var rd = station.riddle || {};
-      if (rd.scope === "selected" && !(Array.isArray(rd.vehicleIds) && rd.vehicleIds.length > 0)) return false;
+    /* Aufgaben-Blöcke: hat ein effektiver Block Typ „Rätsel", ist „ELW zeigt
+       Code direkt" Pflichtfeld (ja/nein muss gewählt sein). Verteilen die Blöcke
+       auf ausgewählte Fahrzeuge, braucht jeder Block mindestens ein aktives
+       Fahrzeug UND jedes aktive Fahrzeug einen Block – sonst „in Bearbeitung". */
+    var blocks = stationTaskBlocks(station);
+    var hasRiddleBlock = blocks.some(function (b) { return b.taskType === "riddle"; });
+    if (hasRiddleBlock && station.elwCodeDirect !== true && station.elwCodeDirect !== false) return false;
+    if (blocks.length && blocks[0].scope === "selected") {
+      var activeVehicles = loadVehicles().filter(function (v) { return v.active; });
+      var activeIds = activeVehicles.map(function (v) { return v.id; });
+      var everyBlockManned = blocks.every(function (b) {
+        return b.vehicleIds.some(function (vid) { return activeIds.indexOf(vid) >= 0; });
+      });
+      if (!everyBlockManned) return false;
+      if (stationUncoveredVehicleTypes(station, activeVehicles).length > 0) return false;
     }
 
     return true;
@@ -2616,7 +2824,8 @@ body {
      Aufgabenbeschreibung, Hinweis noch Lagebilder erfasst sind. Reine Positions-
      daten (Route) zählen hier nicht zum Stationsinhalt. */
   function isStationEmpty(station) {
-    return !nonEmpty(station.title) && !nonEmpty(station.task) &&
+    return !nonEmpty(station.title) &&
+           !(Array.isArray(station.tasks) && station.tasks.some(function (b) { return nonEmpty(b.task); })) &&
            !nonEmpty(station.description) &&
            (!Array.isArray(station.images) || station.images.length === 0);
   }
@@ -2665,6 +2874,7 @@ body {
     if (id === "loesung") renderLoesung();
     /* QR-Übersicht beim Öffnen neu aufbauen (Fahrzeuge/Stationen können sich
        geändert haben). */
+    if (id === "funkauftraege") renderFunkauftraege();
     if (id === "qr") renderQr();
     /* Druck/Export beim Öffnen: Fahrzeugauswahl neu füllen, Status zurücksetzen. */
     if (id === "druck") renderDruck();
@@ -2842,7 +3052,7 @@ body {
     document.getElementById("btnReset").addEventListener("click", function () {
       if (!confirm("Alle Grunddaten inkl. Funkkanäle leeren?")) return;
       document.querySelectorAll("[data-key]").forEach(function (input) { input.value = ""; });
-      saveData({ name: "", date: "", time: "", leader: "",
+      saveData({ name: "", date: "", time: "", leader: "", masterCode: "",
                  radioChannels: [{ id: newId(), tmo: "", dmo: "" }] });
       renderChannels();
       updateStatus();
@@ -2865,7 +3075,7 @@ body {
       row.className = "channel-row";
       row.innerHTML =
         '<span class="channel-no" aria-hidden="true">' + (index + 1) + '</span>' +
-        '<input type="text" data-id="' + item.id + '" data-prop="tmo" placeholder="z. B. E18"' +
+        '<input type="text" data-id="' + item.id + '" data-prop="tmo" placeholder="z. B. EG18"' +
           (isFirst ? ' aria-label="TMO-Rufgruppe (Pflicht)"' : ' aria-label="TMO-Rufgruppe"') + '>' +
         '<input type="text" data-id="' + item.id + '" data-prop="dmo" placeholder="z. B. 316F"' +
           (isFirst ? ' aria-label="DMO-Rufgruppe (Pflicht)"' : ' aria-label="DMO-Rufgruppe"') + '>' +
@@ -3084,7 +3294,8 @@ body {
       var tr = document.createElement("tr");
       tr.className = "station-row" + (s.id === selectedStationId ? " selected" : "");
       tr.dataset.id = s.id;
-      var taskCell = nonEmpty(s.task) ? escapeAttr(stationTruncate(s.task, 50)) : '<span class="cell-muted">—</span>';
+      var firstTask = (s.tasks && s.tasks[0]) ? s.tasks[0].task : "";
+      var taskCell = nonEmpty(firstTask) ? escapeAttr(stationTruncate(firstTask, 50)) : '<span class="cell-muted">—</span>';
       /* Lagebilder-Kurzform: 0 / 1 schlicht; ab 2 zusätzlich Anzahl
          unterschiedlicher zugeordneter Fahrzeuge ("N · M Fzg."). */
       var imgCell = (s.images.length >= 2)
@@ -3150,7 +3361,8 @@ body {
 
   function addStation() {
     var list = loadStations();
-    var st = { id: newStationId(), title: "", task: "", description: "", images: [], position: { address: "", lat: "", lng: "" } };
+    var st = { id: newStationId(), title: "", description: "", images: [], position: { address: "", lat: "", lng: "" },
+      hideLagebild: false, elwCodeDirect: null, tasks: [defaultTaskBlock()] };
     list.push(st);
     saveStations(list);
     selectedStationId = st.id;
@@ -3175,47 +3387,51 @@ body {
 
     wrap.innerHTML =
       '<div class="detail-head">Station ' + (idx + 1) + ' bearbeiten</div>' +
-      '<div class="detail-field">' +
-        '<label for="detTitle">Aufgabe <span class="req" title="Pflichtfeld">*</span></label>' +
-        '<input type="text" id="detTitle" value="' + escapeAttr(s.title) + '" placeholder="z. B. Lageerkundung Wohnhaus">' +
-        '<p class="field-error" id="detTitleErr">Bitte eine Aufgabe eintragen.</p>' +
-      '</div>' +
-      '<div class="detail-field">' +
-        '<label for="detTask">Aufgabenbeschreibung</label>' +
-        '<textarea id="detTask" class="detail-task" rows="5" placeholder="Ausführlicher Aufgabentext für die Teilnehmer">' + escapeAttr(s.task) + '</textarea>' +
-      '</div>' +
-      '<div class="detail-field">' +
-        '<label for="detDesc">Notiz für die Übungsleitung</label>' +
-        '<textarea id="detDesc" rows="3" placeholder="Nur intern – für Teilnehmer nicht sichtbar">' + escapeAttr(s.description) + '</textarea>' +
-      '</div>' +
-      '<div class="detail-images">' +
-        '<div class="detail-images-head">' +
-          '<label>Lagebilder</label>' +
-          '<span class="detail-images-actions">' +
-            '<button type="button" class="btn btn-secondary" id="detImgLib">Bildersammlung</button>' +
-            '<button type="button" class="btn btn-primary" id="detAddImg">+ Lagebild hinzufügen</button>' +
-          '</span>' +
+      '<details class="detail-group" open>' +
+        '<summary>Aufgabe</summary>' +
+        '<div class="detail-group-body">' +
+          '<div class="detail-field">' +
+            '<label for="detTitle">Stationsüberschrift <span class="req" title="Pflichtfeld">*</span></label>' +
+            '<input type="text" id="detTitle" value="' + escapeAttr(s.title) + '" placeholder="z. B. Lageerkundung Wohnhaus">' +
+            '<p class="field-error" id="detTitleErr">Bitte eine Stationsüberschrift eintragen.</p>' +
+          '</div>' +
+          '<div id="detTasksWrap"></div>' +
         '</div>' +
-        '<div id="detImageList"></div>' +
-      '</div>' +
-      '<div class="detail-field">' +
-        '<label for="detTaskType">Aufgabentyp</label>' +
-        '<select id="detTaskType">' +
-          '<option value="text">Text (normale Aufgabe)</option>' +
-          '<option value="riddle">Rätsel (Freischaltung)</option>' +
-        '</select>' +
-      '</div>' +
-      '<div class="detail-field">' +
-        '<label for="detHideLagebild">Lagebild auf Stationsseite ausblenden</label>' +
-        '<select id="detHideLagebild">' +
-          '<option value="no">Nein</option>' +
-          '<option value="yes">Ja</option>' +
-        '</select>' +
-      '</div>' +
-      '<div id="detRiddleWrap"></div>';
+      '</details>' +
+      '<details class="detail-group" open>' +
+        '<summary>Lagebilder</summary>' +
+        '<div class="detail-group-body">' +
+          '<div class="detail-images">' +
+            '<div class="detail-images-head">' +
+              '<label>Lagebilder</label>' +
+              '<span class="detail-images-actions">' +
+                '<button type="button" class="btn btn-secondary" id="detImgLib">Bildersammlung</button>' +
+                '<button type="button" class="btn btn-primary" id="detAddImg">+ Lagebild hinzufügen</button>' +
+              '</span>' +
+            '</div>' +
+            '<div id="detImageList"></div>' +
+          '</div>' +
+          '<div class="detail-field">' +
+            '<label for="detHideLagebild">Lagebild auf Stationsseite ausblenden</label>' +
+            '<select id="detHideLagebild">' +
+              '<option value="no">Nein</option>' +
+              '<option value="yes">Ja</option>' +
+            '</select>' +
+          '</div>' +
+        '</div>' +
+      '</details>' +
+      '<details class="detail-group" open>' +
+        '<summary>Notiz für die Übungsleitung</summary>' +
+        '<div class="detail-group-body">' +
+          '<div class="detail-field">' +
+            '<textarea id="detDesc" rows="3" aria-label="Notiz für die Übungsleitung" placeholder="Nur intern – für Teilnehmer nicht sichtbar">' + escapeAttr(s.description) + '</textarea>' +
+          '</div>' +
+        '</div>' +
+      '</details>';
 
-    /* „Aufgabe" (title) ist Pflichtfeld: leer oder nur Leerzeichen → Fehlermeldung
-       unter dem Feld + rote Markierung; Station gilt dann nicht als vollständig. */
+    /* Die „Stationsüberschrift" (intern title) ist Pflichtfeld: leer oder nur
+       Leerzeichen → Fehlermeldung unter dem Feld + rote Markierung; Station gilt
+       dann nicht als vollständig. */
     function syncTitleError() {
       var inp = document.getElementById("detTitle");
       var err = document.getElementById("detTitleErr");
@@ -3232,12 +3448,6 @@ body {
       updateStationSummary();
       updateStatus();
     });
-    document.getElementById("detTask").addEventListener("input", function () {
-      setStationField(s.id, "task", this.value);
-      renderStationList();
-      updateStationSummary();
-      updateStatus();
-    });
     document.getElementById("detDesc").addEventListener("input", function () {
       setStationField(s.id, "description", this.value);
     });
@@ -3248,16 +3458,6 @@ body {
       openBildOverlay(s.id);
     });
 
-    var taskTypeSel = document.getElementById("detTaskType");
-    taskTypeSel.value = (s.taskType === "riddle") ? "riddle" : "text";
-    taskTypeSel.addEventListener("change", function () {
-      setStationField(s.id, "taskType", this.value === "riddle" ? "riddle" : "text");
-      renderStationRiddles(s.id);
-      renderStationList();
-      updateStationSummary();
-      updateStatus();
-    });
-
     var hideSel = document.getElementById("detHideLagebild");
     hideSel.value = s.hideLagebild ? "yes" : "no";
     hideSel.addEventListener("change", function () {
@@ -3266,7 +3466,7 @@ body {
 
     syncTitleError();
     renderStationImages(s.id);
-    renderStationRiddles(s.id);
+    renderStationTasks(s.id);
   }
 
   function renderStationImages(stationId) {
@@ -4515,33 +4715,49 @@ body {
   }
 
   /* ======================================================================
-     RÄTSEL / FREISCHALTUNG (Pflege im Stations-Detail)
+     AUFGABEN-BLÖCKE (Pflege im Stations-Detail, Karte „Aufgabe")
      ----------------------------------------------------------------------
-     Ein Rätsel je Station mit Geltungsbereich (alle / ausgewählte Fahrzeuge).
-     Je Seite (FHZ/ELW): Frage + Antwort (Freitext oder Multiple-Choice).
-     Speicherung im Station-Objekt (loadStations/saveStations), Klartext-
-     Antworten NUR lokal; Export hasht die Antwortwörter (exportUebungJson).
+     Eine Station hat 1..n Aufgaben-Blöcke (station.tasks[]). Block 1 gilt für
+     alle oder ausgewählte Fahrzeuge; weitere Blöcke verteilen die restlichen
+     Fahrzeuge (jeder Block eigener Aufgabentyp Text/Rätsel/MC). Speicherung im
+     Station-Objekt (loadStations/saveStations), Klartext-Antworten NUR lokal;
+     Export hasht die Antwortwörter (exportUebungJson).
      ====================================================================== */
-  /* Mutiert das Rätsel-Objekt einer Station und speichert. */
-  function updateRiddle(stationId, fn) {
+  /* Mutiert einen Aufgaben-Block (Index bi) und speichert. */
+  function updateTaskBlock(stationId, bi, fn) {
     var list = loadStations();
     var i = indexOfId(list, stationId);
     if (i < 0) return;
-    if (!list[i].riddle) list[i].riddle = defaultRiddle();
-    fn(list[i].riddle);
+    var t = list[i].tasks && list[i].tasks[bi];
+    if (!t) return;
+    fn(t);
     saveStations(list);
   }
+  /* Mutiert die komplette tasks-Liste einer Station (Block anlegen/löschen). */
+  function updateStationTasks(stationId, fn) {
+    var list = loadStations();
+    var i = indexOfId(list, stationId);
+    if (i < 0) return;
+    fn(list[i].tasks);
+    saveStations(list);
+  }
+  function updateRiddle(stationId, bi, fn) {
+    updateTaskBlock(stationId, bi, function (t) { fn(t.riddle); });
+  }
+  function updateMc(stationId, bi, fn) {
+    updateTaskBlock(stationId, bi, function (t) { fn(t.mc); });
+  }
 
-  /* HTML einer Rätsel-Seite (side = "fhz" | "elw"). */
-  function riddleSideHtml(side, rd, headLabel, answerLabel) {
+  /* HTML einer Rätsel-Seite (side = "fhz" | "elw") des Blocks bi. */
+  function riddleSideHtml(bi, side, rd, headLabel, answerLabel) {
     var modeChoice = rd.mode === "choice";
     var html =
       '<div class="riddle-side">' +
         '<div class="riddle-side-head"><span class="rs-tag">●</span>' + escapeHTML(headLabel) + '</div>' +
         '<div class="detail-field"><label>Frage / Rätseltext</label>' +
-          '<textarea data-rs="' + side + '" data-rfield="q" rows="2" placeholder="Rätseltext (leer = diese Seite hat kein Rätsel)">' + escapeHTML(rd.q) + '</textarea></div>' +
+          '<textarea data-rb="' + bi + '" data-rs="' + side + '" data-rfield="q" rows="2" placeholder="Rätseltext (leer = diese Seite hat kein Rätsel)">' + escapeHTML(rd.q) + '</textarea></div>' +
         '<div class="detail-field"><label>Antwortart</label>' +
-          '<select data-rs="' + side + '" data-rmode>' +
+          '<select data-rb="' + bi + '" data-rs="' + side + '" data-rmode>' +
             '<option value="text"' + (modeChoice ? "" : " selected") + '>Freitext</option>' +
             '<option value="choice"' + (modeChoice ? " selected" : "") + '>Auswahl (Multiple-Choice)</option>' +
           '</select></div>';
@@ -4549,58 +4765,84 @@ body {
       var opts = rd.options.length ? rd.options : [""];
       var optsHtml = opts.map(function (o, i) {
         return '<div class="riddle-opt">' +
-          '<input type="radio" name="rcorr-' + side + '" data-rs="' + side + '" data-rcorrect="' + i + '"' + (i === rd.correct ? " checked" : "") + ' aria-label="Richtige Antwort">' +
-          '<input type="text" data-rs="' + side + '" data-roption="' + i + '" value="' + escapeAttr(o) + '" placeholder="Antwortmöglichkeit ' + (i + 1) + '" autocomplete="off">' +
-          '<button type="button" class="icon-btn danger ropt-del" data-rs="' + side + '" data-rdel="' + i + '" title="Option entfernen" aria-label="Option entfernen">' + stationIcon("trash") + '</button>' +
+          '<input type="radio" name="rcorr-' + bi + '-' + side + '" data-rb="' + bi + '" data-rs="' + side + '" data-rcorrect="' + i + '"' + (i === rd.correct ? " checked" : "") + ' aria-label="Richtige Antwort">' +
+          '<input type="text" data-rb="' + bi + '" data-rs="' + side + '" data-roption="' + i + '" value="' + escapeAttr(o) + '" placeholder="Antwortmöglichkeit ' + (i + 1) + '" autocomplete="off">' +
+          '<button type="button" class="icon-btn danger ropt-del" data-rb="' + bi + '" data-rs="' + side + '" data-rdel="' + i + '" title="Option entfernen" aria-label="Option entfernen">' + stationIcon("trash") + '</button>' +
         '</div>';
       }).join("");
       html +=
         '<div class="detail-field"><label>' + escapeHTML(answerLabel) + ' – Antwortmöglichkeiten (richtige markieren)</label>' +
           '<div class="riddle-options">' + optsHtml + '</div>' +
           '<p class="riddle-opt-hint">Die markierte Option gilt als richtige Antwort. Nur sie wird (verschleiert) exportiert.</p>' +
-          '<button type="button" class="btn btn-secondary" data-rs="' + side + '" data-roptadd>+ Antwortmöglichkeit</button>' +
+          '<button type="button" class="btn btn-secondary" data-rb="' + bi + '" data-rs="' + side + '" data-roptadd>+ Antwortmöglichkeit</button>' +
         '</div>';
     } else {
       html +=
         '<div class="detail-field"><label>' + escapeHTML(answerLabel) + '</label>' +
-          '<input type="text" data-rs="' + side + '" data-rfield="answer" value="' + escapeAttr(rd.answer) + '" placeholder="Antwortwort" autocomplete="off"></div>';
+          '<input type="text" data-rb="' + bi + '" data-rs="' + side + '" data-rfield="answer" value="' + escapeAttr(rd.answer) + '" placeholder="Antwortwort" autocomplete="off"></div>';
     }
     return html + '</div>';
   }
 
-  /* Baut den Rätsel-Editor in #detRiddleWrap (nur bei Aufgabentyp „Rätsel"). */
-  function renderStationRiddles(stationId) {
-    var wrap = document.getElementById("detRiddleWrap");
+  /* HTML einer MC-Frage (Frage qi) des Blocks bi. */
+  function mcQuestionHtml(bi, q, qi) {
+    var opts = (q.options.length ? q.options : [""]).map(function (o, oi) {
+      return '<div class="riddle-opt">' +
+        '<input type="radio" name="mccorr-' + bi + '-' + qi + '" data-mb="' + bi + '" data-mccorrect="' + qi + '" data-oi="' + oi + '"' + (oi === q.correct ? " checked" : "") + ' aria-label="Richtige Antwort">' +
+        '<input type="text" data-mb="' + bi + '" data-mcopt="' + qi + '" data-oi="' + oi + '" value="' + escapeAttr(o) + '" placeholder="Antwortmöglichkeit ' + (oi + 1) + '" autocomplete="off">' +
+        '<button type="button" class="icon-btn danger" data-mb="' + bi + '" data-mcoptdel="' + qi + '" data-oi="' + oi + '" title="Option entfernen" aria-label="Option entfernen">' + stationIcon("trash") + '</button>' +
+      '</div>';
+    }).join("");
+    return '<div class="mc-question">' +
+      '<div class="mc-q-head"><span class="mc-q-no">Frage ' + (qi + 1) + '</span>' +
+        '<button type="button" class="icon-btn danger" data-mb="' + bi + '" data-mcqdel="' + qi + '" title="Frage entfernen" aria-label="Frage entfernen">' + stationIcon("trash") + '</button></div>' +
+      '<div class="detail-field"><textarea data-mb="' + bi + '" data-mcq="' + qi + '" rows="2" placeholder="Fragetext">' + escapeHTML(q.q) + '</textarea></div>' +
+      '<label class="mc-opt-label">Antwortmöglichkeiten (richtige markieren)</label>' +
+      '<div class="riddle-options">' + opts + '</div>' +
+      '<button type="button" class="btn btn-secondary" data-mb="' + bi + '" data-mcoptadd="' + qi + '">+ Antwortmöglichkeit</button>' +
+    '</div>';
+  }
+
+  /* Baut die Aufgaben-Blöcke in #detTasksWrap (Karte „Aufgabe" im Detail).
+     Block 1 mit Geltungsbereich (alle/ausgewählte Fahrzeuge); bei „ausgewählte"
+     verteilen weitere Blöcke die restlichen Fahrzeuge (Chips bieten je Block nur
+     Fahrzeuge an, die kein anderer Block beansprucht). */
+  function renderStationTasks(stationId) {
+    var wrap = document.getElementById("detTasksWrap");
     if (!wrap) return;
     var list = loadStations();
     var s = list[indexOfId(list, stationId)];
-    if (!s || s.taskType !== "riddle") { wrap.innerHTML = ""; return; }
-    var rd = s.riddle;
+    if (!s) { wrap.innerHTML = ""; return; }
     var vehicles = loadVehicles().filter(function (v) { return v.active; });
-
+    var blocks = stationTaskBlocks(s);
+    var selectedMode = blocks.length > 0 && blocks[0].scope === "selected";
+    var uncovered = selectedMode ? stationUncoveredVehicleTypes(s, vehicles) : [];
+    var hasRiddle = blocks.some(function (b) { return b.taskType === "riddle"; });
     var directVal = s.elwCodeDirect === true ? "yes" : (s.elwCodeDirect === false ? "no" : "");
-    var scopeSel = rd.scope === "selected" ? "selected" : "all";
 
-    var chips = vehicles.map(function (v) {
-      var on = rd.vehicleIds.indexOf(v.id) >= 0;
-      return '<label class="veh-chip' + (on ? " selected" : "") + '">' +
-               '<input type="checkbox" class="veh-chip-input" data-rveh="' + escapeAttr(v.id) + '"' + (on ? " checked" : "") + ' aria-label="Gilt für ' + escapeAttr(v.type) + '">' +
-               '<span>' + escapeHTML(v.type) + '</span></label>';
-    }).join("");
-    var scopeBlock =
-      '<div class="detail-field"><label for="detRiddleScope">Geltungsbereich des Rätsels</label>' +
-        '<select id="detRiddleScope">' +
-          '<option value="all"' + (scopeSel === "all" ? " selected" : "") + '>Alle Fahrzeuge</option>' +
-          '<option value="selected"' + (scopeSel === "selected" ? " selected" : "") + '>Ausgewählte Fahrzeuge</option>' +
-        '</select>' +
-        (scopeSel === "selected"
-          ? '<div class="riddle-scope-veh"><div class="vehicle-chips">' + (vehicles.length ? chips : '<span class="detail-empty small">Keine aktiven Fahrzeuge.</span>') + '</div></div>'
-          : '') +
-      '</div>';
+    /* Chips eines Blocks: eigene Auswahl immer sichtbar, sonst nur Fahrzeuge,
+       die kein ANDERER Block beansprucht. */
+    function chipsHtml(bi) {
+      var own = blocks[bi].vehicleIds;
+      var claimed = {};
+      blocks.forEach(function (b, j) {
+        if (j !== bi) b.vehicleIds.forEach(function (vid) { claimed[vid] = true; });
+      });
+      var offer = vehicles.filter(function (v) { return own.indexOf(v.id) >= 0 || !claimed[v.id]; });
+      if (!offer.length) return '<span class="detail-empty small">Keine aktiven Fahrzeuge frei.</span>';
+      return offer.map(function (v) {
+        var on = own.indexOf(v.id) >= 0;
+        return '<label class="veh-chip' + (on ? " selected" : "") + '">' +
+                 '<input type="checkbox" class="veh-chip-input" data-tb="' + bi + '" data-tveh="' + escapeAttr(v.id) + '"' + (on ? " checked" : "") + ' aria-label="Gilt für ' + escapeAttr(v.type) + '">' +
+                 '<span>' + escapeHTML(v.type) + '</span></label>';
+      }).join("");
+    }
 
-    wrap.innerHTML =
-      '<div class="riddle-editor">' +
-        '<p class="field-hint riddle-hint">Die Besatzung löst das <b>FHZ-Rätsel</b> vor Ort und gibt die <b>Antwort der Besatzung</b> auf der Stationsseite ein. Die ELW löst das <b>ELW-Rätsel</b> (auf der ELW-Seite) und funkt das <b>Rückwort des ELW</b> herunter, das die Besatzung dort ebenfalls eingibt. Erst wenn alle hinterlegten Wörter stimmen, erscheint das Positionscode-Feld. Eine Seite leer lassen → sie hat kein Rätsel. Antwortwörter werden nur verschleiert (Hash) exportiert, die Rätseltexte stehen in der Datei – daher so bauen, dass sie nur vor Ort (FHZ) bzw. mit Wissen der ELW lösbar sind.</p>' +
+    var html = "";
+    /* „ELW zeigt Code direkt" ist stationsglobal und Pflicht, sobald ein Block
+       Typ „Rätsel" hat. */
+    if (hasRiddle) {
+      html +=
         '<div class="detail-field">' +
           '<label for="detElwDirect">ELW zeigt Positionscode direkt <span class="req" title="Pflichtfeld">*</span></label>' +
           '<select id="detElwDirect">' +
@@ -4609,104 +4851,362 @@ body {
             '<option value="no"' + (directVal === "no" ? " selected" : "") + '>Nein – erst nach Klick „Code anzeigen"</option>' +
           '</select>' +
           '<p class="field-error" id="detElwDirectErr">Bitte ja oder nein wählen.</p>' +
-        '</div>' +
-        scopeBlock +
-        riddleSideHtml("fhz", rd.fhz, "FHZ-Rätsel (Besatzung löst es vor Ort)", "Antwort der Besatzung (wird hochgefunkt)") +
-        riddleSideHtml("elw", rd.elw, "ELW-Rätsel (ELW löst es)", "Rückwort des ELW (wird runtergefunkt)") +
-      '</div>';
-
-    /* „ELW zeigt Code direkt" ist Pflichtfeld → Fehlermarkierung wie bei „Aufgabe". */
-    var directSel = document.getElementById("detElwDirect");
-    var directErr = document.getElementById("detElwDirectErr");
-    function syncDirectError() {
-      var ok = directSel.value === "yes" || directSel.value === "no";
-      directErr.hidden = ok;
-      directSel.classList.toggle("invalid", !ok);
+        '</div>';
     }
-    directSel.addEventListener("change", function () {
-      var v = this.value === "yes" ? true : (this.value === "no" ? false : null);
-      setStationField(stationId, "elwCodeDirect", v);
+
+    blocks.forEach(function (b, bi) {
+      var scopeField;
+      if (bi === 0) {
+        scopeField =
+          '<div class="detail-field"><label>Geltungsbereich der Aufgabe</label>' +
+            '<select data-tscope="0">' +
+              '<option value="all"' + (b.scope === "all" ? " selected" : "") + '>Alle Fahrzeuge</option>' +
+              '<option value="selected"' + (b.scope === "selected" ? " selected" : "") + '>Ausgewählte Fahrzeuge</option>' +
+            '</select>' +
+            (b.scope === "selected"
+              ? '<div class="riddle-scope-veh"><div class="vehicle-chips">' + chipsHtml(bi) + '</div></div>'
+              : '') +
+          '</div>';
+      } else {
+        scopeField =
+          '<div class="detail-field"><label>Fahrzeuge dieser Aufgabe</label>' +
+            '<div class="vehicle-chips">' + chipsHtml(bi) + '</div>' +
+          '</div>';
+      }
+      var typeField =
+        '<div class="detail-field"><label>Aufgabentyp</label>' +
+          '<select data-ttype="' + bi + '">' +
+            '<option value="text"' + (b.taskType === "text" ? " selected" : "") + '>Text (normale Aufgabe)</option>' +
+            '<option value="riddle"' + (b.taskType === "riddle" ? " selected" : "") + '>Rätsel (Freischaltung)</option>' +
+            '<option value="mc"' + (b.taskType === "mc" ? " selected" : "") + '>Multiple-Choice-Fragen</option>' +
+          '</select></div>';
+      var body;
+      if (b.taskType === "riddle") {
+        body =
+          '<p class="field-hint riddle-hint">FHZ-Rätsel = die Besatzung gibt vor Ort die <b>Antwort der Besatzung</b> ein; ELW-Rätsel = die ELW funkt das <b>Rückwort des ELW</b> herunter. Leere Seite = kein Rätsel. Antwortwörter nur so wählen, dass sie nur vor Ort bzw. von der ELW lösbar sind.</p>' +
+          riddleSideHtml(bi, "fhz", b.riddle.fhz, "FHZ-Rätsel (Besatzung löst es vor Ort)", "Antwort der Besatzung (wird hochgefunkt)") +
+          riddleSideHtml(bi, "elw", b.riddle.elw, "ELW-Rätsel (ELW löst es)", "Rückwort des ELW (wird runtergefunkt)");
+      } else if (b.taskType === "mc") {
+        body =
+          '<p class="field-hint">Die Besatzung beantwortet die Fragen an der Station; alle richtig → Positionscode frei. Nur die richtige Option wird verschleiert exportiert.</p>' +
+          b.mc.questions.map(function (q, qi) { return mcQuestionHtml(bi, q, qi); }).join("") +
+          '<button type="button" class="btn btn-primary" data-mcaddq="' + bi + '">+ Frage</button>';
+      } else {
+        body =
+          '<div class="detail-field"><label>Aufgabenbeschreibung</label>' +
+            '<textarea data-ttask="' + bi + '" class="detail-task" rows="5" placeholder="Ausführlicher Aufgabentext für die Teilnehmer">' + escapeHTML(b.task) + '</textarea></div>';
+      }
+      html +=
+        '<div class="task-block">' +
+          '<div class="task-block-head"><span class="task-block-no">Aufgabe ' + (bi + 1) + '</span>' +
+            (bi > 0 ? '<button type="button" class="icon-btn danger" data-tbdel="' + bi + '" title="Aufgabe löschen" aria-label="Aufgabe löschen">' + stationIcon("trash") + '</button>' : '') +
+          '</div>' +
+          scopeField + typeField + body +
+        '</div>';
+    });
+
+    if (selectedMode && uncovered.length) {
+      html +=
+        '<p class="task-missing-hint">Folgende Fahrzeuge haben an dieser Station noch keine Aufgabe: ' + uncovered.map(escapeHTML).join(", ") + '</p>' +
+        '<button type="button" class="btn btn-primary" id="detAddTaskBlock">+ Weitere Aufgabe hinzufügen</button>';
+    }
+
+    wrap.innerHTML = html;
+
+    /* Nach Strukturänderungen alles Betroffene aktualisieren. */
+    function refresh() {
+      renderStationTasks(stationId);
+      renderStationList();
+      updateStationSummary();
+      updateStatus();
+    }
+
+    /* „ELW zeigt Code direkt": Pflichtfeld → Fehlermarkierung wie Überschrift. */
+    var directSel = document.getElementById("detElwDirect");
+    if (directSel) {
+      var directErr = document.getElementById("detElwDirectErr");
+      var syncDirectError = function () {
+        var ok = directSel.value === "yes" || directSel.value === "no";
+        directErr.hidden = ok;
+        directSel.classList.toggle("invalid", !ok);
+      };
+      directSel.addEventListener("change", function () {
+        var v = this.value === "yes" ? true : (this.value === "no" ? false : null);
+        setStationField(stationId, "elwCodeDirect", v);
+        syncDirectError();
+        renderStationList();
+        updateStationSummary();
+        updateStatus();
+      });
       syncDirectError();
-      renderStationList();
-      updateStationSummary();
-      updateStatus();
-    });
-    syncDirectError();
+    }
 
-    var scopeSelEl = document.getElementById("detRiddleScope");
-    scopeSelEl.addEventListener("change", function () {
-      var v = this.value === "selected" ? "selected" : "all";
-      updateRiddle(stationId, function (r) { r.scope = v; });
-      renderStationRiddles(stationId);
-      renderStationList();
-      updateStationSummary();
-      updateStatus();
+    /* Geltungsbereich Block 1: Wechsel auf „alle" löscht weitere Blöcke (Confirm). */
+    wrap.querySelectorAll("[data-tscope]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var v = this.value === "selected" ? "selected" : "all";
+        if (v === "all" && s.tasks.length > 1) {
+          if (!window.confirm("Beim Wechsel auf „Alle Fahrzeuge“ werden die weiteren Aufgaben dieser Station gelöscht. Fortfahren?")) {
+            this.value = "selected";
+            return;
+          }
+          updateStationTasks(stationId, function (tasks) { tasks.length = 1; tasks[0].scope = "all"; });
+        } else {
+          updateTaskBlock(stationId, 0, function (t) { t.scope = v; });
+        }
+        refresh();
+      });
     });
 
-    wrap.querySelectorAll(".veh-chip-input").forEach(function (cb) {
+    /* Fahrzeug-Chips: Zuordnung ändert auch das Angebot der anderen Blöcke → Re-Render. */
+    wrap.querySelectorAll("[data-tveh]").forEach(function (cb) {
       cb.addEventListener("change", function () {
-        var vid = this.dataset.rveh, checked = this.checked;
-        updateRiddle(stationId, function (r) {
-          var k = r.vehicleIds.indexOf(vid);
-          if (checked && k < 0) r.vehicleIds.push(vid);
-          else if (!checked && k >= 0) r.vehicleIds.splice(k, 1);
+        var vid = this.dataset.tveh, bi = parseInt(this.dataset.tb, 10), checked = this.checked;
+        updateTaskBlock(stationId, bi, function (t) {
+          var k = t.vehicleIds.indexOf(vid);
+          if (checked && k < 0) t.vehicleIds.push(vid);
+          else if (!checked && k >= 0) t.vehicleIds.splice(k, 1);
         });
-        var chip = this.closest(".veh-chip");
-        if (chip) chip.classList.toggle("selected", checked);
+        refresh();
+      });
+    });
+
+    /* Aufgabentyp je Block. */
+    wrap.querySelectorAll("[data-ttype]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var bi = parseInt(this.dataset.ttype, 10);
+        var t = (this.value === "riddle" || this.value === "mc") ? this.value : "text";
+        updateTaskBlock(stationId, bi, function (b) { b.taskType = t; });
+        refresh();
+      });
+    });
+
+    /* Aufgabenbeschreibung (Typ Text): still speichern (kein Re-Render → Fokus). */
+    wrap.querySelectorAll("[data-ttask]").forEach(function (el) {
+      el.addEventListener("input", function () {
+        var bi = parseInt(this.dataset.ttask, 10), val = this.value;
+        updateTaskBlock(stationId, bi, function (b) { b.task = val; });
         renderStationList();
         updateStationSummary();
         updateStatus();
       });
     });
 
-    /* Rätseltext (q) und Freitext-Antwort: still speichern (kein Re-Render → Fokus). */
+    /* Weitere Aufgabe hinzufügen / Block löschen. */
+    var addBtn = document.getElementById("detAddTaskBlock");
+    if (addBtn) {
+      addBtn.addEventListener("click", function () {
+        updateStationTasks(stationId, function (tasks) {
+          var b = defaultTaskBlock();
+          b.scope = "selected";
+          tasks.push(b);
+        });
+        refresh();
+      });
+    }
+    wrap.querySelectorAll("[data-tbdel]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var bi = parseInt(this.dataset.tbdel, 10);
+        if (!window.confirm("Diese Aufgabe wirklich löschen? Die zugeteilten Fahrzeuge werden wieder frei.")) return;
+        updateStationTasks(stationId, function (tasks) { if (tasks.length > 1) tasks.splice(bi, 1); });
+        refresh();
+      });
+    });
+
+    /* Rätsel: Texte still speichern, Strukturänderungen mit Re-Render. */
     wrap.querySelectorAll("[data-rfield]").forEach(function (el) {
       el.addEventListener("input", function () {
-        var side = this.dataset.rs, f = this.dataset.rfield, val = this.value;
-        updateRiddle(stationId, function (r) { r[side][f] = val; });
+        var bi = parseInt(this.dataset.rb, 10), side = this.dataset.rs, f = this.dataset.rfield, val = this.value;
+        updateRiddle(stationId, bi, function (r) { r[side][f] = val; });
       });
     });
-    /* Options-Texte: still speichern. */
     wrap.querySelectorAll("[data-roption]").forEach(function (el) {
       el.addEventListener("input", function () {
-        var side = this.dataset.rs, idx = parseInt(this.dataset.roption, 10), val = this.value;
-        updateRiddle(stationId, function (r) { r[side].options[idx] = val; });
+        var bi = parseInt(this.dataset.rb, 10), side = this.dataset.rs, idx = parseInt(this.dataset.roption, 10), val = this.value;
+        updateRiddle(stationId, bi, function (r) { r[side].options[idx] = val; });
       });
     });
-    /* Richtige Option (Radio): still speichern. */
     wrap.querySelectorAll("[data-rcorrect]").forEach(function (el) {
       el.addEventListener("change", function () {
-        var side = this.dataset.rs, idx = parseInt(this.dataset.rcorrect, 10);
-        updateRiddle(stationId, function (r) { r[side].correct = idx; });
+        var bi = parseInt(this.dataset.rb, 10), side = this.dataset.rs, idx = parseInt(this.dataset.rcorrect, 10);
+        updateRiddle(stationId, bi, function (r) { r[side].correct = idx; });
       });
     });
-    /* Antwortart wechseln → Editor neu aufbauen. */
     wrap.querySelectorAll("[data-rmode]").forEach(function (el) {
       el.addEventListener("change", function () {
-        var side = this.dataset.rs, val = this.value === "choice" ? "choice" : "text";
-        updateRiddle(stationId, function (r) {
+        var bi = parseInt(this.dataset.rb, 10), side = this.dataset.rs, val = this.value === "choice" ? "choice" : "text";
+        updateRiddle(stationId, bi, function (r) {
           r[side].mode = val;
           if (val === "choice" && r[side].options.length === 0) r[side].options = ["", ""];
         });
-        renderStationRiddles(stationId);
+        renderStationTasks(stationId);
       });
     });
-    /* Option hinzufügen / entfernen → Editor neu aufbauen. */
     wrap.querySelectorAll("[data-roptadd]").forEach(function (el) {
       el.addEventListener("click", function () {
-        var side = this.dataset.rs;
-        updateRiddle(stationId, function (r) { r[side].options.push(""); });
-        renderStationRiddles(stationId);
+        var bi = parseInt(this.dataset.rb, 10), side = this.dataset.rs;
+        updateRiddle(stationId, bi, function (r) { r[side].options.push(""); });
+        renderStationTasks(stationId);
       });
     });
     wrap.querySelectorAll("[data-rdel]").forEach(function (el) {
       el.addEventListener("click", function () {
-        var side = this.dataset.rs, idx = parseInt(this.dataset.rdel, 10);
-        updateRiddle(stationId, function (r) {
+        var bi = parseInt(this.dataset.rb, 10), side = this.dataset.rs, idx = parseInt(this.dataset.rdel, 10);
+        updateRiddle(stationId, bi, function (r) {
           r[side].options.splice(idx, 1);
           if (r[side].correct >= r[side].options.length) r[side].correct = 0;
         });
-        renderStationRiddles(stationId);
+        renderStationTasks(stationId);
+      });
+    });
+
+    /* Multiple-Choice: Texte still speichern, Strukturänderungen mit Re-Render. */
+    wrap.querySelectorAll("[data-mcaddq]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var bi = parseInt(this.dataset.mcaddq, 10);
+        updateMc(stationId, bi, function (m) { m.questions.push(defaultMcQuestion()); });
+        refresh();
+      });
+    });
+    wrap.querySelectorAll("[data-mcq]").forEach(function (el) {
+      el.addEventListener("input", function () {
+        var bi = parseInt(this.dataset.mb, 10), qi = parseInt(this.dataset.mcq, 10), val = this.value;
+        updateMc(stationId, bi, function (m) { if (m.questions[qi]) m.questions[qi].q = val; });
+      });
+    });
+    wrap.querySelectorAll("[data-mcopt]").forEach(function (el) {
+      el.addEventListener("input", function () {
+        var bi = parseInt(this.dataset.mb, 10), qi = parseInt(this.dataset.mcopt, 10), oi = parseInt(this.dataset.oi, 10), val = this.value;
+        updateMc(stationId, bi, function (m) { if (m.questions[qi]) m.questions[qi].options[oi] = val; });
+      });
+    });
+    wrap.querySelectorAll("[data-mccorrect]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var bi = parseInt(this.dataset.mb, 10), qi = parseInt(this.dataset.mccorrect, 10), oi = parseInt(this.dataset.oi, 10);
+        updateMc(stationId, bi, function (m) { if (m.questions[qi]) m.questions[qi].correct = oi; });
+      });
+    });
+    wrap.querySelectorAll("[data-mcoptadd]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var bi = parseInt(this.dataset.mb, 10), qi = parseInt(this.dataset.mcoptadd, 10);
+        updateMc(stationId, bi, function (m) { if (m.questions[qi]) m.questions[qi].options.push(""); });
+        renderStationTasks(stationId);
+      });
+    });
+    wrap.querySelectorAll("[data-mcoptdel]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var bi = parseInt(this.dataset.mb, 10), qi = parseInt(this.dataset.mcoptdel, 10), oi = parseInt(this.dataset.oi, 10);
+        updateMc(stationId, bi, function (m) {
+          if (!m.questions[qi]) return;
+          m.questions[qi].options.splice(oi, 1);
+          if (m.questions[qi].correct >= m.questions[qi].options.length) m.questions[qi].correct = 0;
+        });
+        renderStationTasks(stationId);
+      });
+    });
+    wrap.querySelectorAll("[data-mcqdel]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var bi = parseInt(this.dataset.mb, 10), qi = parseInt(this.dataset.mcqdel, 10);
+        updateMc(stationId, bi, function (m) { m.questions.splice(qi, 1); });
+        refresh();
+      });
+    });
+  }
+
+  /* ----------------------------------------------------------------------
+     Funkauftrag-Editor (Bereich „Funkaufträge")
+     ---------------------------------------------------------------------- */
+  function updateFunk(id, fn) {
+    var list = loadFunkauftraege();
+    for (var i = 0; i < list.length; i++) { if (list[i].id === id) { fn(list[i]); break; } }
+    saveFunkauftraege(list);
+  }
+  function funkStationOptions(sel, stations) {
+    return '<option value="">— Station —</option>' + stations.map(function (s, i) {
+      var nr = String(i + 1);
+      return '<option value="' + nr + '"' + (sel === nr ? " selected" : "") + '>' + escapeHTML("Station " + nr + (nonEmpty(s.title) ? " – " + s.title : "")) + '</option>';
+    }).join("");
+  }
+  function funkVehicleOptions(sel, vehicles) {
+    return '<option value="">— Fahrzeug —</option>' + vehicles.map(function (v) {
+      return '<option value="' + escapeAttr(v.id) + '"' + (sel === v.id ? " selected" : "") + '>' + escapeHTML(v.type || v.id) + (nonEmpty(v.callsign) ? " · " + escapeHTML(v.callsign) : "") + '</option>';
+    }).join("");
+  }
+  function funkRowHtml(f, vehicles, stations) {
+    var toIsElw = f.to.role === "elw";
+    var toBlock = toIsElw
+      ? '<span class="funk-elw-note">Die ELW gibt das Wort auf <code>elw.html</code> ein → der Code der „Von"-Station wird frei.</span>'
+      : '<select data-fpart="to" data-ffield="vehId">' + funkVehicleOptions(f.to.vehId, vehicles) + '</select>' +
+        '<select data-fpart="to" data-ffield="stationNr">' + funkStationOptions(f.to.stationNr, stations) + '</select>';
+    return '<div class="funk-row" data-fid="' + escapeAttr(f.id) + '">' +
+      '<div class="funk-grid">' +
+        '<div class="detail-field"><label>Funkwort <span class="req" title="Pflichtfeld">*</span></label>' +
+          '<input type="text" data-fword value="' + escapeAttr(f.word) + '" placeholder="z. B. NEUHOF" autocomplete="off"></div>' +
+        '<div class="detail-field"><label>Von (sieht &amp; funkt das Wort)</label>' +
+          '<div class="funk-party">' +
+            '<select data-fpart="from" data-ffield="vehId">' + funkVehicleOptions(f.from.vehId, vehicles) + '</select>' +
+            '<select data-fpart="from" data-ffield="stationNr">' + funkStationOptions(f.from.stationNr, stations) + '</select>' +
+          '</div></div>' +
+        '<div class="detail-field"><label>An (gibt das Wort ein)</label>' +
+          '<div class="funk-party">' +
+            '<select data-ftorole><option value="fhz"' + (!toIsElw ? " selected" : "") + '>Fahrzeug</option><option value="elw"' + (toIsElw ? " selected" : "") + '>ELW</option></select>' +
+            toBlock +
+          '</div></div>' +
+      '</div>' +
+      '<button type="button" class="icon-btn danger funk-del" data-fdel title="Funkauftrag entfernen" aria-label="Funkauftrag entfernen">' + stationIcon("trash") + '</button>' +
+    '</div>';
+  }
+  function initFunk() {
+    var add = document.getElementById("funkAdd");
+    if (add) add.addEventListener("click", function () {
+      var list = loadFunkauftraege();
+      list.push(defaultFunkauftrag());
+      saveFunkauftraege(list);
+      renderFunkauftraege();
+      updateStatus();
+    });
+    renderFunkauftraege();
+  }
+  function renderFunkauftraege() {
+    var host = document.getElementById("funkList");
+    if (!host) return;
+    var vehicles = loadVehicles().filter(function (v) { return v.active; });
+    var stations = loadStations();
+    var list = loadFunkauftraege();
+    if (!vehicles.length || !stations.length) {
+      host.innerHTML = '<p class="detail-empty">Erst aktive Fahrzeuge und Stationen anlegen, dann lassen sich Funkaufträge erstellen.</p>';
+      return;
+    }
+    host.innerHTML = list.length
+      ? list.map(function (f) { return funkRowHtml(f, vehicles, stations); }).join("")
+      : '<p class="detail-empty">Noch keine Funkaufträge. Mit „+ Funkauftrag" anlegen.</p>';
+
+    host.querySelectorAll("[data-fword]").forEach(function (el) {
+      el.addEventListener("input", function () {
+        var id = this.closest(".funk-row").dataset.fid, val = this.value;
+        updateFunk(id, function (f) { f.word = val; });
+        updateStatus();
+      });
+    });
+    host.querySelectorAll("[data-fpart]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = this.closest(".funk-row").dataset.fid, part = this.dataset.fpart, field = this.dataset.ffield, val = this.value;
+        updateFunk(id, function (f) { f[part][field] = val; });
+      });
+    });
+    host.querySelectorAll("[data-ftorole]").forEach(function (el) {
+      el.addEventListener("change", function () {
+        var id = this.closest(".funk-row").dataset.fid, val = this.value === "elw" ? "elw" : "fhz";
+        updateFunk(id, function (f) { f.to.role = val; });
+        renderFunkauftraege();
+      });
+    });
+    host.querySelectorAll("[data-fdel]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var id = this.closest(".funk-row").dataset.fid;
+        saveFunkauftraege(loadFunkauftraege().filter(function (x) { return x.id !== id; }));
+        renderFunkauftraege();
+        updateStatus();
       });
     });
   }
@@ -5475,30 +5975,95 @@ body {
         if(nonEmpty(sd.answer)) cell[hashKey]=hashWord(sd.answer, rsalt);
       }
     }
+    /* Multiple-Choice-Fragen eines Aufgaben-Blocks: Fragetext + Optionen als
+       Klartext (zum Anzeigen), richtige Option NUR als Hash. Nur wohlgeformte Fragen
+       (Text + Optionen + richtige Option) werden exportiert. */
+    function buildMcExport(mc){
+      if(!mc || !Array.isArray(mc.questions)) return null;
+      var qs=mc.questions.map(function(q){
+        var opts=(Array.isArray(q.options)?q.options:[]).map(function(o){return String(o==null?"":o).trim();}).filter(function(o){return o!=="";});
+        var ans=(Array.isArray(q.options)&&q.options[q.correct]!=null)?String(q.options[q.correct]).trim():"";
+        var out={ q:nonEmpty(q.q)?String(q.q).trim():"", options:opts };
+        if(nonEmpty(ans)) out.hash=hashWord(ans, rsalt);
+        return out;
+      }).filter(function(q){ return nonEmpty(q.q) && q.options.length>0 && nonEmpty(q.hash); });
+      return qs.length ? { questions:qs } : null;
+    }
+    /* Je Zelle den zuständigen Aufgaben-Block des Fahrzeugs anwenden: Rätsel →
+       riddle-/hash-Felder (wie bisher immer per Zelle). Text (cell.task) und MC
+       (cell.mc) nur bei Geltungsbereich "ausgewählte Fahrzeuge" – im "alle"-Fall
+       stehen sie wie früher an der Station (stations[].task/mc, alte Leser).
+       Kein Block (Fahrzeug nicht zugeteilt) → nackte Zelle. */
     var assignments={};
     plan.vehicleAssignments.forEach(function(a){
       assignments[a.vehicle.id]={};
       a.rows.forEach(function(r, j){
         var cell={ char:r.char, code:r.code, laufnr:j+1 };
         var st=stations[r.stationIndex];
-        if(st && st.taskType==="riddle" && st.riddle){
-          var rd=st.riddle;
-          var inScope = rd.scope==="all" || (Array.isArray(rd.vehicleIds) && rd.vehicleIds.indexOf(a.vehicle.id)>=0);
-          if(inScope){
-            applyRiddleSide(cell, rd.fhz, "riddleFhz", "fhzMode", "fhzOptions", "hashFhz");
-            applyRiddleSide(cell, rd.elw, "riddleElw", "elwMode", "elwOptions", "hashElw");
+        var blk=st ? taskBlockForVehicle(st, a.vehicle.id) : null;
+        if(blk){
+          if(blk.taskType==="riddle"){
+            applyRiddleSide(cell, blk.riddle.fhz, "riddleFhz", "fhzMode", "fhzOptions", "hashFhz");
+            applyRiddleSide(cell, blk.riddle.elw, "riddleElw", "elwMode", "elwOptions", "hashElw");
+          } else if(blk.taskType==="mc"){
+            if(blk.scope==="selected"){
+              var cellMc=buildMcExport(blk.mc);
+              if(cellMc) cell.mc=cellMc;
+            }
+          } else if(blk.scope==="selected" && nonEmpty(blk.task)){
+            cell.task=String(blk.task).trim();
           }
         }
         assignments[a.vehicle.id][String(r.stationIndex+1)]=cell;
       });
     });
+    /* Funkaufträge in die Zellen mergen: Sender-Zelle bekommt das Wort im KLARTEXT
+       (der Sender muss es lesen, um es zu funken), Empfänger-Zelle nur den HASH.
+       Sender ist immer eine FHZ; Empfänger = FHZ (relayRecv) oder ELW (relayElw,
+       gated auf der Sender-Station-Zeile in elw.html). */
+    function funkVehLabel(id){ var v=active.filter(function(x){return x.id===id;})[0]; return v?(v.type||v.id):id; }
+    loadFunkauftraege().forEach(function(f){
+      if(!nonEmpty(f.word)) return;
+      if(f.from.role!=="fhz" || !nonEmpty(f.from.vehId) || !nonEmpty(f.from.stationNr)) return;
+      var fromMap=assignments[f.from.vehId]; if(!fromMap) return;
+      var fromCell=fromMap[String(f.from.stationNr)]; if(!fromCell) return;
+      var fromLabel=funkVehLabel(f.from.vehId);
+      var wordHash=hashWord(f.word, rsalt);
+      if(f.to.role==="elw"){
+        if(!fromCell.relaySend) fromCell.relaySend=[];
+        fromCell.relaySend.push({ to:"ELW", word:f.word });
+        fromCell.relayElw={ from:fromLabel, hash:wordHash };
+      } else {
+        if(!nonEmpty(f.to.vehId) || !nonEmpty(f.to.stationNr)) return;
+        var toMap=assignments[f.to.vehId]; if(!toMap) return;
+        var toCell=toMap[String(f.to.stationNr)]; if(!toCell) return;
+        if(!fromCell.relaySend) fromCell.relaySend=[];
+        fromCell.relaySend.push({ to:funkVehLabel(f.to.vehId), word:f.word });
+        if(!toCell.relayRecv) toCell.relayRecv=[];
+        toCell.relayRecv.push({ from:fromLabel, hash:wordHash });
+      }
+    });
     var inner={
       app:"EA-Funkuebung-Planungstool", version:APP_INFO.version, generatedAt:new Date().toISOString(),
       meta:{ name:grund.name||"", date:grund.date||"", time:grund.time||"", leader:grund.leader||"", channels:(Array.isArray(grund.radioChannels)?grund.radioChannels:[]).filter(function(c){return nonEmpty(c.tmo)||nonEmpty(c.dmo);}).map(function(c){return { tmo:c.tmo||"", dmo:c.dmo||"" };}) },
       vehicles: active.map(function(v){ return { id:v.id, type:v.type, callsign:v.callsign }; }),
-      stations: stations.map(function(st,idx){ return { nr:idx+1, id:st.id, title:st.title||"", task:st.task||"", address:deStationAddress(st), hideLagebild:st.hideLagebild===true, elwCodeDirect:st.elwCodeDirect===true, images:(Array.isArray(st.images)?st.images:[]).map(function(im){ return { url:im.url||"", title:im.title||"", vehicleIds:(Array.isArray(im.vehicleIds)?im.vehicleIds.slice():[]) }; }) }; }),
+      stations: stations.map(function(st,idx){
+        /* Stations-Ebene bleibt für ALTE Leser kompatibel: task/mc nur, wenn
+           Block 1 für alle Fahrzeuge gilt und den passenden Typ hat (entspricht
+           dem früheren Ein-Aufgaben-Fall). Neue Leser bevorzugen die Zelle. */
+        var b1=(Array.isArray(st.tasks)&&st.tasks[0])?st.tasks[0]:null;
+        var allText=b1 && b1.scope==="all" && b1.taskType==="text";
+        var so={ nr:idx+1, id:st.id, title:st.title||"", task:(allText ? (b1.task||"") : ""), address:deStationAddress(st), hideLagebild:st.hideLagebild===true, elwCodeDirect:st.elwCodeDirect===true, images:(Array.isArray(st.images)?st.images:[]).map(function(im){ return { url:im.url||"", title:im.title||"", vehicleIds:(Array.isArray(im.vehicleIds)?im.vehicleIds.slice():[]) }; }) };
+        if(b1 && b1.scope==="all" && b1.taskType==="mc"){
+          var mcEx=buildMcExport(b1.mc);
+          if(mcEx) so.mc=mcEx;
+        }
+        return so;
+      }),
       assignments: assignments
     };
+    /* Mastercode der Übungsleitung (Override) – nur als Hash, nie im Klartext. */
+    if(nonEmpty(grund.masterCode)) inner.meta.masterCode=hashWord(grund.masterCode, rsalt);
     var wrapper={ app:"EA-Funkuebung-Planungstool", format:"b64", payload:deB64Utf8(JSON.stringify(inner)) };
     if(deDownload("uebung.json", JSON.stringify(wrapper,null,2))) deMsg("uebungMsg","data/uebung.json exportiert – im Repo unter data/ ablegen.","ok");
     else deMsg("uebungMsg","Export nicht möglich.","warn");
@@ -5740,6 +6305,7 @@ body {
     initStations();
     initRoutes();
     initLoesung();
+    initFunk();
     initSatzsammlung();
     initBildersammlung();
     initQr();
