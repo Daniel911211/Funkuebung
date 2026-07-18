@@ -9,6 +9,18 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
+### [ ] Live (main): TMO-Platzhalter „z. B. E18" → „z. B. EG18"
+
+**Status:** offen · vorgemerkt am 2026-06-09 · auf dem Test-Branch bereits erledigt
+
+- **Ziel:** In den Grunddaten (Funkkanäle, TMO-Rufgruppe) den Platzhalter
+  „z. B. E18" in „z. B. EG18" ändern – **auf `main`/live**.
+- **Stand:** Auf dem Test-Branch `claude/funny-lovelace-Ljjaw` seit index
+  v1.34.0 erledigt; live (`main`) steht noch „E18".
+- **Umsetzung:** Erledigt sich automatisch, wenn die Test-Features nach `main`
+  gemergt werden. Falls der Merge länger dauert oder ausbleibt: als kleiner
+  eigener Patch direkt auf `main` (nur Platzhalter, Versions-Bump index).
+
 ### [ ] Stations-Detail: Pflichtfeld „ELW zeigt Positionscode direkt" entfernen
 
 **Status:** offen · vorgemerkt am 2026-06-09 · **noch NICHT umsetzen** (Nutzer: „merken, warten")
