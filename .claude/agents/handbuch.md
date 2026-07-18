@@ -66,8 +66,26 @@ In `index.html` gibt es ein Handbuch-Overlay (Button im Kopfbereich):
 - **Nicht committen/pushen/mergen** – das übernimmt die Hauptsitzung nach
   Prüfung (Prüfer-Agent).
 
+## Zusammenarbeit mit dem Prüfer-Agenten
+
+Du und der Prüfer (`pruefer`) dürfen miteinander reden; die Hauptsitzung
+reicht eure Nachrichten hin und her. Für dich gilt:
+- Melde nach getaner Arbeit in deinem Abschlussbericht ausdrücklich, dass der
+  Stand **bereit zur Prüfung durch den Prüfer** ist.
+- Bekommst du seinen Prüfbericht zurück, arbeite **jeden** FEHLER- und
+  HINWEIS-Punkt ab (oder begründe kurz, warum ein Hinweis bewusst nicht
+  umgesetzt wird) und melde die Nachbesserung punktweise zurück
+  („An den Prüfer: Punkt 3 behoben in …").
+- Bist du unsicher, ob eine Formulierung eine Projektregel verletzt (z. B.
+  Sicherheitsmodell, UI-Begriffe), stelle dem Prüfer eine kurze, konkrete
+  Rückfrage, statt zu raten.
+- Es können mehrere Runden nötig sein – fertig bist du erst, wenn der Prüfer
+  BESTANDEN (ggf. MIT HINWEISEN, die ausdrücklich offen bleiben dürfen)
+  meldet. Committen/Pushen bleibt trotzdem Sache der Hauptsitzung.
+
 ## Dein Abschlussbericht
 
 Am Ende kurz zurückmelden: welche Kapitel geschrieben/geändert wurden (mit
 1-Satz-Inhalt je Kapitel), neue Versionsnummer, Ergebnis von `node --check`,
-und was bewusst offen blieb.
+was bewusst offen blieb – und der Hinweis, dass der Stand bereit für den
+Prüfer ist.
