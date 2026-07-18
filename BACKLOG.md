@@ -72,6 +72,27 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## In Test (nicht live)
 
+### [~] Mehrere Aufgaben-Blöcke je Station (fahrzeugabhängige Aufgaben)
+
+**Status:** in Test · index v1.36.0 / station v1.1.0 (elw unverändert) · Branch
+`claude/funny-lovelace-Ljjaw` (Draft-PR, **nicht** gemergt → nicht live).
+
+- Kartenbereich „Aufgabe" = **1..n Aufgaben-Blöcke** (`station.tasks[]`): Block 1
+  mit Geltungsbereich alle/ausgewählte Fahrzeuge; bei „ausgewählte" verteilen
+  weitere Blöcke („+ Weitere Aufgabe hinzufügen") die restlichen Fahrzeuge (Chips
+  bieten nur unbeanspruchte Fahrzeuge an). Jeder Block eigener Aufgabentyp
+  Text/Rätsel/MC (Nutzerentscheid); unzugeteilte aktive Fahrzeuge → Station
+  „in Bearbeitung" + Hinweis (Nutzerentscheid), Export bleibt möglich.
+- Export: Rätsel wie bisher je Zelle; NEU `cell.task`/`cell.mc` bei „ausgewählt";
+  „alle"-Fall weiter über `stations[].task`/`mc` (alte Leser kompatibel,
+  Ein-Block-Altdaten byte-identisch). station.html: Zelle vor Station (Fallback).
+- **Vermerk:** `elwCodeDirect` bewusst **stationsglobal** geblieben (siehe offener
+  Punkt „ELW zeigt Positionscode direkt entfernen").
+- **Offene Idee:** Vollständigkeit könnte zusätzlich verlangen, dass ein MC-Block
+  ≥ 1 wohlgeformte Frage bzw. ein Rätsel-Block ≥ 1 Rätselseite hat (heute wie
+  bisher ungeprüft; leere Inhalte fallen beim Export einfach weg).
+- **Offen vor Live:** Praxistest Editor + Misch-Szenario; danach entscheiden.
+
 ### [~] Funkaufträge (Funkwort-Weitergabe zwischen Beteiligten)
 
 **Status:** in Test · index v1.35.0 / station v1.0.17 / elw v1.3.0 · Branch

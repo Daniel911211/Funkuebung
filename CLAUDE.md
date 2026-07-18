@@ -21,6 +21,13 @@ Auf dem Branch liegen Testfunktionen, die bewusst **nicht** auf `main`/live sind
 - **Funkaufträge (Funkwort-Weitergabe)** (index v1.35.0 / station v1.0.17 / elw v1.3.0):
   Funkwort „Von" FHZ+Station „An" FHZ+Station oder ELW; Empfänger gibt es ein → Code frei.
   Export `relaySend` (Klartext beim Sender) / `relayRecv`/`relayElw` (nur Hash).
+- **Mehrere Aufgaben-Blöcke je Station** (index v1.36.0 / station v1.1.0): Karte
+  „Aufgabe" = 1..n Blöcke (`station.tasks[]`), Block 1 mit Geltungsbereich
+  alle/ausgewählte Fahrzeuge, weitere Blöcke verteilen die restlichen Fahrzeuge;
+  je Block eigener Aufgabentyp Text/Rätsel/MC. Export NEU je Zelle optional
+  `task`/`mc` (nur bei „ausgewählt"; „alle"-Fall weiter über `stations[].task`/`mc`
+  → alte Leser kompatibel); station.html liest Zelle vor Station. Sichtbares Feld
+  „Aufgabe" heißt seit v1.35.2 **„Stationsüberschrift"** (intern `title`).
 
 Diese Punkte erst nach Freigabe des Nutzers nach `main` übernehmen.
 

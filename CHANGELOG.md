@@ -11,6 +11,27 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.36.0 (Mehrere Aufgaben-Blöcke je Station – TESTBRANCH): Der Kartenbereich
+„Aufgabe" im Stations-Detail besteht jetzt aus **1..n Aufgaben-Blöcken**
+(`station.tasks[]`): Block 1 mit **Geltungsbereich** „Alle Fahrzeuge" /
+„Ausgewählte Fahrzeuge"; bei „Ausgewählte" verteilen weitere Blöcke (Button
+**„+ Weitere Aufgabe hinzufügen"**) die restlichen Fahrzeuge – die Fahrzeug-Chips
+bieten je Block nur Fahrzeuge an, die kein anderer Block beansprucht. **Jeder Block
+hat seinen eigenen Aufgabentyp** (Text/Rätsel/Multiple-Choice) samt Editor; der
+frühere Geltungsbereich am Rätsel ist in den Block gewandert. „ELW zeigt
+Positionscode direkt" bleibt stationsglobal (Pflicht, sobald ein Block Typ Rätsel
+hat). **Vollständigkeit:** Bei „Ausgewählte Fahrzeuge" braucht jeder Block ≥ 1
+aktives Fahrzeug und jedes aktive Fahrzeug einen Block, sonst „In Bearbeitung" +
+Hinweis mit den fehlenden Fahrzeugen (Export bleibt möglich). **Export:**
+Rätsel-Felder wie bisher je Zelle; NEU je Zelle optional `task` (Klartext) bzw.
+`mc` bei Blöcken mit Geltungsbereich „ausgewählt" – im „alle"-Fall bleiben
+`stations[].task`/`stations[].mc` wie bisher (alte Leser kompatibel; Export bei
+Ein-Block-Altdaten byte-identisch, nur version/generatedAt anders).
+**Migration:** Altes Ein-Aufgaben-Format (taskType/task/riddle/mc an der Station)
+wird beim Laden verlustfrei nach `tasks[0]` migriert (nur localStorage).
+Downgrade-Hinweis: Ein mit 1.36.0 erzeugter **Planungsdaten**-Export (Voll-Export)
+verliert beim Import in ein älteres index.html die Aufgabendaten.
+
 Stand 1.35.2 (Stationsplanung überarbeitet: Stationsüberschrift + typgebundene
 Aufgabenbeschreibung – TESTBRANCH): Das Pflichtfeld „Aufgabe" heißt sichtbar jetzt
 **„Stationsüberschrift"** (intern weiterhin `title`; Tabellen-Spalte,
@@ -548,6 +569,14 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
+
+Stand 1.1.0 (Aufgaben je Fahrzeug-Zelle – TESTBRANCH): Passend zu den
+Aufgaben-Blöcken in index.html 1.36.0 liest die Station **Aufgabenbeschreibung**
+und **Multiple-Choice-Fragen** jetzt bevorzugt aus der eigenen Fahrzeug-Zelle
+(`assign.task` bzw. `assign.mc.questions`); die Stations-Ebene
+(`station.task`/`station.mc`) bleibt als **Altformat-Fallback** vollständig
+erhalten → alte Exporte verhalten sich unverändert. Rätsel-Gates waren schon
+zellenbasiert und sind unverändert.
 
 Stand 1.0.17 (Funkauftrag-Karten – TESTFUNKTION, nicht live): Zwei neue Karten je
 Station (parallel zur Aufgabe). **Funkauftrag-Sender:** bei hinterlegtem `relaySend`

@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.0.17 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.1.0 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -139,7 +139,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.0.17" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.1.0" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -204,12 +204,17 @@
     if(nonEmpty(meta.time)) ex.push(escapeHTML(meta.time)+' Uhr');
     document.getElementById("exMeta").innerHTML=ex.join(' · ');
 
-    /* Gemeinsame Karte „Aufgabe": zuerst der kurze Titel (station.title) deutlich
-       hervorgehoben, darunter – falls vorhanden – die ausführliche Beschreibung
-       (station.task) als normaler Text. Leere Felder erzeugen KEINEN Platzhalter. */
+    /* Gemeinsame Karte „Aufgabe": zuerst die Stationsüberschrift (station.title)
+       deutlich hervorgehoben, darunter – falls vorhanden – die ausführliche
+       Beschreibung. Seit den Aufgaben-Blöcken (index v1.36.0) kann die
+       Beschreibung je Fahrzeug in der Zelle stehen (assign.task); die
+       Stations-Ebene (station.task) bleibt als Altformat-Fallback. Leere Felder
+       erzeugen KEINEN Platzhalter. */
+    var taskText = (assign && nonEmpty(assign.task)) ? assign.task
+                 : (nonEmpty(station.task) ? station.task : "");
     var aufgabeInner =
       (nonEmpty(station.title) ? '<div class="aufgabe-text">'+escapeHTML(station.title)+'</div>' : '') +
-      (nonEmpty(station.task)  ? '<div class="task">'+escapeHTML(station.task)+'</div>'         : '');
+      (nonEmpty(taskText)      ? '<div class="task">'+escapeHTML(taskText)+'</div>'              : '');
     var aufgabeCard = aufgabeInner
       ? '<div class="card"><div class="label">Aufgabe</div>'+aufgabeInner+'</div>'
       : '';
@@ -235,12 +240,15 @@
     var needFhz   = nonEmpty(hashFhz);
     var needElw   = nonEmpty(hashElw);
     /* Multiple-Choice-Fragen (Aufgabentyp „mc"): an der Station beantwortet die
-       Besatzung alle Fragen; erst dann erscheint das Positionscode-Feld. Die Fragen
-       stehen am Stations-Objekt (station.mc.questions), je Frage Optionen (Klartext)
-       + Hash der richtigen Option. */
-    var mcQuestions = (station.mc && Array.isArray(station.mc.questions))
-      ? station.mc.questions.filter(function(q){ return q && nonEmpty(q.q) && Array.isArray(q.options) && q.options.length>0 && nonEmpty(q.hash); })
-      : [];
+       Besatzung alle Fragen; erst dann erscheint das Positionscode-Feld. Seit den
+       Aufgaben-Blöcken (index v1.36.0) können die Fragen je Fahrzeug in der Zelle
+       stehen (assign.mc.questions); die Stations-Ebene (station.mc.questions) bleibt
+       als Altformat-Fallback. Je Frage Optionen (Klartext) + Hash der richtigen
+       Option. */
+    var mcSource = (assign && assign.mc && Array.isArray(assign.mc.questions)) ? assign.mc.questions
+                 : (station.mc && Array.isArray(station.mc.questions)) ? station.mc.questions
+                 : [];
+    var mcQuestions = mcSource.filter(function(q){ return q && nonEmpty(q.q) && Array.isArray(q.options) && q.options.length>0 && nonEmpty(q.hash); });
     var needMc    = mcQuestions.length>0;
     /* Mastercode der Übungsleitung (Override): nicht offen sichtbar, erst über einen
        dezenten Button einblendbar. Korrekt → Lösungszeichen direkt, ohne Gate/Code. */
