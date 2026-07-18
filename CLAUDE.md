@@ -13,10 +13,10 @@ Die vollständige Versionshistorie steht in `CHANGELOG.md` (nicht mehr im
 Datei-Kopf). Die Datei-Köpfe enthalten nur noch die aktuelle Versionszeile +
 Kurzbeschreibung und verweisen auf `CHANGELOG.md`.
 
-## Test-Features (NICHT live, Branch `claude/funny-lovelace-Ljjaw`)
+## Zusatzfunktionen (live seit 2026-07-18)
 
-Auf dem Branch liegen Testfunktionen, die bewusst **nicht** auf `main`/live sind
-(Draft-PRs, nicht gemergt). Details in `CHANGELOG.md`/`BACKLOG.md`:
+Mit dem Merge des Branches `claude/funny-lovelace-Ljjaw` nach `main` sind live
+(Details in `CHANGELOG.md`/`BACKLOG.md`):
 - **Aufgabentyp Multiple-Choice + Mastercode-Override** (index v1.34.0 / station v1.0.16).
 - **Funkaufträge (Funkwort-Weitergabe)** (index v1.35.0 / station v1.0.17 / elw v1.3.0):
   Funkwort „Von" FHZ+Station „An" FHZ+Station oder ELW; Empfänger gibt es ein → Code frei.
@@ -24,12 +24,10 @@ Auf dem Branch liegen Testfunktionen, die bewusst **nicht** auf `main`/live sind
 - **Mehrere Aufgaben-Blöcke je Station** (index v1.36.0 / station v1.1.0): Karte
   „Aufgabe" = 1..n Blöcke (`station.tasks[]`), Block 1 mit Geltungsbereich
   alle/ausgewählte Fahrzeuge, weitere Blöcke verteilen die restlichen Fahrzeuge;
-  je Block eigener Aufgabentyp Text/Rätsel/MC. Export NEU je Zelle optional
+  je Block eigener Aufgabentyp Text/Rätsel/MC. Export je Zelle optional
   `task`/`mc` (nur bei „ausgewählt"; „alle"-Fall weiter über `stations[].task`/`mc`
   → alte Leser kompatibel); station.html liest Zelle vor Station. Sichtbares Feld
   „Aufgabe" heißt seit v1.35.2 **„Stationsüberschrift"** (intern `title`).
-
-Diese Punkte erst nach Freigabe des Nutzers nach `main` übernehmen.
 
 ## Backlog / Vormerkungen (WICHTIG)
 

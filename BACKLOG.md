@@ -9,18 +9,6 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
-### [ ] Live (main): TMO-Platzhalter „z. B. E18" → „z. B. EG18"
-
-**Status:** offen · vorgemerkt am 2026-06-09 · auf dem Test-Branch bereits erledigt
-
-- **Ziel:** In den Grunddaten (Funkkanäle, TMO-Rufgruppe) den Platzhalter
-  „z. B. E18" in „z. B. EG18" ändern – **auf `main`/live**.
-- **Stand:** Auf dem Test-Branch `claude/funny-lovelace-Ljjaw` seit index
-  v1.34.0 erledigt; live (`main`) steht noch „E18".
-- **Umsetzung:** Erledigt sich automatisch, wenn die Test-Features nach `main`
-  gemergt werden. Falls der Merge länger dauert oder ausbleibt: als kleiner
-  eigener Patch direkt auf `main` (nur Platzhalter, Versions-Bump index).
-
 ### [ ] Stations-Detail: Pflichtfeld „ELW zeigt Positionscode direkt" entfernen
 
 **Status:** offen · vorgemerkt am 2026-06-09 · **noch NICHT umsetzen** (Nutzer: „merken, warten")
@@ -82,12 +70,12 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ---
 
-## In Test (nicht live)
+## Erledigt
 
-### [~] Mehrere Aufgaben-Blöcke je Station (fahrzeugabhängige Aufgaben)
+### [x] Mehrere Aufgaben-Blöcke je Station (fahrzeugabhängige Aufgaben) – live
 
-**Status:** in Test · index v1.36.0 / station v1.1.0 (elw unverändert) · Branch
-`claude/funny-lovelace-Ljjaw` (Draft-PR, **nicht** gemergt → nicht live).
+**Status:** erledigt/live am 2026-07-18 · index v1.36.0 / station v1.1.0
+(elw unverändert) · Branch `claude/funny-lovelace-Ljjaw` → `main` (PR #87).
 
 - Kartenbereich „Aufgabe" = **1..n Aufgaben-Blöcke** (`station.tasks[]`): Block 1
   mit Geltungsbereich alle/ausgewählte Fahrzeuge; bei „ausgewählte" verteilen
@@ -103,12 +91,11 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 - **Offene Idee:** Vollständigkeit könnte zusätzlich verlangen, dass ein MC-Block
   ≥ 1 wohlgeformte Frage bzw. ein Rätsel-Block ≥ 1 Rätselseite hat (heute wie
   bisher ungeprüft; leere Inhalte fallen beim Export einfach weg).
-- **Offen vor Live:** Praxistest Editor + Misch-Szenario; danach entscheiden.
 
-### [~] Funkaufträge (Funkwort-Weitergabe zwischen Beteiligten)
+### [x] Funkaufträge (Funkwort-Weitergabe zwischen Beteiligten) – live
 
-**Status:** in Test · index v1.35.0 / station v1.0.17 / elw v1.3.0 · Branch
-`claude/funny-lovelace-Ljjaw` (Draft-PR, **nicht** gemergt → nicht live).
+**Status:** erledigt/live am 2026-07-18 · index v1.35.0 / station v1.0.17 /
+elw v1.3.0 · Branch `claude/funny-lovelace-Ljjaw` → `main` (PR #87).
 
 - Neuer Bereich „Funkaufträge": ein **Funkwort**, das **Von** (FHZ + Station) **An**
   (anderes FHZ + Station **oder** ELW) per Funk durchgegeben wird. Empfänger gibt es an
@@ -118,12 +105,12 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
   (Code erst nach Eingabe des hochgefunkten Worts).
 - **Bewusste Aufweichung:** das Funkwort steht im Klartext beim Sender in der Datei
   (muss er lesen) – Obfuscation-Niveau wie der Base64-Payload, der Mechanik inhärent.
-- **Offen vor Live:** Praxistest des Gesamtablaufs; danach über Live-Gang entscheiden.
 
-### [~] Aufgabentyp Multiple-Choice + Mastercode + Detail-Überarbeitung
+### [x] Aufgabentyp Multiple-Choice + Mastercode + Detail-Überarbeitung – live
 
-**Status:** in Test · index v1.34.0 / station v1.0.16 · Branch
-`claude/funny-lovelace-Ljjaw` (Draft-PR, **nicht** gemergt → nicht live).
+**Status:** erledigt/live am 2026-07-18 · index v1.34.0 / station v1.0.16 ·
+Branch `claude/funny-lovelace-Ljjaw` → `main` (PR #87). Damit auch live:
+TMO-Platzhalter „z. B. E18" → „z. B. EG18" (Vormerkung vom 2026-06-09 erledigt).
 
 - **Multiple-Choice-Fragen** als dritter Aufgabentyp je Station (mehrere Fragen,
   Antwortmöglichkeiten + richtige Option). station.html: Fragen-Gate, alle richtig →
@@ -138,12 +125,6 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
   Pflichtfeld heißt **„Stationsüberschrift"**, Aufgabenbeschreibung nur bei
   Aufgabentyp „Text" sichtbar und nur dann exportiert.
 - Platzhalter TMO-Funkkanal „z. B. E18" → „z. B. EG18" (erledigt).
-- **Offen vor Live:** Annahmen prüfen (MC schaltet Code frei; Mastercode = voller
-  Override bis Lösungszeichen); nach Test über Live-Gang entscheiden.
-
----
-
-## Erledigt
 
 ### [x] Rätsel-Freischaltung (ELW↔FHZ-Funkverkehr) – live
 
