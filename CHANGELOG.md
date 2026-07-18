@@ -570,6 +570,13 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
 
+Stand 1.1.1 (Leere „Freischaltung"-Karte entfernt): Die Karte „Freischaltung"
+(FHZ-Rätsel + ELW-Rückwort) erschien seit v1.0.17 auch dann – leer, nur mit
+Überschrift –, wenn eine Station ausschließlich ein Funkwort- oder
+Multiple-Choice-Gate hat (diese haben eigene Karten). Sie wird jetzt nur noch
+gebaut, wenn FHZ-Rätsel oder ELW-Rückwort hinterlegt sind; die Gate-Logik
+(Code-Feld erst nach allen Freischaltungen) ist unverändert.
+
 Stand 1.1.0 (Aufgaben je Fahrzeug-Zelle – TESTBRANCH): Passend zu den
 Aufgaben-Blöcken in index.html 1.36.0 liest die Station **Aufgabenbeschreibung**
 und **Multiple-Choice-Fragen** jetzt bevorzugt aus der eigenen Fahrzeug-Zelle
