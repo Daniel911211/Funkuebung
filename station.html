@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.1.0 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.1.1 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -139,7 +139,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.1.0" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.1.1" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -261,8 +261,11 @@
     var relayRecv = (assign && Array.isArray(assign.relayRecv)) ? assign.relayRecv.filter(function(x){ return x && nonEmpty(x.hash); }) : [];
     var needRelay = relayRecv.length>0;
     var needGate  = needFhz || needElw || needMc || needRelay;
+    /* Die Karte „Freischaltung" zeigt nur FHZ-Rätsel und ELW-Rückwort. Sie wird
+       daher NUR gebaut, wenn eine der beiden Seiten hinterlegt ist – MC- und
+       Funkwort-Gates haben eigene Karten (sonst bliebe hier eine leere Kachel). */
     var gateCard = "";
-    if(needGate){
+    if(needFhz || needElw){
       var fhzPart = "";
       if(needFhz){
         var fhzAnswer = (fhzMode==="choice")
