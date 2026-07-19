@@ -11,6 +11,20 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.36.2 (Token-Pflege + kleine UI-Angleichungen): **1)** Neues `:root`-Token
+`--input-bg: #1d2026` („Eingabefelder"); die acht hartkodierten
+`background: #1d2026`-Vorkommen nutzen jetzt das Token. **2)** Fünf Verwendungen
+des **nicht definierten** Tokens `var(--bg-1)` repariert (Hintergrund wurde dort
+gar nicht gerendert): Karten-Suchfeld → `--input-bg`, Suchtreffer-Hover →
+`--surface-2`, Zeichen-Chip der Lösungssatz-Fahrzeugkarten, Satzsammlungs- und
+Bildersammlungs-Kacheln → `--surface`. **3)** „Übernehmen"-Zeilen-Button im
+Bildersammlung-Overlay von `btn-primary` auf `btn-secondary` (Angleichung an die
+Satzsammlung; Übernehmen ist eine neutrale Aktion). **4)** Header-Meta-Label
+„Titel" → **„Übungstitel"** (konsistent zu den Grunddaten). **5)** Kommentare an
+den Leaflet-Farbwerten (Stationskreis = `--red`, OSRM-Routenlinie = Blau des
+Such-Markers): Werte bewusst dupliziert, Leaflet-Optionen können keine
+CSS-Variablen lesen.
+
 Stand 1.36.1 (Funkaufträge: Feld-Beschriftungen, Test-Badge raus, Übersichtskarte):
 **1)** Im Funkauftrag-Editor hat jedes Auswahlfeld jetzt ein sichtbares Sub-Label
 (neues `.funk-sub`, Label umschließt das Select → implizite Zuordnung, kurzer
@@ -594,6 +608,20 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
 
+Stand 1.2.0 (Optik an das Planungstool angeglichen – Nutzer-Entscheid; sichtbare
+Änderung gewollt): Der `:root`-Block übernimmt die **Token-Werte des
+index-Styleguides** (CLAUDE.md) samt Flächen-Token-Namen: Seite `--bg` #16181c,
+Karten `--surface` #23272e (vorher `--bg-2` #1b1e23), dunkle Anzeigeflächen
+(Bildhintergrund, Funkwort, Lösungszeichen-Box, `code`) `--bg-2` #1b1e23,
+Eingabefelder/Antwort-Optionen `--input-bg` #1d2026, Linien `--line` #353b44 /
+`--line-soft` #2c313a, Text `--text` #e8eaed, Radien 10px/7px (vorher 14/9).
+Dazu Fix: `.relay-send-card` nutzte das dort **nicht definierte**
+`var(--status-prog)` – der gelbe Akzentstreifen der Funkwort-Karte wurde nie
+gerendert; jetzt `var(--warn)` (gleicher Wert; bewusst kein eigenes
+Status-Token, `--warn` deckt die Rolle bereits ab). Das redundante
+Focus-`background` des Code-Felds entfällt (wie index: Fokus nur per
+Rahmenfarbe). Token-Block identisch mit elw.html 1.4.0; keine Logikänderung.
+
 Stand 1.1.1 (Leere „Freischaltung"-Karte entfernt): Die Karte „Freischaltung"
 (FHZ-Rätsel + ELW-Rückwort) erschien seit v1.0.17 auch dann – leer, nur mit
 Überschrift –, wenn eine Station ausschließlich ein Funkwort- oder
@@ -716,6 +744,20 @@ Versionsanzeige im Footer, Positionscode-Freischaltung des Lösungszeichens.
 > Eigene Versionierung (zentral in `ELW_APP_INFO.version`, im Footer sichtbar).
 > Lesende Schwesterseite zu station.html für ELW/Übungsleitung; lädt
 > data/uebung.json. Zeigt NIEMALS Lösungssatz/Lösungszeichen (nur Positionscodes).
+
+Stand 1.4.0 (Optik an das Planungstool angeglichen – Nutzer-Entscheid; sichtbare
+Änderung gewollt): Der `:root`-Block übernimmt die **Token-Werte des
+index-Styleguides** (CLAUDE.md) samt Flächen-Token-Namen, identisch zu
+station.html 1.2.0: Seite `--bg` #16181c, Karten/Zeilen (`.card`, `.elw-top`,
+`.erow`, `.ov-card`, `.btn-mini`) `--surface` #23272e, eingelassene
+Fahrzeuggruppe `.veh` und `code` `--bg-2` #1b1e23 (Schichtung Karte → Gruppe →
+Zeile bleibt erhalten), Eingabefeld `--input-bg` #1d2026, Hover
+(Funkkanal-Zeilen, `.btn-mini`) `--surface-2` #2a2f37, Linien `--line` #353b44 /
+`--line-soft` #2c313a, Text `--text` #e8eaed, Radien 10px/7px (vorher 14/9).
+Zudem Prio-3-Punkt: hartkodiertes Grün `#2f9e60` des „erledigt"-Buttons als
+Token `--btn-ok` (Wert wie index) und der hartkodierte `#23272e`-Hover als
+`--surface-2` eingebunden. Keine Logikänderung; weiterhin kein
+Lösungssatz/`char`.
 
 Stand 1.3.0 (Funkauftrag-Empfänger / Code-Gate – seit 2026-07-18 live): Hat eine
 Station ein `relayElw` (Besatzung funkt ein Wort hoch), zeigt `elw.html` in der
