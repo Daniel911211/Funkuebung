@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.1.1 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.2.0 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -38,20 +38,23 @@
   ============================================================================
 -->
 <style>
+  /* Token-WERTE = :root von index.html (Styleguide in CLAUDE.md); Namen der
+     Flächen-Tokens ebenfalls übernommen. --ok/--warn entsprechen den
+     Statusfarben --status-done/--status-prog des Planungstools. */
   :root {
-    --bg-0:#101216; --bg-1:#14161a; --bg-2:#1b1e23;
-    --line:#2c313a; --line-soft:#242931; --text:#e7ebf0; --text-muted:#99a0aa; --text-faint:#6b727c;
-    --red:#861619; --red-strong:#a11f27; --red-soft:rgba(134,22,25,.18); --ok:#3fae6b; --warn:#e0a32e;
-    --radius:14px; --radius-sm:9px;
+    --bg:#16181c; --bg-2:#1b1e23; --surface:#23272e; --surface-2:#2a2f37; --input-bg:#1d2026;
+    --line:#353b44; --line-soft:#2c313a; --text:#e8eaed; --text-muted:#99a0aa; --text-faint:#6b727c;
+    --red:#861619; --red-strong:#a11f27; --red-soft:rgba(134,22,25,.18); --ok:#3fae6b; --warn:#e0a32e; --btn-ok:#2f9e60;
+    --radius:10px; --radius-sm:7px;
     --font:"Segoe UI","Roboto","Helvetica Neue",system-ui,-apple-system,sans-serif;
     --font-mono:"Consolas","SF Mono","Roboto Mono",ui-monospace,monospace;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg-0);color:var(--text);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.5;-webkit-font-smoothing:antialiased;}
   .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 44px;}
   .meta{font-size:.82rem;color:var(--text-faint);text-align:center;margin-bottom:12px;}
 
-  .topbar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);position:relative;overflow:hidden;margin-bottom:16px;}
+  .topbar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);position:relative;overflow:hidden;margin-bottom:16px;}
   .topbar::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);}
   .st-no{flex:0 0 auto;width:58px;height:58px;border-radius:12px;background:var(--red-soft);border:2px solid var(--red);display:grid;place-items:center;font-family:var(--font-mono);font-weight:800;font-size:2rem;color:#fff;}
   .topbar h1{margin:0;font-size:1.35rem;font-weight:700;line-height:1.2;}
@@ -60,7 +63,7 @@
 
   .grid{display:grid;grid-template-columns:1fr;gap:16px;}
   @media (min-width:760px){ .grid{grid-template-columns:1fr 1fr;align-items:start;} }
-  .card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;}
   .label{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;}
   .task{font-size:1.05rem;line-height:1.55;color:var(--text-muted);font-weight:400;}
   .aufgabe-text{font-size:1.4rem;line-height:1.35;color:var(--text);font-weight:700;}
@@ -68,7 +71,7 @@
 
   .imgs{display:flex;flex-direction:column;gap:12px;}
   .imgfig{margin:0;}
-  .imgfig img{display:block;width:100%;height:auto;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-1);cursor:zoom-in;}
+  .imgfig img{display:block;width:100%;height:auto;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-2);cursor:zoom-in;}
   .imgfig img:focus-visible{outline:2px solid var(--red);outline-offset:2px;}
   .muted{font-size:.95rem;color:var(--text-faint);font-style:italic;}
 
@@ -83,9 +86,9 @@
   /* Lösungszeichen – Freischaltung per Positionscode */
   .code-card{margin-top:16px;}
   .code-row{display:flex;flex-wrap:wrap;gap:10px;}
-  .code-row input{flex:1 1 220px;min-width:0;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--text);font:inherit;font-size:1.05rem;letter-spacing:.04em;padding:12px 14px;text-transform:uppercase;}
+  .code-row input{flex:1 1 220px;min-width:0;background:var(--input-bg);border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--text);font:inherit;font-size:1.05rem;letter-spacing:.04em;padding:12px 14px;text-transform:uppercase;}
   .code-row input::placeholder{color:var(--text-faint);text-transform:none;letter-spacing:0;}
-  .code-row input:focus{outline:none;border-color:var(--red);background:#1d2026;}
+  .code-row input:focus{outline:none;border-color:var(--red);}
   .btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;font:inherit;font-size:1rem;font-weight:600;padding:12px 20px;border-radius:var(--radius-sm);border:1px solid var(--red);background:var(--red);color:#fff;cursor:pointer;transition:background .14s,border-color .14s;}
   .btn:hover{background:var(--red-strong);border-color:var(--red-strong);}
   .code-msg{margin:12px 0 0;font-size:.95rem;min-height:1.2em;}
@@ -94,16 +97,18 @@
   .gate-part{padding:10px 0;}
   .gate-part + .gate-part{border-top:1px solid var(--line-soft);margin-top:4px;}
   .gate-opts{display:flex;flex-wrap:wrap;gap:8px;}
-  .gate-opt{font:inherit;font-size:1rem;padding:11px 16px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--bg-1);color:var(--text);cursor:pointer;transition:border-color .14s,background .14s;}
+  .gate-opt{font:inherit;font-size:1rem;padding:11px 16px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--input-bg);color:var(--text);cursor:pointer;transition:border-color .14s,background .14s;}
   .gate-opt:hover:not(:disabled){border-color:var(--red);}
   .gate-opt:disabled{cursor:default;opacity:.85;}
   .gate-opt.correct{border-color:var(--ok);background:rgba(63,174,107,.15);color:var(--ok);font-weight:600;}
   .gate-opt.wrong{border-color:var(--warn);}
   .mc-card{margin-top:16px;}
   .mc-q .task{margin-bottom:10px;}
-  .relay-send-card{margin-top:16px;border-left:3px solid var(--status-prog);}
+  /* Akzentstreifen: --warn = Wert von --status-prog im Planungstool (hier
+     bewusst kein eigenes Status-Token, --warn deckt diese Rolle bereits ab). */
+  .relay-send-card{margin-top:16px;border-left:3px solid var(--warn);}
   .relay-send + .relay-send{border-top:1px solid var(--line-soft);margin-top:10px;padding-top:10px;}
-  .relay-word{font-family:var(--font-mono);font-size:1.8rem;font-weight:800;letter-spacing:.06em;color:var(--text);background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 14px;margin-top:6px;word-break:break-word;}
+  .relay-word{font-family:var(--font-mono);font-size:1.8rem;font-weight:800;letter-spacing:.06em;color:var(--text);background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 14px;margin-top:6px;word-break:break-word;}
   .relay-recv-card{margin-top:16px;}
 
   /* Mastercode der Übungsleitung: bewusst zurückhaltend, kein auffälliges Feld. */
@@ -113,14 +118,14 @@
   .master-box{max-width:360px;margin:10px auto 0;text-align:left;}
 
   .letterbox{display:flex;align-items:center;gap:18px;margin-top:14px;}
-  .letter{flex:0 0 auto;width:104px;height:104px;border-radius:var(--radius);display:grid;place-items:center;background:var(--bg-1);border:2px solid var(--ok);font-family:var(--font-mono);font-weight:800;font-size:3.4rem;color:#fff;}
+  .letter{flex:0 0 auto;width:104px;height:104px;border-radius:var(--radius);display:grid;place-items:center;background:var(--bg-2);border:2px solid var(--ok);font-family:var(--font-mono);font-weight:800;font-size:3.4rem;color:#fff;}
   .letter.space,.letter.empty{color:var(--text-faint);border-color:var(--line);font-weight:400;}
   .letter-note{font-size:1rem;color:var(--text-muted);} .letter-note b{color:var(--text);}
 
   .error{margin-top:16px;background:var(--red-soft);border:1px solid var(--red);border-radius:var(--radius);padding:16px 18px;}
   .error h2{margin:0 0 6px;font-size:1.05rem;color:var(--red-strong);}
   .error p{margin:0;font-size:.95rem;color:var(--text-muted);}
-  .error code{font-family:var(--font-mono);color:var(--text);background:var(--bg-1);padding:1px 5px;border-radius:4px;}
+  .error code{font-family:var(--font-mono);color:var(--text);background:var(--bg-2);padding:1px 5px;border-radius:4px;}
   .foot{margin-top:22px;text-align:center;font-size:.74rem;color:var(--text-faint);}
 </style>
 </head>
@@ -139,7 +144,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.1.1" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.2.0" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */

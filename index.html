@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.36.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.37.0)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -42,6 +42,7 @@
   --bg-2:          #1b1e23;   /* Hintergrund Inhaltsbereich                */
   --surface:       #23272e;   /* Kartenflächen                            */
   --surface-2:     #2a2f37;   /* erhöhte Flächen / Hover                   */
+  --input-bg:      #1d2026;   /* Eingabefelder                             */
   --line:          #353b44;   /* Rahmen / Trennlinien                     */
   --line-soft:     #2c313a;   /* dezente Trennlinien                      */
 
@@ -409,7 +410,7 @@ body {
 .field input:focus {
   outline: none;
   border-color: var(--red);
-  background: #1d2026;
+  background: var(--input-bg);
 }
 .form-actions {
   display: flex;
@@ -516,7 +517,7 @@ body {
 
 .channel-row input {
   width: 100%;
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -605,7 +606,7 @@ body {
 .vehicle-table input[type="number"],
 .station-table input[type="text"] {
   width: 100%;
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -711,7 +712,7 @@ body {
 .detail-field select,
 .image-fields input[type="text"] {
   width: 100%;
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -739,7 +740,7 @@ body {
 .image-preview {
   flex: none; width: 64px; height: 48px;
   object-fit: cover; border-radius: var(--radius-sm);
-  border: 1px solid var(--line); background: #1d2026;
+  border: 1px solid var(--line); background: var(--input-bg);
 }
 .image-preview.empty {
   border-style: dashed;
@@ -912,7 +913,7 @@ body {
 .route-control-field > span { font-size: .78rem; color: var(--text-faint); }
 .route-control-field select,
 .route-control-field input {
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -950,7 +951,7 @@ body {
 .map-search-ctrl .ms-row { display: flex; gap: 6px; }
 .map-search-ctrl input {
   flex: 1 1 auto; min-width: 0;
-  background: var(--bg-1); border: 1px solid var(--line); border-radius: 6px;
+  background: var(--input-bg); border: 1px solid var(--line); border-radius: 6px;
   color: var(--text); font: inherit; font-size: .85rem; padding: 7px 9px;
 }
 .map-search-ctrl input::placeholder { color: var(--text-faint); }
@@ -971,8 +972,10 @@ body {
   color: var(--text); font: inherit; font-size: .8rem; line-height: 1.35;
   padding: 7px 4px; cursor: pointer;
 }
-.map-search-ctrl .ms-item:hover { background: var(--bg-1); }
-/* Temporärer Such-Marker (blau, deutlich anders als rote Stationsmarker) */
+.map-search-ctrl .ms-item:hover { background: var(--surface-2); }
+/* Temporärer Such-Marker (blau, deutlich anders als rote Stationsmarker).
+   Blauton bewusst hart kodiert: derselbe Wert steht auch in den Leaflet-Optionen
+   der OSRM-Routenlinie (JS), die keine CSS-Variablen lesen können. */
 .search-marker { background: transparent; border: 0; }
 .search-marker-dot {
   display: block; width: 16px; height: 16px; border-radius: 50%;
@@ -1013,7 +1016,7 @@ body {
 .route-pos-table .rcol-status { width: 14%; }
 .route-pos-table input[type="text"] {
   width: 100%;
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -1146,7 +1149,7 @@ body {
   transition: border-color .14s, background .14s;
 }
 .field textarea::placeholder { color: var(--text-faint); }
-.field textarea:focus { outline: none; border-color: var(--red); background: #1d2026; }
+.field textarea:focus { outline: none; border-color: var(--red); background: var(--input-bg); }
 .loes-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 /* SOLL / IST / STATUS – drei Kennzahl-Boxen */
 .loes-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
@@ -1200,7 +1203,7 @@ body {
 .loes-assign-char {
   flex: 0 0 auto; min-width: 30px; text-align: center;
   font-family: var(--font-mono); font-weight: 700; font-size: 1rem; color: var(--text);
-  background: var(--bg-1); border: 1px solid var(--line);
+  background: var(--surface); border: 1px solid var(--line);
   border-radius: 6px; padding: 2px 8px;
 }
 .loes-assign-char.empty { color: var(--text-faint); font-weight: 400; border-style: dashed; }
@@ -1259,7 +1262,7 @@ body {
 .satz-empty { margin: 0; font-size: .88rem; color: var(--text-faint); font-style: italic; }
 .satz-item {
   display: flex; align-items: center; gap: 12px;
-  background: var(--bg-1); border: 1px solid var(--line);
+  background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius-sm); padding: 10px 12px;
 }
 .satz-item-text { flex: 1 1 auto; min-width: 0; font-size: .9rem; color: var(--text); line-height: 1.45; word-break: break-word; }
@@ -1284,7 +1287,7 @@ body {
 .bild-empty { margin: 0; font-size: .88rem; color: var(--text-faint); font-style: italic; }
 .bild-card {
   display: flex; flex-direction: column;
-  background: var(--bg-1); border: 1px solid var(--line);
+  background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius-sm); overflow: hidden;
 }
 .bild-thumb {
@@ -1717,7 +1720,7 @@ body {
     <div class="header-center">
       <div class="header-meta">
         <div class="meta-item">
-          <div class="meta-label">Titel</div>
+          <div class="meta-label">Übungstitel</div>
           <div class="meta-value empty" id="metaName">–</div>
         </div>
         <div class="meta-item">
@@ -2069,7 +2072,7 @@ body {
           <h3 class="subsection-title">Funkaufträge</h3>
           <button type="button" class="btn btn-primary" id="funkAdd">+ Funkauftrag</button>
         </div>
-        <p class="field-hint">„<b>Von</b>" sieht das Wort an seiner Station und funkt es; „<b>An</b>" gibt es an seiner Station ein → Code frei. Bei „An = ELW" gibt die ELW das hochgefunkte Wort auf <code>elw.html</code> ein und der Code der „Von"-Station wird frei. Das Funkwort wird für den Empfänger nur <b>verschleiert (Hash)</b> exportiert.</p>
+        <p class="field-hint">„<b>Von</b>" sieht das Wort an seiner Station und funkt es; „<b>An</b>" gibt es an seiner Station ein → Code frei. Bei „An = ELW-Koordinationsseite" gibt die Übungsleitung das hochgefunkte Wort auf <code>elw.html</code> ein und der Code der „Von"-Station wird frei (das ELW als <b>Fahrzeug</b> zu wählen heißt dagegen: seine Besatzung gibt das Wort an ihrer Station ein). Das Funkwort wird für den Empfänger nur <b>verschleiert (Hash)</b> exportiert.</p>
         <div id="funkList"></div>
         <p class="field-hint" id="funkMsg" role="status" aria-live="polite"></p>
       </div>
@@ -2317,7 +2320,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.36.1"
+    version: "1.37.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2641,7 +2644,7 @@ body {
     var list = [];
     for (var i = 1; i <= STATION_SEED_COUNT; i++) {
       list.push({ id: "station_" + i, title: "", description: "", images: [], position: { address: "", lat: "", lng: "" },
-        hideLagebild: false, elwCodeDirect: null, tasks: [defaultTaskBlock()] });
+        hideLagebild: false, elwCodeDirect: false, tasks: [defaultTaskBlock()] });
     }
     return list;
   }
@@ -2685,10 +2688,10 @@ body {
          Geltungsbereich am Rätsel) → genau ein Block; scope/vehicleIds werden
          nur bei Alt-Typ "riddle" aus s.riddle übernommen.
        - hideLagebild: Lagebild-Karte auf station.html ausblenden (stationsglobal)
-       - elwCodeDirect: PFLICHT, sobald ein Block Typ "riddle" hat (true=Code
-         sofort auf elw.html, false=erst nach Klick). null = noch nicht gewählt.
-         Stationsglobal; ohne Rätsel-Block ohne Bedeutung, null bleibt erhalten. */
-    var elwDirect = s.elwCodeDirect === true ? true : (s.elwCodeDirect === false ? false : null);
+       - elwCodeDirect: seit v1.37.0 KEIN Eingabefeld mehr, intern fest false
+         (Code auf elw.html immer erst nach Klick „Code anzeigen"). Migration:
+         auch früher gespeicherte true-Werte werden bewusst vereinheitlicht
+         (Nutzer-Entscheid). Das Feld bleibt nur für den Export an Alt-Leser. */
     var tasks;
     if (Array.isArray(s.tasks) && s.tasks.length) {
       tasks = s.tasks.map(function (t, i) { return normalizeTaskBlock(t, i === 0); });
@@ -2711,7 +2714,7 @@ body {
       images: images,
       position: position,
       hideLagebild: s.hideLagebild === true,
-      elwCodeDirect: elwDirect,
+      elwCodeDirect: false,
       tasks: tasks
     };
   }
@@ -2837,13 +2840,11 @@ body {
       if (!allImagesAssigned) return false;
     }
 
-    /* Aufgaben-Blöcke: hat ein effektiver Block Typ „Rätsel", ist „ELW zeigt
-       Code direkt" Pflichtfeld (ja/nein muss gewählt sein). Verteilen die Blöcke
-       auf ausgewählte Fahrzeuge, braucht jeder Block mindestens ein aktives
-       Fahrzeug UND jedes aktive Fahrzeug einen Block – sonst „in Bearbeitung". */
+    /* Aufgaben-Blöcke: verteilen die Blöcke auf ausgewählte Fahrzeuge, braucht
+       jeder Block mindestens ein aktives Fahrzeug UND jedes aktive Fahrzeug
+       einen Block – sonst „in Bearbeitung". (Das frühere Pflichtfeld „ELW zeigt
+       Positionscode direkt" entfiel mit v1.37.0.) */
     var blocks = stationTaskBlocks(station);
-    var hasRiddleBlock = blocks.some(function (b) { return b.taskType === "riddle"; });
-    if (hasRiddleBlock && station.elwCodeDirect !== true && station.elwCodeDirect !== false) return false;
     if (blocks.length && blocks[0].scope === "selected") {
       var activeVehicles = loadVehicles().filter(function (v) { return v.active; });
       var activeIds = activeVehicles.map(function (v) { return v.id; });
@@ -3406,7 +3407,7 @@ body {
   function addStation() {
     var list = loadStations();
     var st = { id: newStationId(), title: "", description: "", images: [], position: { address: "", lat: "", lng: "" },
-      hideLagebild: false, elwCodeDirect: null, tasks: [defaultTaskBlock()] };
+      hideLagebild: false, elwCodeDirect: false, tasks: [defaultTaskBlock()] };
     list.push(st);
     saveStations(list);
     selectedStationId = st.id;
@@ -4144,6 +4145,8 @@ body {
       if (mapCircles[s.id]) {
         mapCircles[s.id].setLatLng([ll.lat, ll.lng]); mapCircles[s.id].setRadius(radius);
       } else {
+        /* Farbwert bewusst hart kodiert (= --red aus :root): Leaflet-Optionen
+           können keine CSS-Variablen lesen. Bei Token-Änderung mitziehen. */
         mapCircles[s.id] = window.L.circle([ll.lat, ll.lng], {
           radius: radius, color: "#861619", weight: 1, opacity: .5,
           fillColor: "#861619", fillOpacity: .08
@@ -4171,6 +4174,8 @@ body {
     } else {
       latlngs = setSt.map(function (s) { var ll = stationLatLng(s); return [ll.lat, ll.lng]; });
     }
+    /* Blau bewusst hart kodiert – gleicher Wert wie .search-marker-dot im CSS
+       (Leaflet-Optionen können keine CSS-Variablen lesen). */
     mapRouteLine = window.L.polyline(latlngs, { color: "#3d6fb0", weight: 4, opacity: .75 }).addTo(mapInstance);
   }
 
@@ -4861,8 +4866,6 @@ body {
     var blocks = stationTaskBlocks(s);
     var selectedMode = blocks.length > 0 && blocks[0].scope === "selected";
     var uncovered = selectedMode ? stationUncoveredVehicleTypes(s, vehicles) : [];
-    var hasRiddle = blocks.some(function (b) { return b.taskType === "riddle"; });
-    var directVal = s.elwCodeDirect === true ? "yes" : (s.elwCodeDirect === false ? "no" : "");
 
     /* Chips eines Blocks: eigene Auswahl immer sichtbar, sonst nur Fahrzeuge,
        die kein ANDERER Block beansprucht. */
@@ -4883,21 +4886,6 @@ body {
     }
 
     var html = "";
-    /* „ELW zeigt Code direkt" ist stationsglobal und Pflicht, sobald ein Block
-       Typ „Rätsel" hat. */
-    if (hasRiddle) {
-      html +=
-        '<div class="detail-field">' +
-          '<label for="detElwDirect">ELW zeigt Positionscode direkt <span class="req" title="Pflichtfeld">*</span></label>' +
-          '<select id="detElwDirect">' +
-            '<option value=""' + (directVal === "" ? " selected" : "") + '>— bitte wählen —</option>' +
-            '<option value="yes"' + (directVal === "yes" ? " selected" : "") + '>Ja – Code sofort sichtbar</option>' +
-            '<option value="no"' + (directVal === "no" ? " selected" : "") + '>Nein – erst nach Klick „Code anzeigen"</option>' +
-          '</select>' +
-          '<p class="field-error" id="detElwDirectErr">Bitte ja oder nein wählen.</p>' +
-        '</div>';
-    }
-
     blocks.forEach(function (b, bi) {
       var scopeField;
       if (bi === 0) {
@@ -4963,26 +4951,6 @@ body {
       renderStationList();
       updateStationSummary();
       updateStatus();
-    }
-
-    /* „ELW zeigt Code direkt": Pflichtfeld → Fehlermarkierung wie Überschrift. */
-    var directSel = document.getElementById("detElwDirect");
-    if (directSel) {
-      var directErr = document.getElementById("detElwDirectErr");
-      var syncDirectError = function () {
-        var ok = directSel.value === "yes" || directSel.value === "no";
-        directErr.hidden = ok;
-        directSel.classList.toggle("invalid", !ok);
-      };
-      directSel.addEventListener("change", function () {
-        var v = this.value === "yes" ? true : (this.value === "no" ? false : null);
-        setStationField(stationId, "elwCodeDirect", v);
-        syncDirectError();
-        renderStationList();
-        updateStationSummary();
-        updateStatus();
-      });
-      syncDirectError();
     }
 
     /* Geltungsbereich Block 1: Wechsel auf „alle" löscht weitere Blöcke (Confirm). */
@@ -5181,7 +5149,7 @@ body {
     /* Jedes Auswahlfeld bekommt ein sichtbares Sub-Label (implizite Zuordnung:
        <label> umschließt das <select>); title erklärt kurz die Rolle des Felds. */
     var toBlock = toIsElw
-      ? '<span class="funk-elw-note">Die ELW gibt das Wort auf <code>elw.html</code> ein → der Code der „Von"-Station wird frei.</span>'
+      ? '<span class="funk-elw-note">Die Übungsleitung gibt das Wort auf der ELW-Koordinationsseite (<code>elw.html</code>) ein → der Code der „Von"-Station wird frei.</span>'
       : '<label class="funk-sub" title="Fahrzeug, das das Wort an seiner Station eingibt">Fahrzeug' +
           '<select data-fpart="to" data-ffield="vehId">' + funkVehicleOptions(f.to.vehId, vehicles) + '</select></label>' +
         '<label class="funk-sub" title="Station, an der das Wort eingegeben wird und den Positionscode freischaltet">Station' +
@@ -5199,8 +5167,11 @@ body {
           '</div></div>' +
         '<div class="detail-field"><label>An (gibt das Wort ein)</label>' +
           '<div class="funk-party">' +
-            '<label class="funk-sub" title="Empfänger: anderes Fahrzeug oder die ELW">Empfänger' +
-              '<select data-ftorole><option value="fhz"' + (!toIsElw ? " selected" : "") + '>Fahrzeug</option><option value="elw"' + (toIsElw ? " selected" : "") + '>ELW</option></select></label>' +
+            /* Sichtbar „ELW-Koordinationsseite" statt „ELW": Das ELW ist auch als
+               Fahrzeug wählbar (Besatzung an ihrer Station) – hier ist aber die
+               Übungsleitung auf elw.html gemeint. value "elw" bleibt (Datenmodell). */
+            '<label class="funk-sub" title="Empfänger: anderes Fahrzeug oder die Übungsleitung auf der ELW-Koordinationsseite">Empfänger' +
+              '<select data-ftorole><option value="fhz"' + (!toIsElw ? " selected" : "") + '>Fahrzeug</option><option value="elw"' + (toIsElw ? " selected" : "") + '>ELW-Koordinationsseite</option></select></label>' +
             toBlock +
           '</div></div>' +
       '</div>' +
@@ -5580,7 +5551,7 @@ body {
                  '<img class="bild-thumb" loading="lazy" alt="' + escapeAttr(it.name) + '" src="' + escapeAttr(it.url) + '" data-bild-take="' + i + '">' +
                  '<div class="bild-card-foot">' +
                    '<span class="bild-card-name" title="' + escapeAttr(it.name) + '">' + escapeHTML(it.name) + '</span>' +
-                   '<button type="button" class="btn btn-primary" data-bild-take="' + i + '">Übernehmen</button>' +
+                   '<button type="button" class="btn btn-secondary" data-bild-take="' + i + '">Übernehmen</button>' +
                  '</div>' +
                '</div>';
       }).join("");
@@ -6084,6 +6055,9 @@ body {
       var wordHash=hashWord(f.word, rsalt);
       if(f.to.role==="elw"){
         if(!fromCell.relaySend) fromCell.relaySend=[];
+        /* to:"ELW" bleibt BEWUSST so (nicht „ELW-Koordinationsseite" wie die
+           Editor-Option): station.html zeigt das Label in der Funk-Anweisung
+           („an ELW durchgeben") – im Funkverkehr ruft die Besatzung die ELW. */
         fromCell.relaySend.push({ to:"ELW", word:f.word });
         fromCell.relayElw={ from:fromLabel, hash:wordHash };
       } else {
@@ -6103,7 +6077,9 @@ body {
       stations: stations.map(function(st,idx){
         /* Stations-Ebene bleibt für ALTE Leser kompatibel: task/mc nur, wenn
            Block 1 für alle Fahrzeuge gilt und den passenden Typ hat (entspricht
-           dem früheren Ein-Aufgaben-Fall). Neue Leser bevorzugen die Zelle. */
+           dem früheren Ein-Aufgaben-Fall). Neue Leser bevorzugen die Zelle.
+           elwCodeDirect wird weiter geschrieben (seit v1.37.0 konstant false,
+           Feld nur noch für Alt-Leser; elw.html zeigt Codes erst nach Klick). */
         var b1=(Array.isArray(st.tasks)&&st.tasks[0])?st.tasks[0]:null;
         var allText=b1 && b1.scope==="all" && b1.taskType==="text";
         var so={ nr:idx+1, id:st.id, title:st.title||"", task:(allText ? (b1.task||"") : ""), address:deStationAddress(st), hideLagebild:st.hideLagebild===true, elwCodeDirect:st.elwCodeDirect===true, images:(Array.isArray(st.images)?st.images:[]).map(function(im){ return { url:im.url||"", title:im.title||"", vehicleIds:(Array.isArray(im.vehicleIds)?im.vehicleIds.slice():[]) }; }) };

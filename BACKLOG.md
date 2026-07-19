@@ -9,23 +9,6 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
-### [ ] Stations-Detail: Pflichtfeld „ELW zeigt Positionscode direkt" entfernen
-
-**Status:** offen · vorgemerkt am 2026-06-09 · **noch NICHT umsetzen** (Nutzer: „merken, warten")
-
-- **Ziel:** Das Auswahlfeld **„ELW zeigt Positionscode direkt"** (ja/nein) im
-  Stations-Detail (Rätsel-Editor, `detElwDirect`) vorerst **aus der UI entfernen**.
-- **Vor dem Umsetzen klären:**
-  - Soll das Datenfeld `stations[].elwCodeDirect` ganz raus oder nur das
-    Eingabefeld verschwinden und `elwCodeDirect` intern fest auf einen Wert
-    (z. B. `false` = erst nach Klick „Code anzeigen")?
-  - Verhalten in `elw.html`: ohne das Feld immer „Code anzeigen"-Button (kein
-    direkter Code) – ist das gewünscht?
-  - Validierung/Pflichtfeld-Logik (`detElwDirect` ist aktuell Pflicht) mit anpassen.
-- **Randbedingungen:** kein Lösungssatz/`char` auf `elw.html` · Export
-  rückwärtskompatibel halten (Feld optional) · Versions-Bump erst beim
-  tatsächlichen Umsetzen.
-
 ### [ ] GPS-Standortprüfung für Stationsoberfläche
 
 **Status:** offen · später fachlich ausarbeiten
@@ -72,6 +55,28 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Erledigt
 
+### [x] Stations-Detail: Pflichtfeld „ELW zeigt Positionscode direkt" entfernen
+
+**Status:** erledigt mit index v1.37.0 (vorgemerkt am 2026-06-09, Umsetzung vom
+Nutzer freigegeben) · Branch `claude/funny-lovelace-Ljjaw`.
+
+- **Zuschnitt:** Das Auswahlfeld (`detElwDirect` inkl. Fehlermeldung/Handler und
+  der `hasRiddle`-Einblendung) ist ersatzlos aus dem Stations-Detail entfernt;
+  die Pflicht-Bedingung in `isStationComplete` ist gestrichen.
+- **Antworten auf die damaligen Klärungsfragen:**
+  - *Datenfeld ganz raus oder nur UI?* → Nur das Eingabefeld verschwindet;
+    `stations[].elwCodeDirect` bleibt intern und im Export erhalten, fest
+    `false` (= Code erst nach Klick „Code anzeigen"). `normalizeStation`
+    vereinheitlicht dabei auch früher gespeicherte `true`-Werte auf `false`
+    (bewusster Nutzer-Entscheid, im CHANGELOG vermerkt).
+  - *Verhalten in `elw.html`?* → Unverändert (kein Code-Patch dort): Code
+    erscheint erst nach Klick „Code anzeigen" bzw. nach Funkwort-Eingabe;
+    Alt-Exporte mit `true` funktionieren weiter.
+  - *Validierung/Pflichtfeld-Logik?* → Komplett entfernt (Feld, Fehlermeldung
+    `detElwDirectErr`, `syncDirectError`, Vollständigkeits-Bedingung).
+- **Randbedingungen eingehalten:** kein Lösungssatz/`char` auf `elw.html` ·
+  Export rückwärtskompatibel (Feld wird weiter geschrieben, konstant `false`).
+
 ### [x] Mehrere Aufgaben-Blöcke je Station (fahrzeugabhängige Aufgaben) – live
 
 **Status:** erledigt/live am 2026-07-18 · index v1.36.0 / station v1.1.0
@@ -86,8 +91,8 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 - Export: Rätsel wie bisher je Zelle; NEU `cell.task`/`cell.mc` bei „ausgewählt";
   „alle"-Fall weiter über `stations[].task`/`mc` (alte Leser kompatibel,
   Ein-Block-Altdaten byte-identisch). station.html: Zelle vor Station (Fallback).
-- **Vermerk:** `elwCodeDirect` bewusst **stationsglobal** geblieben (siehe offener
-  Punkt „ELW zeigt Positionscode direkt entfernen").
+- **Vermerk:** `elwCodeDirect` bewusst **stationsglobal** geblieben (das Feld ist
+  inzwischen mit index v1.37.0 aus der UI entfernt, siehe eigenen Erledigt-Punkt).
 - **Offene Idee:** Vollständigkeit könnte zusätzlich verlangen, dass ein MC-Block
   ≥ 1 wohlgeformte Frage bzw. ein Rätsel-Block ≥ 1 Rätselseite hat (heute wie
   bisher ungeprüft; leere Inhalte fallen beim Export einfach weg).
