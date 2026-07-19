@@ -9,6 +9,27 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
+### [ ] station.html: uneinheitlicher Abstand zwischen den Karten
+
+**Status:** offen · vorgemerkt am 2026-07-19 · Design-Agent soll den Fix festlegen
+
+- **Beobachtung (Nutzer):** Auf der Teilnehmerseite (`station.html`) stimmen die
+  **Abstände zwischen den Karten** nicht (Beispiel: Aufgabe → Funkauftrag →
+  Freischaltung uneinheitlich).
+- **Wahrscheinliche Ursache (vorab gefunden):** Die gestapelten Karten setzen ihren
+  Abstand über eigenes `margin-top:16px` (`.relay-send-card`, `.code-card`,
+  `.mc-card`, `.relay-recv-card`, `.master-card` 18px). ABER die **Freischaltungs-
+  Karte `.gate-card` hat GAR KEINE eigene CSS-Regel** (nur die Klasse im HTML,
+  `station.html:305`) → **kein `margin-top`** → dadurch inkonsistenter Abstand,
+  je nach Kartenreihenfolge zu eng/zu weit.
+- **Möglicher Fix (vom Design-Agenten bestätigen/festlegen):** Entweder `.gate-card`
+  ein `margin-top:16px` geben (einheitlich zu den anderen), ODER sauberer: die
+  Karten in einen gemeinsamen Flex-Container mit `gap:16px` setzen und die einzelnen
+  `margin-top`-Regeln entfernen (eine Abstands-Quelle statt viele). Design-Agent
+  entscheidet; danach Programmierer + Versions-Bump station.html.
+- **Randbedingungen:** nur Layout/Abstände, keine Logik; Design-Tokens nutzen
+  (`--radius` etc.), Mobil-Ansicht mitprüfen.
+
 ### [ ] Funkauftrag-Sender-Karte: Hinweis „Empfänger soll Wort notieren" ergänzen
 
 **Status:** offen · vorgemerkt am 2026-07-19 · Text vom Übungs-Designer verfassen lassen
@@ -17,11 +38,8 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
   per Funk an <Empfänger> durch:") zusätzlich erklären, **was mit dem Wort geschehen
   soll** – der Empfänger soll es sich **notieren** (und später an seiner Station
   eingeben). Aktuell steht nur „Gib folgendes Wort per Funk an LF durch:".
-- **Fertiger Text (vom Übungs-Designer, 2026-07-19) – vom Programmierer einbauen:**
-  - **Empfohlen:** „Weise den Empfänger an, sich das Wort zu notieren und an seiner
-    Station einzugeben."
-  - **Alternative:** „Der Empfänger notiert das Wort und gibt es an seiner Station
-    ein – funke ihm diese Anweisung mit durch."
+- **Fertiger Text (vom Nutzer festgelegt, 2026-07-19) – vom Programmierer einbauen:**
+  - **„Weise den Empfänger an, sich das Wort zu notieren."**
   - Darstellung: gedämpfte Hinweiszeile (z. B. `--text-muted`) UNTER dem
     hervorgehobenen Funkwort, damit das Wort optisch führend bleibt.
 - **Umsetzung:** Der **Programmierer** baut den (empfohlenen) Text in die
