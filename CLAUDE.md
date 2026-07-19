@@ -21,6 +21,10 @@ Mit dem Merge des Branches `claude/funny-lovelace-Ljjaw` nach `main` sind live
 - **Funkaufträge (Funkwort-Weitergabe)** (index v1.35.0 / station v1.0.17 / elw v1.3.0):
   Funkwort „Von" FHZ+Station „An" FHZ+Station oder ELW; Empfänger gibt es ein → Code frei.
   Export `relaySend` (Klartext beim Sender) / `relayRecv`/`relayElw` (nur Hash).
+  Seit index v1.38.2: **nicht-blockierende Timing-Planungswarnung** je Funkauftrag
+  (Empfänger = Fahrzeug) nach Priorität Zyklus > Reihenfolge (Sender-Laufnr ≥
+  Empfänger-Laufnr) > Spätlage (Sender-Laufnr > 3); Empfänger = ELW nie gewarnt.
+  Nur in `index.html`, kein Export-/Verhaltens-Change (Datenmodell unverändert).
 - **Mehrere Aufgaben-Blöcke je Station** (index v1.36.0 / station v1.1.0): Karte
   „Aufgabe" = 1..n Blöcke (`station.tasks[]`), Block 1 mit Geltungsbereich
   alle/ausgewählte Fahrzeuge, weitere Blöcke verteilen die restlichen Fahrzeuge;

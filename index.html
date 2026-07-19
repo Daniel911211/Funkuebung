@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.38.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.38.2)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -1693,6 +1693,30 @@ body {
   .funk-check span { font-size: .9rem; color: var(--text); }
   .funk-elw-note { font-size: .8rem; color: var(--text-faint); line-height: 1.4; }
   .funk-del { position: absolute; top: 10px; right: 10px; }
+  /* --- Timing-Warnungen Funkaufträge (weich, nicht blockierend) -------
+     Gelbe „In Bearbeitung"-Töne (Statusfarbe), linker Farbstreifen analog
+     .manual-todo / .loes-hintbox.is-missing – nur bestehende Tokens. */
+  .funk-warn {
+    margin: 10px 0 0; padding: 8px 12px;
+    border: 1px solid rgba(224,163,46,.4);
+    border-left: 3px solid var(--status-prog);
+    border-radius: var(--radius-sm);
+    background: rgba(224,163,46,.08);
+    color: var(--text);
+    font-size: .85rem; line-height: 1.45;
+  }
+  .field-hint.warn { color: var(--status-prog); }
+  .funk-warnbox {
+    margin-top: 16px; padding: 14px 16px;
+    border: 1px solid rgba(224,163,46,.4);
+    border-left: 3px solid var(--status-prog);
+    border-radius: var(--radius);
+    background: rgba(224,163,46,.08);
+  }
+  .funk-warnbox-title { font-size: 1.05rem; font-weight: 600; color: var(--status-prog); margin-bottom: 6px; }
+  .funk-warnbox-count { margin: 0 0 8px; font-size: .9rem; color: var(--text-muted); }
+  .funk-warnbox-list { margin: 0; padding-left: 18px; color: var(--text-muted); font-size: .88rem; line-height: 1.5; }
+  .funk-warnbox-list li { margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -1778,6 +1802,9 @@ body {
 
       <!-- Statuskarten werden per JS erzeugt -->
       <div class="card-grid" id="statusCards"></div>
+
+      <!-- Nicht-blockierende Timing-Warnungen der Funkaufträge (per JS befüllt) -->
+      <div id="funkWarnBox" class="funk-warnbox" hidden></div>
     </section>
 
     <!-- ----- 2) GRUNDDATEN --------------------------------------------- -->
@@ -2324,7 +2351,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.38.1"
+    version: "1.38.2"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2820,6 +2847,101 @@ body {
     return list.every(function (f) { return funkAuftragComplete(f, activeIds, stationCount); }) ? "done" : "prog";
   }
 
+  /* Laufnummer (1-basiert) der Station stationNr (echte, 1-basierte Stationsnummer)
+     in der automatischen Route von vehId. Die Route ist eine reine zyklische Drehung
+     nach Index in den aktiven Fahrzeugen (identisch zur exportierten laufnr). Fehlt
+     das Fahrzeug oder ist die Stationsnummer ungültig → null. */
+  function funkLaufnr(vehId, stationNr, stations, activeVehicles) {
+    var nr = parseInt(stationNr, 10);
+    if (!isFinite(nr) || nr < 1 || nr > stations.length) return null;
+    var vehIdx = -1;
+    for (var i = 0; i < activeVehicles.length; i++) { if (activeVehicles[i].id === vehId) { vehIdx = i; break; } }
+    if (vehIdx < 0) return null;
+    var targetId = stations[nr - 1].id;
+    var route = buildAutoRouteForVehicle(vehIdx, stations);
+    for (var j = 0; j < route.length; j++) { if (route[j].id === targetId) return j + 1; }
+    return null;
+  }
+
+  /* Weiche, nicht-blockierende Timing-Warnungen für Funkaufträge (nur Planungshilfe,
+     KEIN harter Block – der Export bleibt unverändert). Betrachtet werden nur
+     vollständige Aufträge mit Empfänger = Fahrzeug (to.role "fhz"); Empfänger = ELW
+     bekommt NIE eine Warnung (die Übungsleitung ist durchgehend erreichbar).
+     Da es keinen Timeout/keine Online-Sync gibt, ist die Laufnummer (Position der
+     Station in der parallel gefahrenen Route) ein grober Zeit-Anhalt. Genau eine
+     Warnung je Auftrag nach Priorität cycle > order > late. Rückgabe:
+     [{ fid, level, text }], level ∈ "cycle"|"order"|"late". Texte sind bereits
+     HTML-escaped. */
+  function computeFunkWarnings() {
+    var list = loadFunkauftraege();
+    var stations = loadStations();
+    var activeVehicles = loadVehicles().filter(function (v) { return v.active; });
+    var activeIds = activeVehicles.map(function (v) { return v.id; });
+    var stationCount = stations.length;
+
+    /* Kandidaten: vollständige Aufträge mit Empfänger = Fahrzeug. */
+    var cands = list.filter(function (f) {
+      return funkAuftragComplete(f, activeIds, stationCount) && f.to.role === "fhz";
+    });
+
+    /* Zyklus-Graph: gerichtete Kanten from.vehId → to.vehId (Mengen). */
+    var edges = {};
+    cands.forEach(function (f) {
+      var a = f.from.vehId;
+      if (!edges[a]) edges[a] = {};
+      edges[a][f.to.vehId] = true;
+    });
+    /* Erreichbarkeit über die Kanten (BFS/DFS). Deckt A↔B, Ringe A→B→C→A und
+       Selbstkanten (A→A) ab. */
+    function reaches(start, goal) {
+      var seen = {}, stack = [start];
+      while (stack.length) {
+        var next = edges[stack.pop()];
+        if (!next) continue;
+        for (var k in next) {
+          if (!next.hasOwnProperty(k)) continue;
+          if (k === goal) return true;
+          if (!seen[k]) { seen[k] = true; stack.push(k); }
+        }
+      }
+      return false;
+    }
+
+    /* Fahrzeug-Beschriftung analog funkVehicleOptions (Typ · Rufname). */
+    function vehLabel(id) {
+      var v = null;
+      for (var i = 0; i < activeVehicles.length; i++) { if (activeVehicles[i].id === id) { v = activeVehicles[i]; break; } }
+      if (!v) return id;
+      return (v.type || v.id) + (nonEmpty(v.callsign) ? " · " + v.callsign : "");
+    }
+
+    var out = [];
+    cands.forEach(function (f) {
+      var sName = escapeHTML(vehLabel(f.from.vehId));
+      var rName = escapeHTML(vehLabel(f.to.vehId));
+      var level = null, text = "";
+      if (reaches(f.to.vehId, f.from.vehId)) {
+        /* cycle: von der Empfänger-FHZ führen die Kanten wieder zur Sender-FHZ zurück. */
+        level = "cycle";
+        text = "Gegenseitige/ringförmige Abhängigkeit: Sender (" + sName + ") und Empfänger (" + rName + ") hängen wechselseitig voneinander ab – die Reihenfolge lässt sich nicht sicher auflösen. Kette gerichtet planen (kein A→B UND B→A).";
+      } else {
+        var sLauf = funkLaufnr(f.from.vehId, f.from.stationNr, stations, activeVehicles);
+        var rLauf = funkLaufnr(f.to.vehId, f.to.stationNr, stations, activeVehicles);
+        if (sLauf != null && rLauf != null && sLauf >= rLauf) {
+          /* order: Sender ist erst an oder nach der Empfänger-Laufnummer an seiner Funkstation. */
+          level = "order";
+          text = "Sender (" + sName + ") erreicht seine Funkstation als Laufnummer " + sLauf + ", Empfänger (" + rName + ") braucht das Wort schon an Laufnummer " + rLauf + " – das Wort könnte zu spät verfügbar sein.";
+        } else if (sLauf != null && sLauf > 3) {
+          /* late: Sender kommt spät (später als 3. Station) an seine Funkstation. */
+          level = "late";
+          text = "Sender (" + sName + ") erreicht seine Funkstation erst als Laufnummer " + sLauf + ". Sender möglichst früh setzen (1.–2., spätestens 3. Station).";
+        }
+      }
+      if (level) out.push({ fid: f.id, level: level, text: text });
+    });
+    return out;
+  }
+
   /* Eine AKTIVE Station gilt als vollständig, wenn:
      1. die Aufgabe ausgefüllt ist,
      2. alle vorhandenen Lagebilder eine ausgefüllte URL haben,
@@ -3029,6 +3151,24 @@ body {
     document.getElementById("progressDone").textContent  = doneCount;
     document.getElementById("progressTotal").textContent = cardSections.length;
     document.getElementById("progressFill").style.width  = (doneCount / cardSections.length * 100) + "%";
+
+    /* Übersicht: nicht-blockierende Timing-Warnungen der Funkaufträge als Callout.
+       Fließt NICHT in die Fortschrittszählung ein (Funkaufträge sind optional). */
+    var funkWarnBox = document.getElementById("funkWarnBox");
+    if (funkWarnBox) {
+      var fw = computeFunkWarnings();
+      if (fw.length > 0) {
+        var fwItems = fw.map(function (w) { return '<li>' + w.text + '</li>'; }).join("");
+        funkWarnBox.innerHTML =
+          '<div class="funk-warnbox-title">Funkaufträge: mögliche Timing-Konflikte</div>' +
+          '<p class="funk-warnbox-count">' + fw.length + ' mögliche(r) Timing-Konflikt(e) – im Bereich Funkaufträge prüfen.</p>' +
+          '<ul class="funk-warnbox-list">' + fwItems + '</ul>';
+        funkWarnBox.hidden = false;
+      } else {
+        funkWarnBox.innerHTML = "";
+        funkWarnBox.hidden = true;
+      }
+    }
 
     updateHeaderMeta(data);
   }
@@ -5177,7 +5317,7 @@ body {
       return '<option value="' + escapeAttr(v.id) + '"' + (sel === v.id ? " selected" : "") + '>' + escapeHTML(v.type || v.id) + (nonEmpty(v.callsign) ? " · " + escapeHTML(v.callsign) : "") + '</option>';
     }).join("");
   }
-  function funkRowHtml(f, vehicles, stations) {
+  function funkRowHtml(f, vehicles, stations, warn) {
     var toIsElw = f.to.role === "elw";
     /* Jedes Auswahlfeld bekommt ein sichtbares Sub-Label (implizite Zuordnung:
        <label> umschließt das <select>); title erklärt kurz die Rolle des Felds. */
@@ -5211,6 +5351,8 @@ body {
           '</div></div>' +
       '</div>' +
       '<button type="button" class="icon-btn danger funk-del" data-fdel title="Funkauftrag entfernen" aria-label="Funkauftrag entfernen">' + stationIcon("trash") + '</button>' +
+      /* Weiche Timing-Warnung (Text bereits escaped in computeFunkWarnings). */
+      (warn ? '<p class="funk-warn">' + warn + '</p>' : '') +
     '</div>';
   }
   function initFunk() {
@@ -5232,11 +5374,30 @@ body {
     var list = loadFunkauftraege();
     if (!vehicles.length || !stations.length) {
       host.innerHTML = '<p class="detail-empty">Erst aktive Fahrzeuge und Stationen anlegen, dann lassen sich Funkaufträge erstellen.</p>';
+      var funkMsgEmpty = document.getElementById("funkMsg");
+      if (funkMsgEmpty) { funkMsgEmpty.className = "field-hint"; funkMsgEmpty.textContent = ""; }
       return;
     }
+    /* Weiche Timing-Warnungen einmal berechnen und je Zeile durchreichen. */
+    var warnings = computeFunkWarnings();
+    var warnMap = {};
+    warnings.forEach(function (w) { warnMap[w.fid] = w.text; });
+
     host.innerHTML = list.length
-      ? list.map(function (f) { return funkRowHtml(f, vehicles, stations); }).join("")
+      ? list.map(function (f) { return funkRowHtml(f, vehicles, stations, warnMap[f.id]); }).join("")
       : '<p class="detail-empty">Noch keine Funkaufträge. Mit „+ Funkauftrag" anlegen.</p>';
+
+    /* Sammelmeldung unter der Liste: Anzahl + einmaliger Unschärfe-Hinweis. */
+    var funkMsg = document.getElementById("funkMsg");
+    if (funkMsg) {
+      if (warnings.length > 0) {
+        funkMsg.className = "field-hint warn";
+        funkMsg.textContent = warnings.length + " möglicher Timing-Konflikt(e) – siehe markierte Zeilen. (Laufnummer ist nur ein grober Zeit-Anhalt; Fahrzeiten/Stationsdauern sind nicht berücksichtigt.)";
+      } else {
+        funkMsg.className = "field-hint";
+        funkMsg.textContent = "";
+      }
+    }
 
     host.querySelectorAll("[data-fword]").forEach(function (el) {
       el.addEventListener("input", function () {
