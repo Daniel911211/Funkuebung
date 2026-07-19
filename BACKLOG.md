@@ -17,9 +17,15 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
   per Funk an <Empfänger> durch:") zusätzlich erklären, **was mit dem Wort geschehen
   soll** – der Empfänger soll es sich **notieren** (und später an seiner Station
   eingeben). Aktuell steht nur „Gib folgendes Wort per Funk an LF durch:".
-- **Umsetzung:** Der **Übungs-Designer** (`uebungsdesigner`) formuliert den kurzen,
-  klaren Ergänzungstext (Funkdisziplin-gerecht); der Programmierer baut ihn in die
-  Sender-Karte (`station.html`, Bereich `relaySend`, ~Z. 252 ff.) ein.
+- **Fertiger Text (vom Übungs-Designer, 2026-07-19) – vom Programmierer einbauen:**
+  - **Empfohlen:** „Weise den Empfänger an, sich das Wort zu notieren und an seiner
+    Station einzugeben."
+  - **Alternative:** „Der Empfänger notiert das Wort und gibt es an seiner Station
+    ein – funke ihm diese Anweisung mit durch."
+  - Darstellung: gedämpfte Hinweiszeile (z. B. `--text-muted`) UNTER dem
+    hervorgehobenen Funkwort, damit das Wort optisch führend bleibt.
+- **Umsetzung:** Der **Programmierer** baut den (empfohlenen) Text in die
+  Sender-Karte ein (`station.html`, Bereich `relaySend`, ~Z. 252 ff.).
 - **Randbedingungen:** Nur sichtbarer Text auf der Sender-Karte; Funklogik/Gate/
   Datenmodell (`relaySend`/`relayRecv`/`relayElw`) unverändert. Begriffe konsistent
   (Sender/Empfänger – siehe eigenen Backlog-Punkt zur Umbenennung). station.html
