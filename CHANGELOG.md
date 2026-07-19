@@ -11,6 +11,18 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.38.1 (Rätsel-Antwortart gemeinsam für FHZ + ELW): Im Rätsel-Editor legt
+ein **einziger** „Antwortart"-Select (Freitext / Auswahl (Multiple-Choice)) den
+Modus für **beide** Rätsel-Seiten (FHZ und ELW) gemeinsam fest, statt wie bisher
+je Seite getrennt. Der Select sitzt direkt unter dem Aufgabentyp-Select und ist
+(da nur im riddle-Body gebaut) systembedingt nur bei Aufgabentyp „Rätsel"
+sichtbar. Der per-Seite Select in `riddleSideHtml` entfiel; die Funktion erhält
+den Modus jetzt als Parameter. `normalizeRiddle` koppelt beim Laden
+`elw.mode = fhz.mode` (FHZ kanonisch) → beide Seiten haben immer denselben Modus.
+Datenmodell (`defaultRiddleSide`, `mode`-Feld je Seite), Export
+(`fhzMode`/`elwMode` – jetzt stets gleich) sowie `station.html`/`elw.html`
+unverändert und rückwärtskompatibel.
+
 Stand 1.38.0 (Rätsel-Anweisungsfeld je Gate + 4 Backlog-Punkte): **A)** Jede
 Rätsel-Seite (FHZ/ELW) hat im Stations-Detail ein neues optionales Freitextfeld
 **„Anweisung an die Besatzung (Stationsseite, optional)"** (`riddle.*.hint`,
