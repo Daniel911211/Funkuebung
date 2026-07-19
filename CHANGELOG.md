@@ -11,6 +11,17 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.37.1 (Funkauftrag-Editor: Empfänger-Auswahl im Bereich „Funkaufträge"
+von einem Dropdown auf ein einzelnes Ankreuz-Kästchen umgestellt): In
+`funkRowHtml` ersetzt ein sichtbares Kästchen „ELW-Koordinationsseite"
+(`<input type="checkbox" data-ftorole>`, angehakt bei `to.role === "elw"`) das
+bisherige `<select>` mit den Optionen „Fahrzeug"/„ELW-Koordinationsseite".
+Angehakt → Empfänger ist die Übungsleitung auf `elw.html` (`funk-elw-note`);
+leer → wie bisher Fahrzeug + Station wählen. Der Change-Handler wertet jetzt
+`this.checked` aus. Neue CSS-Klasse `.funk-check` (Kästchen neben Label, saubere
+vertikale Ausrichtung, `accent-color:var(--red)`). Datenmodell/Export unverändert
+(`to.role` bleibt „fhz"/„elw").
+
 Stand 1.37.0 (Pflichtfeld „ELW zeigt Positionscode direkt" entfernt –
 Backlog-Punkt, vom Nutzer freigegeben): Das Auswahlfeld im Stations-Detail
 (`detElwDirect` samt Fehlermeldung, `syncDirectError` und der Einblendung bei
