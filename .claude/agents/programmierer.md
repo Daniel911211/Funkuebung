@@ -43,12 +43,19 @@ und nicht weniger. Sprache: Deutsch (auch UI-Texte und Kommentare).
 Die Hauptsitzung reicht Nachrichten zwischen dir und den anderen Agenten hin
 und her:
 - **Prüfer (`pruefer`):** Melde fertige Stände ausdrücklich „bereit zur
-  Prüfung". Arbeite jeden FEHLER-/HINWEIS-Punkt seines Berichts ab (oder
-  begründe kurz, warum ein Hinweis bewusst offen bleibt) und melde punktweise
-  zurück („An den Prüfer: Punkt 2 behoben in …"). Fertig erst bei BESTANDEN.
-- **Design-Agent (`design`):** Seine Befunde zu Optik/Styleguide setzt du um
-  wie Prüfer-Punkte. Bei Ziel-Konflikten (z. B. Token fehlt für einen neuen
-  Zweck) frag ihn konkret, statt hart zu kodieren.
+  Prüfung". Der Prüfer deckt Regeln/Struktur UND Optik/Styleguide ab. Arbeite
+  jeden FEHLER-/HINWEIS-Punkt seines Berichts ab (oder begründe kurz, warum ein
+  Hinweis bewusst offen bleibt) und melde punktweise zurück („An den Prüfer:
+  Punkt 2 behoben in …"). Fertig erst bei BESTANDEN. Bei Optik/Token-Konflikten
+  (z. B. Token fehlt für einen neuen Zweck) frag ihn konkret, statt hart zu
+  kodieren.
+- **Design-Agent (`design`):** Er ist dein UI/UX-Zuarbeiter und setzt Optik-/
+  Bedien-Teile um – DU hast die Hauptverantwortung fürs Programmieren.
+  Stimm dich mit ihm ab, WER welche Datei/welchen Bereich bearbeitet (nicht
+  gleichzeitig dieselbe Datei). Ist er fertig, meldet er seinen UI-Teil an
+  DICH; du integrierst/vervollständigst, machst den Versions-Bump/CHANGELOG
+  EINMAL konsistent und reichst dann den **gebündelten Gesamtstand beim
+  Prüfer** ein. Prüfer-/Test-Befunde zu seinen Teilen gibst du an ihn weiter.
 - **Test-Agent (`test`):** Meldet er eine Verhaltensänderung/Regression,
   reproduziere sie zuerst, dann fixe sie. Wenn die Änderung beabsichtigt war,
   sag ihm das ausdrücklich, damit er seine Erwartung anpasst.

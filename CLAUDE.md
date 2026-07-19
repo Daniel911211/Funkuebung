@@ -32,16 +32,21 @@ Mit dem Merge des Branches `claude/funny-lovelace-Ljjaw` nach `main` sind live
 ## Projekt-Agenten (`.claude/agents/`)
 
 Feste Subagenten mit klaren Rollen (Details in der jeweiligen Datei):
-- **`programmierer`** – setzt Patches um (umsetzend) · **`handbuch`** –
-  schreibt die eingebaute Bedienungsanleitung (umsetzend).
-- **`pruefer`** – Regel-/Strukturprüfung · **`design`** – Styleguide/Optik ·
-  **`test`** – Verhaltenstests per Node-Harness (alle rein prüfend/lesend).
-- **`uebungsdesigner`** – fachliche Übungsinhalte (beratend).
+- **Umsetzend:** **`programmierer`** – setzt Patches um, hat die
+  Hauptverantwortung fürs Programmieren · **`design`** – UI/UX-Designer, setzt
+  Optik/Layout/Bedienung um und arbeitet dabei dem Programmierer zu (meldet
+  fertige Teile an ihn, NICHT direkt an den Prüfer) · **`handbuch`** – schreibt
+  die eingebaute Bedienungsanleitung.
+- **Prüfend/lesend:** **`pruefer`** – Regel-/Strukturprüfung **inkl.
+  Styleguide/Optik** (seit 2026-07-19) · **`test`** – Verhaltenstests per
+  Node-Harness.
+- **Beratend:** **`uebungsdesigner`** – fachliche Übungsinhalte.
 
 Die Agenten dürfen miteinander reden (Vermittlung über die Hauptsitzung):
-umsetzende Agenten reichen Stände bei den Prüfenden ein und bessern nach, bis
-BESTANDEN. **Commit/Push/Merge macht ausschließlich die Hauptsitzung** nach
-Freigabe des Nutzers; kein Agent verändert `data/uebung.json`.
+Der Programmierer bündelt seinen und den Design-Anteil und reicht den
+Gesamtstand beim Prüfer (und ggf. Test-Agent) ein; umsetzende Agenten bessern
+nach, bis BESTANDEN. **Commit/Push/Merge macht ausschließlich die Hauptsitzung**
+nach Freigabe des Nutzers; kein Agent verändert `data/uebung.json`.
 
 ## Backlog / Vormerkungen (WICHTIG)
 
