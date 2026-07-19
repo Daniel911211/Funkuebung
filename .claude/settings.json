@@ -4,7 +4,23 @@
       "mcp__github__actions_list",
       "mcp__github__pull_request_read",
       "mcp__github__get_file_contents",
-      "mcp__github__list_branches"
+      "mcp__github__list_branches",
+      "mcp__github__list_commits",
+      "Bash(node --check:*)",
+      "Bash(node:*)",
+      "Bash(python3:*)",
+      "Bash(awk:*)",
+      "Bash(grep:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git log:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(sed:*)"
     ]
   }
 }
