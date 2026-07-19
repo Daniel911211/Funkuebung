@@ -11,6 +11,17 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.38.4 (Funkaufträge – Routen ansehen): Im Bereich Funkaufträge öffnet
+ein neuer Button „Routen ansehen" (secondary, neben „+ Funkauftrag") ein
+Overlay mit der Übersicht der **automatischen Fahrzeugrouten** (Laufnummern je
+aktivem Fahrzeug), damit sich Funkaufträge (und die Timing-Warnungen) planen
+lassen, ohne die Sektion zu wechseln. Read-only; beim Öffnen immer frisch
+gerendert. Dafür wurde `renderVehicleRoutes` zu `renderVehicleRoutesInto(host)`
+refaktoriert (Routenplanung-Sektion unverändert). Das Overlay nutzt die
+vorhandene Satz-Overlay-Optik (`.satz-overlay`/`.satz-dialog`/`.satz-header`)
+inkl. Schließen per X / Backdrop / ESC. Kein Export-/Datenmodell-Change
+(`station.html`/`elw.html`/`data/uebung.json` unberührt).
+
 Stand 1.38.3 (Bugfix – Timing-Warnung live): Die weiche Timing-Warnung der
 Funkaufträge (Zeilen-Hinweis `.funk-warn`, Sammelmeldung `#funkMsg` und
 Übersichts-Callout `#funkWarnBox`) aktualisiert sich jetzt **live** bei
