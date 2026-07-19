@@ -21,14 +21,19 @@ schaltet den Positionscode frei). data-Attribute und Event-Logik unverändert, d
 ELW-Hinweiszeile bleibt. **2)** Das gelbe **„Test"-Badge** an der Überschrift
 „Funkaufträge" ist entfernt (Feature ist live), inkl. der nur dort genutzten
 CSS-Regel `.badge-test`. **3)** „Funkaufträge" erscheint jetzt als **Karte in der
-Übersicht** (`card: true`, neue Beschreibung ohne Test-Zusatz) mit eigener
-Status-Pille: ohne Aufträge neutral **„Optional"** (grau), sonst „In Bearbeitung"
-bzw. „Vollständig" (`computeFunkStatus`; vollständig = Funkwort + Von-Felder +
-je nach Empfänger An-Felder – wie die Export-Prüfung). Als **optionaler** Bereich
-(`optional: true` in `SECTIONS`) zählt er nicht in die Fortschrittsleiste
-(weiter x/6). Die Select-Change-Handler rufen dafür zusätzlich `updateStatus()`
-auf; nebenbei Struktur-Kommentare der Sections korrigiert (Funkaufträge waren
-noch als „QR-CODE-PLAN" überschrieben).
+Übersicht** (`card: true`, eigenes Icon `funk` = Funkwellen-Symbol statt der
+Dublette mit „Routenplanung", Beschreibung „Funkwörter … festlegen – erzwingt
+echten Funkverkehr.") mit eigener Status-Pille: ohne Aufträge neutral
+**„Optional"** (grau), sonst „In Bearbeitung" bzw. „Vollständig"
+(`computeFunkStatus`). Vollständig = Funkwort + gültige Von-Seite (Fahrzeug
+**aktiv**, Station **vorhanden**) + je nach Empfänger gültige An-Seite – genau die
+Fälle, in denen der Export den Auftrag sonst stumm verwirft (veraltete Verweise;
+eine Routen-Prüfung ist unnötig, da jede Fahrzeugroute per Rotation immer alle
+Stationen enthält). Als **optionaler** Bereich (`optional: true` in `SECTIONS`)
+zählt die Karte nicht in die Fortschrittsleiste (weiter x/6). Die
+Select-Change-Handler rufen dafür zusätzlich `updateStatus()` auf; nebenbei
+Struktur-Kommentare der Sections korrigiert (Funkaufträge waren noch als
+„QR-CODE-PLAN" überschrieben).
 
 Stand 1.36.0 (Mehrere Aufgaben-Blöcke je Station – seit 2026-07-18 live): Der Kartenbereich
 „Aufgabe" im Stations-Detail besteht jetzt aus **1..n Aufgaben-Blöcken**
