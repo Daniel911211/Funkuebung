@@ -9,73 +9,6 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
-### [ ] station.html: uneinheitlicher Abstand zwischen den Karten
-
-**Status:** offen · vorgemerkt am 2026-07-19 · Design-Agent soll den Fix festlegen
-
-- **Beobachtung (Nutzer):** Auf der Teilnehmerseite (`station.html`) stimmen die
-  **Abstände zwischen den Karten** nicht (Beispiel: Aufgabe → Funkauftrag →
-  Freischaltung uneinheitlich).
-- **Wahrscheinliche Ursache (vorab gefunden):** Die gestapelten Karten setzen ihren
-  Abstand über eigenes `margin-top:16px` (`.relay-send-card`, `.code-card`,
-  `.mc-card`, `.relay-recv-card`, `.master-card` 18px). ABER die **Freischaltungs-
-  Karte `.gate-card` hat GAR KEINE eigene CSS-Regel** (nur die Klasse im HTML,
-  `station.html:305`) → **kein `margin-top`** → dadurch inkonsistenter Abstand,
-  je nach Kartenreihenfolge zu eng/zu weit.
-- **Möglicher Fix (vom Design-Agenten bestätigen/festlegen):** Entweder `.gate-card`
-  ein `margin-top:16px` geben (einheitlich zu den anderen), ODER sauberer: die
-  Karten in einen gemeinsamen Flex-Container mit `gap:16px` setzen und die einzelnen
-  `margin-top`-Regeln entfernen (eine Abstands-Quelle statt viele). Design-Agent
-  entscheidet; danach Programmierer + Versions-Bump station.html.
-- **Randbedingungen:** nur Layout/Abstände, keine Logik; Design-Tokens nutzen
-  (`--radius` etc.), Mobil-Ansicht mitprüfen.
-
-### [ ] Funkauftrag-Sender-Karte: Hinweis „Empfänger soll Wort notieren" ergänzen
-
-**Status:** offen · vorgemerkt am 2026-07-19 · Text vom Übungs-Designer verfassen lassen
-
-- **Wunsch:** Auf der Funkauftrag-**Sender-Karte** (station.html, „Gib folgendes Wort
-  per Funk an <Empfänger> durch:") zusätzlich erklären, **was mit dem Wort geschehen
-  soll** – der Empfänger soll es sich **notieren** (und später an seiner Station
-  eingeben). Aktuell steht nur „Gib folgendes Wort per Funk an LF durch:".
-- **Fertiger Text (vom Nutzer festgelegt, 2026-07-19) – vom Programmierer einbauen:**
-  - **„Weise den Empfänger an, sich das Wort zu notieren."**
-  - Darstellung: gedämpfte Hinweiszeile (z. B. `--text-muted`) UNTER dem
-    hervorgehobenen Funkwort, damit das Wort optisch führend bleibt.
-- **Umsetzung:** Der **Programmierer** baut den (empfohlenen) Text in die
-  Sender-Karte ein (`station.html`, Bereich `relaySend`, ~Z. 252 ff.).
-- **Randbedingungen:** Nur sichtbarer Text auf der Sender-Karte; Funklogik/Gate/
-  Datenmodell (`relaySend`/`relayRecv`/`relayElw`) unverändert. Begriffe konsistent
-  (Sender/Empfänger – siehe eigenen Backlog-Punkt zur Umbenennung). station.html
-  Versions-Bump beim Umsetzen.
-
-### [ ] Export blocken/warnen, wenn Stationen „in Bearbeitung" sind
-
-**Status:** offen · vorgemerkt am 2026-07-19 · vor Umsetzung Details klären
-
-- **Wunsch:** Der Export der Stationsdaten (`data/uebung.json`, evtl. auch der
-  Planungs-Export) soll **nicht möglich** sein, solange in der Übersicht noch etwas
-  **„in Bearbeitung"** ist. **Beispiel (Nutzer):** In der aktuellen Übung waren
-  **keine Adressen** hinterlegt – der Export lief trotzdem durch.
-- **Ist-Zustand:** `exportUebungJson` bricht nur bei `invalid-start` (Lösungssatz
-  beginnt mit Leer-/Satzzeichen) ab; unvollständige Stationen erzeugen nur eine
-  Status-Pille „in Bearbeitung", **kein** Export-Stopp. **Wichtig:** Die
-  **Adresse/Einsatzort** zählt aktuell **NICHT** zu `isStationComplete` (Adresse
-  wird in der Routenplanung gepflegt, nicht in der Stationsvollständigkeit) → eine
-  Station ohne Adresse gilt heute NICHT als „in Bearbeitung".
-- **Vorab klären:**
-  - **Hart blocken oder nur warnen?** Harter Stopp (wie `invalid-start`) kann beim
-    iterativen Arbeiten nerven → Alternative: deutlicher Bestätigungsdialog
-    („X Stationen unvollständig / ohne Adresse – trotzdem exportieren?").
-  - **Soll „Adresse fehlt" zur Unvollständigkeit zählen?** Der Nutzer-Fall dreht
-    sich genau darum. Ggf. Adresse als (optionales?) Export-Kriterium aufnehmen –
-    getrennt von `isStationComplete` klären, da Adresse fachlich zur Route gehört.
-  - **Welche Übersicht/Bereiche?** Nur Stationsplanung oder auch Dashboard-Status
-    anderer Bereiche (Grunddaten, Fahrzeuge, Routen, Lösungssatz)?
-- **Randbedingungen:** Fehlermeldung kurz & konkret (welche Stationen/Felder
-  fehlen); Positionscode-/Hash-/Funklogik unberührt; `data/uebung.json` nie mit
-  Beispieladressen füllen (bleibt: echte Adresse eintragen oder Fallback-Anzeige).
-
 ### [ ] Routenplanung: nur Straßen als Route + immer kürzester Weg
 
 **Status:** offen · vorgemerkt am 2026-07-19 · vor Umsetzung technisch klären
@@ -106,39 +39,6 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
   Ziel: Feldwege/Tracks ausschließen (nur richtige Straßen) und die kurze
   Straßenverbindung nehmen. Prüfen, ob OSRM-Profil/Parameter das leisten
   (z. B. `exclude`, anderes Profil) oder ein anderer Routing-Ansatz nötig ist.
-
-### [ ] Stationsplanung-Übersicht: Spalte „Aufgabenbeschreibung" → „Aufgabentyp"
-
-**Status:** offen · vorgemerkt am 2026-07-19 · beim nächsten Patch miterledigen
-
-- **Problem:** In der Stationsplanungs-Tabelle zeigt die Spalte
-  „Aufgabenbeschreibung" (`renderStationList`, `station-cell-task` = `tasks[0].task`)
-  bei Rätsel-/MC-Stationen nur „—" (die haben keinen Beschreibungstext) → wirkt leer/nutzlos.
-- **Ziel:** Diese Spalte in der **Übersicht** stattdessen den **Aufgabentyp** je
-  Station anzeigen: Text / Rätsel / Multiple-Choice. Bei mehreren Aufgaben-Blöcken
-  die vorkommenden Typen zusammenfassen (z. B. „Rätsel", „Text + MC" o. Ä.).
-  Spaltenkopf entsprechend „Aufgabentyp" nennen.
-- **Randbedingungen:** Nur die Übersichts-Tabelle (`renderStationList` + `<th>`);
-  Detail-Editor und Datenmodell unverändert. Begriffe konsistent (Aufgabentyp-Werte
-  wie im Detail: „Text"/„Rätsel"/„Multiple-Choice"). Ggf. Spaltenbreiten/`col`-
-  Klassen anpassen. Kein Export betroffen.
-
-### [ ] Funkauftrag-Editor: Labels „Von"/„An" → „Sender"/„Empfänger"
-
-**Status:** offen · vorgemerkt am 2026-07-19 · beim nächsten Patch miterledigen
-
-- **Ziel:** Im Funkauftrag-Editor (index.html, Bereich „Funkaufträge") die beiden
-  Feld-Überschriften umbenennen:
-  - „Von (sieht & funkt das Wort)" → **„Sender"** (sieht & funkt das Wort)
-  - „An (gibt das Wort ein)" → **„Empfänger"** (gibt das Wort ein)
-- **Auch anpassen (Nutzer):** Der **Feld-Hinweistext** unter dem Editor
-  (`field-hint`, index.html ~Z. 2075) nennt ebenfalls „Von"/„An" → auf
-  „Sender"/„Empfänger" umstellen; ebenso die `title`-/`funk-elw-note`-Texte,
-  die „Von"-Station" erwähnen.
-- **Randbedingungen:** Nur die sichtbaren Texte (`funkRowHtml`, Hinweis, titles);
-  Datenmodell (`from`/`to`), Export und Handler unverändert. Klammer-Zusatz kann
-  bleiben oder in den `title` wandern – Programmierer/Design entscheiden.
-  Handbuch mitziehen (Begriffe projektweit konsistent halten).
 
 ### [ ] GPS-Standortprüfung für Stationsoberfläche
 
@@ -185,6 +85,59 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 ---
 
 ## Erledigt
+
+### [x] station.html: uneinheitlicher Abstand zwischen den Karten
+
+**Status:** erledigt mit station.html v1.3.0 (vorgemerkt am 2026-07-19).
+
+- Die gestapelten Karten beziehen ihren Abstand jetzt aus **einer** Quelle:
+  `#content` ist ein Flex-Container mit `gap:16px`; die einzelnen
+  `margin-top`-Regeln (`.code-card`, `.mc-card`, `.relay-send-card`,
+  `.relay-recv-card`, `.master-card`) und die `margin-bottom` der Topbar sind
+  entfallen → einheitlicher Abstand (auch die zuvor regellose `.gate-card`).
+  Nur Layout/Tokens, keine Logik. Design-Agent prüft die Optik nach.
+
+### [x] Funkauftrag-Sender-Karte: Hinweis „Empfänger soll Wort notieren" ergänzen
+
+**Status:** erledigt mit station.html v1.3.0 (vorgemerkt am 2026-07-19).
+
+- Unter dem hervorgehobenen Funkwort der Sender-Karte steht jetzt eine gedämpfte
+  Hinweiszeile (`.relay-note`, `--text-muted`): **„Weise den Empfänger an, sich
+  das Wort zu notieren."** Nur sichtbarer Text; Funklogik/Gate/Datenmodell
+  unverändert.
+
+### [x] Export blocken, wenn Stationen „in Bearbeitung" sind (Adresse zählt)
+
+**Status:** erledigt mit index.html v1.38.0 (vorgemerkt am 2026-07-19).
+
+- Der `data/uebung.json`-Export **blockt jetzt hart** (analog `invalid-start`),
+  wenn nicht alle Stationen vollständig sind – mit klarer Meldung, welche
+  Stationen betroffen sind und welche ohne Einsatzort/Adresse.
+- Der **Einsatzort/die Adresse** zählt nun zur Vollständigkeit
+  (`isStationComplete` verlangt `deStationAddress`) → eine Station ohne Adresse
+  gilt als „in Bearbeitung" und verhindert den Export (wirkt auch auf die
+  Status-Pillen, gewollt). Positionscode-/Hash-/Funklogik unberührt; keine
+  Beispieladressen.
+
+### [x] Stationsplanung-Übersicht: Spalte „Aufgabenbeschreibung" → „Aufgabentyp"
+
+**Status:** erledigt mit index.html v1.38.0 (vorgemerkt am 2026-07-19).
+
+- Die Übersichts-Spalte zeigt statt der (bei Rätsel/MC leeren) Aufgabenbeschreibung
+  jetzt den **Aufgabentyp** je Station (Text / Rätsel / Multiple-Choice; mehrere
+  Blöcke zusammengefasst, z. B. „Text + Multiple-Choice"). Spaltenkopf „Aufgabentyp".
+  Neuer Helfer `stationTaskTypeSummary`; die dadurch ungenutzte `stationTruncate`
+  entfernt. Nur Übersicht; Detail-Editor/Datenmodell/Export unverändert.
+
+### [x] Funkauftrag-Editor: Labels „Von"/„An" → „Sender"/„Empfänger"
+
+**Status:** erledigt mit index.html v1.38.0 (vorgemerkt am 2026-07-19).
+
+- Die Feld-Überschriften im Funkauftrag-Editor heißen jetzt **„Sender"** (statt
+  „Von …") und **„Empfänger"** (statt „An …"); der Klammer-Zusatz ist in den
+  `title` gewandert. Bereichs-Hilfetext und ELW-Hinweiszeile ziehen nach.
+  Datenmodell (`from`/`to`, `role`), Export und Handler unverändert. (Handbuch
+  ggf. nachziehen – Begriffe projektweit konsistent.)
 
 ### [x] Stations-Detail: Pflichtfeld „ELW zeigt Positionscode direkt" entfernen
 
@@ -305,3 +258,5 @@ eintragen." und steuert die Vollständigkeit; „Aufgabenbeschreibung" (intern
 `task`) optional. station.html zieht mit (Block „Aufgabe" oben, sofern Titel
 hinterlegt; bisherige Karte heißt „Aufgabenbeschreibung"). Interne Feldnamen
 unverändert (`title`/`task`), bestehende Daten bleiben erhalten.
+</content>
+</invoke>

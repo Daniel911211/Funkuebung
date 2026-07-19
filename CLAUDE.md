@@ -133,6 +133,9 @@ Projektweit konsistente Begriffe:
 - **Einsatzort / Adresse** = Ort der echten Station
 - **Laufnummer** = sichtbare Teilnehmer-Station innerhalb der Fahrzeugroute
 - **echte Stationsnummer** = interne Stationsnummer aus der Planung
+- **Sender / Empfänger** = im Funkauftrag-Editor die beiden Seiten (früher
+  „Von"/„An"; Datenmodell `from`/`to` unverändert): **Sender** sieht und funkt
+  das Wort, **Empfänger** gibt es ein (ab index v1.38.0)
 
 Keine widersprüchlichen Altbegriffe stehen lassen (z. B. „Bezeichnung",
 „Aufgabe kurz", „Titel" wenn sichtbar „Aufgabe" gemeint ist).
@@ -268,15 +271,25 @@ Token-Werte wie der `:root`-Block in `index.html`.
   `stations[].hideLagebild`/`elwCodeDirect` ab index v1.33.0 (siehe Rätsel);
   `elwCodeDirect` seit index v1.37.0 ohne UI-Feld und konstant `false` (bleibt nur
   aus Kompatibilität zu Alt-Lesern im Export, `elw.html` unverändert).
+- **Export-Vollständigkeit (ab index v1.38.0):** Der `data/uebung.json`-Export
+  **bricht hart ab**, wenn nicht alle Stationen vollständig sind (analog zur
+  `invalid-start`-Prüfung des Lösungssatzes). Neu zählt der **Einsatzort/die
+  Adresse** zu `isStationComplete` (`deStationAddress` muss gesetzt sein) → eine
+  Station ohne Adresse gilt als „in Bearbeitung" und verhindert den Export (wirkt
+  auch auf die Status-Pillen). Keine Beispieladressen einsetzen (Fallback-Anzeige
+  bleibt bei fehlenden Echtdaten).
 - **Rätsel-Felder (ab index v1.33.0):** Pflege je Station im Stations-Detail
   (`riddle` im Station-Objekt: `scope` „all"/„selected", `vehicleIds`, je Seite `fhz`/
-  `elw` = `{q,mode,options,answer,correct}`). Export je `assignments`-Zelle – nur für
+  `elw` = `{q,mode,options,answer,correct,hint}`; `hint` = optionale Anweisung an
+  die Besatzung, ab index v1.38.0). Export je `assignments`-Zelle – nur für
   Fahrzeuge im Geltungsbereich – optional `riddleFhz`/`riddleElw` (Rätseltexte,
   Klartext), `fhzMode`/`elwMode` = `"choice"` (+ `fhzOptions`/`elwOptions` als
-  Klartext-Optionen) bei Multiple-Choice und `hashFhz`/`hashElw` (Antwortwörter als
+  Klartext-Optionen) bei Multiple-Choice, `hashFhz`/`hashElw` (Antwortwörter als
   **Verschleierungs-Hash** cyrb53, gesalzen mit `name+date` – KEIN Krypto, gleiches
-  Niveau wie der Base64-Payload). Alle Felder **optional** → fehlen sie, gibt es kein
-  Gate (alter Ablauf). Gate-Logik **stationsseitig**: `station.html` prüft `hashFhz`
+  Niveau wie der Base64-Payload) und – falls gepflegt – `hintFhz`/`hintElw`
+  (Anweisungstexte im Klartext; `station.html` zeigt sie als Gate-Hinweis statt des
+  Standardtexts, leer = Standardtext). Alle Felder **optional** → fehlen sie, gibt es
+  kein Gate (alter Ablauf). Gate-Logik **stationsseitig**: `station.html` prüft `hashFhz`
   (Antwort der Besatzung, vor Ort gelöst) **und** `hashElw` (Rückwort des ELW,
   heruntergefunkt); `elw.html` prüft **kein** Wort, zeigt nur `riddleElw` (Overlay)
   und den Code. Bei Multiple-Choice ist die richtige Option = `options[correct]`; ihr

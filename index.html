@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.37.1)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.38.0)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -1925,7 +1925,7 @@ body {
               <tr>
                 <th class="col-no">Station</th>
                 <th>Stationsüberschrift</th>
-                <th>Aufgabenbeschreibung</th>
+                <th>Aufgabentyp</th>
                 <th class="col-imgs">Lagebilder</th>
                 <th class="col-actions">Aktionen</th>
               </tr>
@@ -2076,7 +2076,7 @@ body {
           <h3 class="subsection-title">Funkaufträge</h3>
           <button type="button" class="btn btn-primary" id="funkAdd">+ Funkauftrag</button>
         </div>
-        <p class="field-hint">„<b>Von</b>" sieht das Wort an seiner Station und funkt es; „<b>An</b>" gibt es an seiner Station ein → Code frei. Bei „An = ELW-Koordinationsseite" gibt die Übungsleitung das hochgefunkte Wort auf <code>elw.html</code> ein und der Code der „Von"-Station wird frei (das ELW als <b>Fahrzeug</b> zu wählen heißt dagegen: seine Besatzung gibt das Wort an ihrer Station ein). Das Funkwort wird für den Empfänger nur <b>verschleiert (Hash)</b> exportiert.</p>
+        <p class="field-hint">Der <b>Sender</b> sieht das Wort an seiner Station und funkt es; der <b>Empfänger</b> gibt es an seiner Station ein → Code frei. Bei „Empfänger = ELW-Koordinationsseite" gibt die Übungsleitung das hochgefunkte Wort auf <code>elw.html</code> ein und der Code der <b>Sender</b>-Station wird frei (das ELW als <b>Fahrzeug</b> zu wählen heißt dagegen: seine Besatzung gibt das Wort an ihrer Station ein). Das Funkwort wird für den Empfänger nur <b>verschleiert (Hash)</b> exportiert.</p>
         <div id="funkList"></div>
         <p class="field-hint" id="funkMsg" role="status" aria-live="polite"></p>
       </div>
@@ -2324,7 +2324,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.37.1"
+    version: "1.38.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -2544,7 +2544,7 @@ body {
      Optionen + Index der richtigen Option (für Multiple-Choice), Freitext-Antwort.
      Antworten/Optionen NUR lokal im Klartext; Export hasht (siehe exportUebungJson). */
   function defaultRiddleSide() {
-    return { q: "", mode: "text", options: [], answer: "", correct: 0 };
+    return { q: "", mode: "text", options: [], answer: "", correct: 0, hint: "" };
   }
   function normalizeRiddleSide(x) {
     x = x || {};
@@ -2556,7 +2556,8 @@ body {
       mode: x.mode === "choice" ? "choice" : "text",
       options: opts,
       answer: x.answer != null ? String(x.answer) : "",
-      correct: correct
+      correct: correct,
+      hint: x.hint != null ? String(x.hint) : ""
     };
   }
   /* Rätsel eines Aufgaben-Blocks: nur noch die beiden Seiten FHZ/ELW. Der
@@ -2829,6 +2830,10 @@ body {
     /* Pflichtfeld ist die „Stationsüberschrift" (intern title). „Aufgabenbeschreibung" (task)
        ist optional und geht nicht in die Vollständigkeit ein. */
     if (!nonEmpty(station.title)) return false;
+
+    /* Einsatzort/Adresse ist Pflicht (seit v1.38.0): eine Station ohne Adresse gilt
+       als unvollständig und blockiert den data/uebung.json-Export. */
+    if (!nonEmpty(deStationAddress(station))) return false;
 
     var images = Array.isArray(station.images) ? station.images : [];
 
@@ -3305,10 +3310,6 @@ body {
     for (var i = 0; i < list.length; i++) if (list[i].id === id) return i;
     return -1;
   }
-  function stationTruncate(t, n) {
-    t = String(t || "");
-    return t.length > n ? t.slice(0, n).replace(/\s+\S*$/, "") + "…" : t;
-  }
   function stationIcon(name) {
     var p = {
       up:    '<path d="M12 19V5"/><path d="M6 11l6-6 6 6"/>',
@@ -3326,6 +3327,18 @@ body {
       '<button type="button" class="icon-btn danger" data-act="delete" title="Löschen" aria-label="Löschen">' + stationIcon("trash") + '</button>';
   }
 
+  /* Kurzform des/der Aufgabentyp(en) einer Station für die Übersicht: die distinct
+     Typen der Aufgaben-Blöcke (Reihenfolge = erstes Vorkommen), z. B. „Text",
+     „Rätsel", „Text + Multiple-Choice". */
+  function stationTaskTypeSummary(st) {
+    var labels = { text: "Text", riddle: "Rätsel", mc: "Multiple-Choice" };
+    var seen = [];
+    stationTaskBlocks(st).forEach(function (b) {
+      var t = (b.taskType === "riddle" || b.taskType === "mc") ? b.taskType : "text";
+      if (seen.indexOf(t) < 0) seen.push(t);
+    });
+    return seen.map(function (t) { return labels[t]; }).join(" + ");
+  }
   function renderStationList() {
     var body = document.getElementById("stationTableBody");
     if (!body) return;
@@ -3343,8 +3356,8 @@ body {
       var tr = document.createElement("tr");
       tr.className = "station-row" + (s.id === selectedStationId ? " selected" : "");
       tr.dataset.id = s.id;
-      var firstTask = (s.tasks && s.tasks[0]) ? s.tasks[0].task : "";
-      var taskCell = nonEmpty(firstTask) ? escapeAttr(stationTruncate(firstTask, 50)) : '<span class="cell-muted">—</span>';
+      var typeSummary = stationTaskTypeSummary(s);
+      var taskCell = nonEmpty(typeSummary) ? escapeHTML(typeSummary) : '<span class="cell-muted">—</span>';
       /* Lagebilder-Kurzform: 0 / 1 schlicht; ab 2 zusätzlich Anzahl
          unterschiedlicher zugeordneter Fahrzeuge ("N · M Fzg."). */
       var imgCell = (s.images.length >= 2)
@@ -4834,6 +4847,14 @@ body {
         '<div class="detail-field"><label>' + escapeHTML(answerLabel) + '</label>' +
           '<input type="text" data-rb="' + bi + '" data-rs="' + side + '" data-rfield="answer" value="' + escapeAttr(rd.answer) + '" placeholder="Antwortwort" autocomplete="off"></div>';
     }
+    /* Optionale Anweisung an die Besatzung: erscheint auf station.html über dem
+       Eingabefeld statt des Standardtexts (leer = Standardtext, siehe Placeholder). */
+    var hintPlaceholder = side === "elw"
+      ? "Die Einsatzleitung funkt dir das Rückwort des ELW herunter – gib es hier ein."
+      : "Löse die Aufgabe vor Ort und gib die Antwort der Besatzung ein.";
+    html +=
+      '<div class="detail-field"><label>Anweisung an die Besatzung (Stationsseite, optional)</label>' +
+        '<textarea data-rb="' + bi + '" data-rs="' + side + '" data-rfield="hint" rows="2" placeholder="' + escapeAttr(hintPlaceholder) + '">' + escapeHTML(rd.hint) + '</textarea></div>';
     return html + '</div>';
   }
 
@@ -5153,7 +5174,7 @@ body {
     /* Jedes Auswahlfeld bekommt ein sichtbares Sub-Label (implizite Zuordnung:
        <label> umschließt das <select>); title erklärt kurz die Rolle des Felds. */
     var toBlock = toIsElw
-      ? '<span class="funk-elw-note">Die Übungsleitung gibt das Wort auf der ELW-Koordinationsseite (<code>elw.html</code>) ein → der Code der „Von"-Station wird frei.</span>'
+      ? '<span class="funk-elw-note">Die Übungsleitung gibt das Wort auf der ELW-Koordinationsseite (<code>elw.html</code>) ein → der Code der „Sender"-Station wird frei.</span>'
       : '<label class="funk-sub" title="Fahrzeug, das das Wort an seiner Station eingibt">Fahrzeug' +
           '<select data-fpart="to" data-ffield="vehId">' + funkVehicleOptions(f.to.vehId, vehicles) + '</select></label>' +
         '<label class="funk-sub" title="Station, an der das Wort eingegeben wird und den Positionscode freischaltet">Station' +
@@ -5162,14 +5183,14 @@ body {
       '<div class="funk-grid">' +
         '<div class="detail-field"><label>Funkwort <span class="req" title="Pflichtfeld">*</span></label>' +
           '<input type="text" data-fword value="' + escapeAttr(f.word) + '" placeholder="z. B. NEUHOF" autocomplete="off"></div>' +
-        '<div class="detail-field"><label>Von (sieht &amp; funkt das Wort)</label>' +
+        '<div class="detail-field"><label title="Fahrzeug, das das Wort an seiner Station sieht und funkt">Sender</label>' +
           '<div class="funk-party">' +
             '<label class="funk-sub" title="Fahrzeug, das das Wort sieht und funkt">Fahrzeug' +
               '<select data-fpart="from" data-ffield="vehId">' + funkVehicleOptions(f.from.vehId, vehicles) + '</select></label>' +
             '<label class="funk-sub" title="Station, an der dem Fahrzeug das Wort angezeigt wird">Station' +
               '<select data-fpart="from" data-ffield="stationNr">' + funkStationOptions(f.from.stationNr, stations) + '</select></label>' +
           '</div></div>' +
-        '<div class="detail-field"><label>An (gibt das Wort ein)</label>' +
+        '<div class="detail-field"><label title="Empfänger, der das Wort an seiner Station eingibt → Positionscode frei">Empfänger</label>' +
           '<div class="funk-party">' +
             /* Ankreuz-Kästchen statt Dropdown: angehakt = Empfänger ist die
                Übungsleitung auf der ELW-Koordinationsseite (elw.html, role "elw").
@@ -5989,13 +6010,28 @@ body {
     if(stations.length===0){ deMsg("uebungMsg","Keine Stationen – nichts zu exportieren.","warn"); return; }
     var grund=loadData(); var plan=computeLoesungPlan();
     if(plan.status==="invalid-start"){ deMsg("uebungMsg","Lösungssatz beginnt mit Leerzeichen/Satzzeichen – bitte korrigieren. Export abgebrochen.","warn"); return; }
+    /* Hart blocken, wenn Stationen unvollständig sind (analog invalid-start). Vor
+       allem fehlende Einsatzorte/Adressen sollen den Export verhindern. */
+    var unvollStationen=[]; var ohneAdresse=[];
+    stations.forEach(function(st,idx){
+      if(!isStationComplete(st)){
+        unvollStationen.push(idx+1);
+        if(!nonEmpty(deStationAddress(st))) ohneAdresse.push(idx+1);
+      }
+    });
+    if(unvollStationen.length){
+      var uvMsg="Nicht alle Stationen sind vollständig – Export abgebrochen. Unvollständig: Station "+unvollStationen.join(", ")+".";
+      if(ohneAdresse.length) uvMsg+=" Ohne Einsatzort/Adresse: Station "+ohneAdresse.join(", ")+".";
+      deMsg("uebungMsg", uvMsg, "warn"); return;
+    }
     /* Freischalt-Rätsel je Station: in die Zellen der Fahrzeuge im Geltungsbereich
        mergen. Rätseltexte/Optionen als Klartext (zum Anzeigen nötig), Antwortwörter
        NUR als Hash (gesalzen mit name+date). Leere Seite → kein Gate. */
     var rsalt=saltFromMeta(grund.name, grund.date);
-    function applyRiddleSide(cell, sd, riddleKey, modeKey, optionsKey, hashKey){
+    function applyRiddleSide(cell, sd, riddleKey, modeKey, optionsKey, hashKey, hintKey){
       if(!sd) return;
       if(nonEmpty(sd.q)) cell[riddleKey]=String(sd.q).trim();
+      if(nonEmpty(sd.hint)) cell[hintKey]=String(sd.hint).trim();
       if(sd.mode==="choice"){
         var opts=(Array.isArray(sd.options)?sd.options:[]).map(function(o){return String(o==null?"":o).trim();}).filter(function(o){return o!=="";});
         if(opts.length){ cell[modeKey]="choice"; cell[optionsKey]=opts; }
@@ -6033,8 +6069,8 @@ body {
         var blk=st ? taskBlockForVehicle(st, a.vehicle.id) : null;
         if(blk){
           if(blk.taskType==="riddle"){
-            applyRiddleSide(cell, blk.riddle.fhz, "riddleFhz", "fhzMode", "fhzOptions", "hashFhz");
-            applyRiddleSide(cell, blk.riddle.elw, "riddleElw", "elwMode", "elwOptions", "hashElw");
+            applyRiddleSide(cell, blk.riddle.fhz, "riddleFhz", "fhzMode", "fhzOptions", "hashFhz", "hintFhz");
+            applyRiddleSide(cell, blk.riddle.elw, "riddleElw", "elwMode", "elwOptions", "hashElw", "hintElw");
           } else if(blk.taskType==="mc"){
             if(blk.scope==="selected"){
               var cellMc=buildMcExport(blk.mc);
