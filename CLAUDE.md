@@ -281,7 +281,12 @@ Token-Werte wie der `:root`-Block in `index.html`.
 - **Rätsel-Felder (ab index v1.33.0):** Pflege je Station im Stations-Detail
   (`riddle` im Station-Objekt: `scope` „all"/„selected", `vehicleIds`, je Seite `fhz`/
   `elw` = `{q,mode,options,answer,correct,hint}`; `hint` = optionale Anweisung an
-  die Besatzung, ab index v1.38.0). Export je `assignments`-Zelle – nur für
+  die Besatzung, ab index v1.38.0). **Die Antwortart (`mode` Freitext/Auswahl)
+  gilt ab index v1.38.1 gemeinsam für beide Rätsel-Seiten** – ein einziger
+  „Antwortart"-Select (unter dem Aufgabentyp-Select) steuert FHZ und ELW; beide
+  `mode`-Felder bleiben strukturell erhalten, sind aber immer gleich
+  (`normalizeRiddle` koppelt beim Laden `elw.mode = fhz.mode`, FHZ kanonisch).
+  Export je `assignments`-Zelle – nur für
   Fahrzeuge im Geltungsbereich – optional `riddleFhz`/`riddleElw` (Rätseltexte,
   Klartext), `fhzMode`/`elwMode` = `"choice"` (+ `fhzOptions`/`elwOptions` als
   Klartext-Optionen) bei Multiple-Choice, `hashFhz`/`hashElw` (Antwortwörter als
