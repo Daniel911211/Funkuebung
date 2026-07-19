@@ -11,6 +11,19 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.38.3 (Bugfix – Timing-Warnung live): Die weiche Timing-Warnung der
+Funkaufträge (Zeilen-Hinweis `.funk-warn`, Sammelmeldung `#funkMsg` und
+Übersichts-Callout `#funkWarnBox`) aktualisiert sich jetzt **live** bei
+Stations-, Fahrzeug- und Funkauftrag-Änderungen – vorher blieben Zeilen-Hinweis
+und Sammelmeldung veraltet, bis der Funk-Bereich neu geöffnet oder die Seite neu
+geladen wurde (sie wurden nur in `renderFunkauftraege()` gezeichnet, die
+auslösenden Handler riefen aber nur `updateStatus()`). Neue leichte Funktion
+`refreshFunkWarnings()`, die die Warnungen einmalig berechnet und **nur** die
+Warnungs-DOM in-place aktualisiert (ohne die Eingabefelder neu aufzubauen → kein
+Fokusverlust); zentral aus `updateStatus()` und am Ende von
+`renderFunkauftraege()` aufgerufen. Reiner Anzeige-Fix – Export, Datenmodell und
+`station.html`/`elw.html` unverändert.
+
 Stand 1.38.2 (weiche Timing-Warnung für Funkaufträge): Das Planungstool zeigt
 für vollständige Funkaufträge mit Empfänger = Fahrzeug eine **nicht-blockierende,
 mehrstufige Planungswarnung** – Empfänger = ELW bekommt nie eine Warnung
