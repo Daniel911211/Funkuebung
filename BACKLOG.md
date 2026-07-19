@@ -9,6 +9,22 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
+### [ ] Funkauftrag-Sender-Karte: Hinweis „Empfänger soll Wort notieren" ergänzen
+
+**Status:** offen · vorgemerkt am 2026-07-19 · Text vom Übungs-Designer verfassen lassen
+
+- **Wunsch:** Auf der Funkauftrag-**Sender-Karte** (station.html, „Gib folgendes Wort
+  per Funk an <Empfänger> durch:") zusätzlich erklären, **was mit dem Wort geschehen
+  soll** – der Empfänger soll es sich **notieren** (und später an seiner Station
+  eingeben). Aktuell steht nur „Gib folgendes Wort per Funk an LF durch:".
+- **Umsetzung:** Der **Übungs-Designer** (`uebungsdesigner`) formuliert den kurzen,
+  klaren Ergänzungstext (Funkdisziplin-gerecht); der Programmierer baut ihn in die
+  Sender-Karte (`station.html`, Bereich `relaySend`, ~Z. 252 ff.) ein.
+- **Randbedingungen:** Nur sichtbarer Text auf der Sender-Karte; Funklogik/Gate/
+  Datenmodell (`relaySend`/`relayRecv`/`relayElw`) unverändert. Begriffe konsistent
+  (Sender/Empfänger – siehe eigenen Backlog-Punkt zur Umbenennung). station.html
+  Versions-Bump beim Umsetzen.
+
 ### [ ] Export blocken/warnen, wenn Stationen „in Bearbeitung" sind
 
 **Status:** offen · vorgemerkt am 2026-07-19 · vor Umsetzung Details klären
