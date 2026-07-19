@@ -11,6 +11,23 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.38.2 (weiche Timing-Warnung für Funkaufträge): Das Planungstool zeigt
+für vollständige Funkaufträge mit Empfänger = Fahrzeug eine **nicht-blockierende,
+mehrstufige Planungswarnung** – Empfänger = ELW bekommt nie eine Warnung
+(Übungsleitung durchgehend erreichbar). Grundlage ist die **Laufnummer** (Position
+der Station in der parallel gefahrenen Route) als grober Zeit-Anhalt. Genau eine
+Warnung je Auftrag nach Priorität **Zyklus > Reihenfolge > Spätlage**: *Zyklus* =
+gegenseitige/ringförmige Abhängigkeit (A↔B, Ringe, Selbstkante, per
+Erreichbarkeits-Prüfung im Kanten-Graph `from.vehId → to.vehId`); sonst
+*Reihenfolge* = Sender-Laufnummer ≥ Empfänger-Laufnummer (Wort evtl. zu spät
+verfügbar); sonst *Spätlage* = Sender-Laufnummer > 3. Anzeige: je Zeile
+(`.funk-warn`), Sammelmeldung `#funkMsg` (Anzahl + einmaliger Unschärfe-Hinweis)
+sowie ein Callout `#funkWarnBox` in der Übersicht. Neue Helfer `funkLaufnr` /
+`computeFunkWarnings` (Wiederverwendung `funkAuftragComplete` und
+`buildAutoRouteForVehicle`). **Kein harter Block, kein Export-/Verhaltens-Change**
+(`station.html`/`elw.html`/Datenmodell unverändert); Warnungen zählen nicht in den
+Fortschritt (Funkaufträge sind optional). CSS nur mit bestehenden Tokens.
+
 Stand 1.38.1 (Rätsel-Antwortart gemeinsam für FHZ + ELW): Im Rätsel-Editor legt
 ein **einziger** „Antwortart"-Select (Freitext / Auswahl (Multiple-Choice)) den
 Modus für **beide** Rätsel-Seiten (FHZ und ELW) gemeinsam fest, statt wie bisher
