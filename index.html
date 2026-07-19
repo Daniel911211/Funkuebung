@@ -42,6 +42,7 @@
   --bg-2:          #1b1e23;   /* Hintergrund Inhaltsbereich                */
   --surface:       #23272e;   /* Kartenflächen                            */
   --surface-2:     #2a2f37;   /* erhöhte Flächen / Hover                   */
+  --input-bg:      #1d2026;   /* Eingabefelder                             */
   --line:          #353b44;   /* Rahmen / Trennlinien                     */
   --line-soft:     #2c313a;   /* dezente Trennlinien                      */
 
@@ -409,7 +410,7 @@ body {
 .field input:focus {
   outline: none;
   border-color: var(--red);
-  background: #1d2026;
+  background: var(--input-bg);
 }
 .form-actions {
   display: flex;
@@ -516,7 +517,7 @@ body {
 
 .channel-row input {
   width: 100%;
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -605,7 +606,7 @@ body {
 .vehicle-table input[type="number"],
 .station-table input[type="text"] {
   width: 100%;
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -711,7 +712,7 @@ body {
 .detail-field select,
 .image-fields input[type="text"] {
   width: 100%;
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -739,7 +740,7 @@ body {
 .image-preview {
   flex: none; width: 64px; height: 48px;
   object-fit: cover; border-radius: var(--radius-sm);
-  border: 1px solid var(--line); background: #1d2026;
+  border: 1px solid var(--line); background: var(--input-bg);
 }
 .image-preview.empty {
   border-style: dashed;
@@ -912,7 +913,7 @@ body {
 .route-control-field > span { font-size: .78rem; color: var(--text-faint); }
 .route-control-field select,
 .route-control-field input {
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -950,7 +951,7 @@ body {
 .map-search-ctrl .ms-row { display: flex; gap: 6px; }
 .map-search-ctrl input {
   flex: 1 1 auto; min-width: 0;
-  background: var(--bg-1); border: 1px solid var(--line); border-radius: 6px;
+  background: var(--input-bg); border: 1px solid var(--line); border-radius: 6px;
   color: var(--text); font: inherit; font-size: .85rem; padding: 7px 9px;
 }
 .map-search-ctrl input::placeholder { color: var(--text-faint); }
@@ -971,8 +972,10 @@ body {
   color: var(--text); font: inherit; font-size: .8rem; line-height: 1.35;
   padding: 7px 4px; cursor: pointer;
 }
-.map-search-ctrl .ms-item:hover { background: var(--bg-1); }
-/* Temporärer Such-Marker (blau, deutlich anders als rote Stationsmarker) */
+.map-search-ctrl .ms-item:hover { background: var(--surface-2); }
+/* Temporärer Such-Marker (blau, deutlich anders als rote Stationsmarker).
+   Blauton bewusst hart kodiert: derselbe Wert steht auch in den Leaflet-Optionen
+   der OSRM-Routenlinie (JS), die keine CSS-Variablen lesen können. */
 .search-marker { background: transparent; border: 0; }
 .search-marker-dot {
   display: block; width: 16px; height: 16px; border-radius: 50%;
@@ -1013,7 +1016,7 @@ body {
 .route-pos-table .rcol-status { width: 14%; }
 .route-pos-table input[type="text"] {
   width: 100%;
-  background: #1d2026;
+  background: var(--input-bg);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -1146,7 +1149,7 @@ body {
   transition: border-color .14s, background .14s;
 }
 .field textarea::placeholder { color: var(--text-faint); }
-.field textarea:focus { outline: none; border-color: var(--red); background: #1d2026; }
+.field textarea:focus { outline: none; border-color: var(--red); background: var(--input-bg); }
 .loes-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
 /* SOLL / IST / STATUS – drei Kennzahl-Boxen */
 .loes-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; }
@@ -1200,7 +1203,7 @@ body {
 .loes-assign-char {
   flex: 0 0 auto; min-width: 30px; text-align: center;
   font-family: var(--font-mono); font-weight: 700; font-size: 1rem; color: var(--text);
-  background: var(--bg-1); border: 1px solid var(--line);
+  background: var(--surface); border: 1px solid var(--line);
   border-radius: 6px; padding: 2px 8px;
 }
 .loes-assign-char.empty { color: var(--text-faint); font-weight: 400; border-style: dashed; }
@@ -1717,7 +1720,7 @@ body {
     <div class="header-center">
       <div class="header-meta">
         <div class="meta-item">
-          <div class="meta-label">Titel</div>
+          <div class="meta-label">Übungstitel</div>
           <div class="meta-value empty" id="metaName">–</div>
         </div>
         <div class="meta-item">
@@ -4144,6 +4147,8 @@ body {
       if (mapCircles[s.id]) {
         mapCircles[s.id].setLatLng([ll.lat, ll.lng]); mapCircles[s.id].setRadius(radius);
       } else {
+        /* Farbwert bewusst hart kodiert (= --red aus :root): Leaflet-Optionen
+           können keine CSS-Variablen lesen. Bei Token-Änderung mitziehen. */
         mapCircles[s.id] = window.L.circle([ll.lat, ll.lng], {
           radius: radius, color: "#861619", weight: 1, opacity: .5,
           fillColor: "#861619", fillOpacity: .08
@@ -4171,6 +4176,8 @@ body {
     } else {
       latlngs = setSt.map(function (s) { var ll = stationLatLng(s); return [ll.lat, ll.lng]; });
     }
+    /* Blau bewusst hart kodiert – gleicher Wert wie .search-marker-dot im CSS
+       (Leaflet-Optionen können keine CSS-Variablen lesen). */
     mapRouteLine = window.L.polyline(latlngs, { color: "#3d6fb0", weight: 4, opacity: .75 }).addTo(mapInstance);
   }
 
@@ -5580,7 +5587,7 @@ body {
                  '<img class="bild-thumb" loading="lazy" alt="' + escapeAttr(it.name) + '" src="' + escapeAttr(it.url) + '" data-bild-take="' + i + '">' +
                  '<div class="bild-card-foot">' +
                    '<span class="bild-card-name" title="' + escapeAttr(it.name) + '">' + escapeHTML(it.name) + '</span>' +
-                   '<button type="button" class="btn btn-primary" data-bild-take="' + i + '">Übernehmen</button>' +
+                   '<button type="button" class="btn btn-secondary" data-bild-take="' + i + '">Übernehmen</button>' +
                  '</div>' +
                '</div>';
       }).join("");
