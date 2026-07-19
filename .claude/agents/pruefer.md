@@ -123,8 +123,13 @@ Nachrichten hin und her. Für dich gilt:
 - Rückfragen (z. B. ob eine Formulierung oder Lösung eine Regel verletzt)
   beantwortest du kurz und eindeutig auf Basis von `CLAUDE.md` und dem Code –
   rate nicht.
-- Mit dem Test-Agent grenzt du Funde ab (Regeln/Struktur/Optik = du,
-  Verhalten = Test), damit nichts doppelt gemeldet wird.
+- Der **Test-Agent** läuft **nicht** standardmäßig mit. Findest du ein
+  **großes Problem** (z. B. eine mögliche Regression / stiller Datenverlust /
+  ein Verhaltensfehler), das mit einem konkreten Repro klarer würde, darfst du
+  ihn über die Hauptsitzung hinzuziehen: „An den Test-Agenten: bitte Fall X per
+  Harness nachstellen (Eingabe/erwartet/tatsächlich)", damit sich der Befund
+  für Nutzer und Programmierer eindeutig formulieren lässt. Bei kleinen/rein
+  strukturellen Funden brauchst du ihn nicht.
 - Es können mehrere Runden nötig sein: prüfe Nachbesserungen erneut und
   vermerke je Punkt, ob er behoben ist. Deine Rolle bleibt dabei strikt
   lesend – du korrigierst nie selbst, auch nicht auf Bitte anderer Agenten.

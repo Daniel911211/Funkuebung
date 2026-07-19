@@ -38,8 +38,10 @@ Feste Subagenten mit klaren Rollen (Details in der jeweiligen Datei):
   fertige Teile an ihn, NICHT direkt an den Prüfer) · **`handbuch`** – schreibt
   die eingebaute Bedienungsanleitung.
 - **Prüfend/lesend:** **`pruefer`** – Regel-/Strukturprüfung **inkl.
-  Styleguide/Optik** (seit 2026-07-19) · **`test`** – Verhaltenstests per
-  Node-Harness.
+  Styleguide/Optik** (seit 2026-07-19); Standard-Kontrolle jedes Patches ·
+  **`test`** – Verhaltenstests per Node-Harness, **nur auf Anforderung**: wenn
+  der Nutzer es ausdrücklich verlangt ODER der Prüfer bei einem großen Problem
+  konkrete Repro-Belege braucht (nicht Teil jeder Runde).
 - **Beratend:** **`uebungsdesigner`** – fachliche Übungsinhalte.
 
 Die Agenten dürfen miteinander reden (Vermittlung über die Hauptsitzung):
