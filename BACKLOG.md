@@ -9,6 +9,97 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
+### [ ] Export blocken/warnen, wenn Stationen „in Bearbeitung" sind
+
+**Status:** offen · vorgemerkt am 2026-07-19 · vor Umsetzung Details klären
+
+- **Wunsch:** Der Export der Stationsdaten (`data/uebung.json`, evtl. auch der
+  Planungs-Export) soll **nicht möglich** sein, solange in der Übersicht noch etwas
+  **„in Bearbeitung"** ist. **Beispiel (Nutzer):** In der aktuellen Übung waren
+  **keine Adressen** hinterlegt – der Export lief trotzdem durch.
+- **Ist-Zustand:** `exportUebungJson` bricht nur bei `invalid-start` (Lösungssatz
+  beginnt mit Leer-/Satzzeichen) ab; unvollständige Stationen erzeugen nur eine
+  Status-Pille „in Bearbeitung", **kein** Export-Stopp. **Wichtig:** Die
+  **Adresse/Einsatzort** zählt aktuell **NICHT** zu `isStationComplete` (Adresse
+  wird in der Routenplanung gepflegt, nicht in der Stationsvollständigkeit) → eine
+  Station ohne Adresse gilt heute NICHT als „in Bearbeitung".
+- **Vorab klären:**
+  - **Hart blocken oder nur warnen?** Harter Stopp (wie `invalid-start`) kann beim
+    iterativen Arbeiten nerven → Alternative: deutlicher Bestätigungsdialog
+    („X Stationen unvollständig / ohne Adresse – trotzdem exportieren?").
+  - **Soll „Adresse fehlt" zur Unvollständigkeit zählen?** Der Nutzer-Fall dreht
+    sich genau darum. Ggf. Adresse als (optionales?) Export-Kriterium aufnehmen –
+    getrennt von `isStationComplete` klären, da Adresse fachlich zur Route gehört.
+  - **Welche Übersicht/Bereiche?** Nur Stationsplanung oder auch Dashboard-Status
+    anderer Bereiche (Grunddaten, Fahrzeuge, Routen, Lösungssatz)?
+- **Randbedingungen:** Fehlermeldung kurz & konkret (welche Stationen/Felder
+  fehlen); Positionscode-/Hash-/Funklogik unberührt; `data/uebung.json` nie mit
+  Beispieladressen füllen (bleibt: echte Adresse eintragen oder Fallback-Anzeige).
+
+### [ ] Routenplanung: nur Straßen als Route + immer kürzester Weg
+
+**Status:** offen · vorgemerkt am 2026-07-19 · vor Umsetzung technisch klären
+
+- **Wunsch:** Die Routenplanung soll **ausschließlich Straßen** als Route nutzen
+  und **immer den kürzesten Weg** wählen.
+- **Ist-Zustand (index.html ~Z. 3879, 4196–4230):** Route wird bereits per
+  **OSRM-Straßenrouting** berechnet (`router.project-osrm.org`, Profil „driving",
+  `overview=full`). ABER: (1) OSRM „driving" liefert die **schnellste**, nicht die
+  **kürzeste** Strecke (zeit- statt distanzoptimiert). (2) Schlägt OSRM fehl, wird
+  auf **Luftlinie** (gerade Linie) zurückgefallen (`mode:"air"`) – also KEINE Straße.
+- **Vorab klären / Randbedingungen:**
+  - **Kürzester Weg:** Der öffentliche OSRM-Demo-Server optimiert Fahrzeit; einen
+    echten „kürzeste-Distanz"-Modus bietet er nicht direkt → prüfen, ob per
+    Parametern/Alternativen (anderer Router/Profil) machbar, sonst als „kürzeste
+    Fahrzeit" belassen und Wunsch mit dem Nutzer abgleichen.
+  - **Nur Straßen:** Bei „nur Straßen" darf der **Luftlinien-Fallback** keine Route
+    vortäuschen → stattdessen klare Meldung „Straßenroute nicht berechenbar" (keine
+    gerade Linie als vermeintliche Route), oder Fallback nur als grobe Distanz-
+    Schätzung kennzeichnen (ist teilweise schon so, aber die Linie wird gezeichnet).
+  - Fair-Use des öffentlichen OSRM-Servers beachten; Routenlogik/Laufnummern nicht
+    beschädigen.
+- **Konkretes Beispiel (Nutzer, 2026-07-19):** Route Station 4 → Station 5 wird
+  über einen **Feldweg / die „Westspange"** geführt (großer Umweg am Feldrand),
+  statt direkt über die Straßen (Beethovenstraße/Mozartstraße). Ursache
+  wahrscheinlich: OSRM-„driving" bezieht als Track/Feldweg getaggte Wege ein bzw.
+  wählt die (vermeintlich) schnellste statt der auf Straßen kürzesten Strecke.
+  Ziel: Feldwege/Tracks ausschließen (nur richtige Straßen) und die kurze
+  Straßenverbindung nehmen. Prüfen, ob OSRM-Profil/Parameter das leisten
+  (z. B. `exclude`, anderes Profil) oder ein anderer Routing-Ansatz nötig ist.
+
+### [ ] Stationsplanung-Übersicht: Spalte „Aufgabenbeschreibung" → „Aufgabentyp"
+
+**Status:** offen · vorgemerkt am 2026-07-19 · beim nächsten Patch miterledigen
+
+- **Problem:** In der Stationsplanungs-Tabelle zeigt die Spalte
+  „Aufgabenbeschreibung" (`renderStationList`, `station-cell-task` = `tasks[0].task`)
+  bei Rätsel-/MC-Stationen nur „—" (die haben keinen Beschreibungstext) → wirkt leer/nutzlos.
+- **Ziel:** Diese Spalte in der **Übersicht** stattdessen den **Aufgabentyp** je
+  Station anzeigen: Text / Rätsel / Multiple-Choice. Bei mehreren Aufgaben-Blöcken
+  die vorkommenden Typen zusammenfassen (z. B. „Rätsel", „Text + MC" o. Ä.).
+  Spaltenkopf entsprechend „Aufgabentyp" nennen.
+- **Randbedingungen:** Nur die Übersichts-Tabelle (`renderStationList` + `<th>`);
+  Detail-Editor und Datenmodell unverändert. Begriffe konsistent (Aufgabentyp-Werte
+  wie im Detail: „Text"/„Rätsel"/„Multiple-Choice"). Ggf. Spaltenbreiten/`col`-
+  Klassen anpassen. Kein Export betroffen.
+
+### [ ] Funkauftrag-Editor: Labels „Von"/„An" → „Sender"/„Empfänger"
+
+**Status:** offen · vorgemerkt am 2026-07-19 · beim nächsten Patch miterledigen
+
+- **Ziel:** Im Funkauftrag-Editor (index.html, Bereich „Funkaufträge") die beiden
+  Feld-Überschriften umbenennen:
+  - „Von (sieht & funkt das Wort)" → **„Sender"** (sieht & funkt das Wort)
+  - „An (gibt das Wort ein)" → **„Empfänger"** (gibt das Wort ein)
+- **Auch anpassen (Nutzer):** Der **Feld-Hinweistext** unter dem Editor
+  (`field-hint`, index.html ~Z. 2075) nennt ebenfalls „Von"/„An" → auf
+  „Sender"/„Empfänger" umstellen; ebenso die `title`-/`funk-elw-note`-Texte,
+  die „Von"-Station" erwähnen.
+- **Randbedingungen:** Nur die sichtbaren Texte (`funkRowHtml`, Hinweis, titles);
+  Datenmodell (`from`/`to`), Export und Handler unverändert. Klammer-Zusatz kann
+  bleiben oder in den `title` wandern – Programmierer/Design entscheiden.
+  Handbuch mitziehen (Begriffe projektweit konsistent halten).
+
 ### [ ] GPS-Standortprüfung für Stationsoberfläche
 
 **Status:** offen · später fachlich ausarbeiten
