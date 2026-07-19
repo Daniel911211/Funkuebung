@@ -11,6 +11,29 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.37.0 (Pflichtfeld „ELW zeigt Positionscode direkt" entfernt –
+Backlog-Punkt, vom Nutzer freigegeben): Das Auswahlfeld im Stations-Detail
+(`detElwDirect` samt Fehlermeldung, `syncDirectError` und der Einblendung bei
+Rätsel-Blöcken) ist **ersatzlos entfernt**; die zugehörige Pflicht-Bedingung in
+der Vollständigkeitsprüfung (`isStationComplete`) entfällt. Intern steht
+`stations[].elwCodeDirect` jetzt **fest auf `false`** (= Code auf `elw.html`
+erst nach Klick „Code anzeigen"): `normalizeStation` erzwingt `false` und
+**migriert dabei bewusst auch früher gespeicherte `true`-Werte** auf `false`
+(Nutzer-Entscheid); die Stations-Seeds (`defaultStations`/`addStation`) starten
+mit `false` statt `null`. **Export unverändert kompatibel:** das Feld
+`stations[].elwCodeDirect` wird für Alt-Leser weiter geschrieben (konstant
+`false`). `elw.html` bleibt unangetastet – Alt-Exporte mit `true` zeigen dort
+den Code weiterhin direkt. CLAUDE.md (Layout-/Datenmodell-Abschnitte) und
+BACKLOG.md (Punkt nach „Erledigt") entsprechend nachgezogen. **Zusätzlich**
+(Nutzer-Wunsch): Im Funkauftrag-Editor heißt die Empfänger-Option „ELW"
+sichtbar jetzt **„ELW-Koordinationsseite"** (value/Datenmodell `"elw"`
+unverändert), da das ELW auch als Fahrzeug wählbar ist (Besatzung an ihrer
+Station vs. Übungsleitung auf `elw.html`); ELW-Hinweiszeile, Empfänger-Tooltip
+und Bereichs-Hilfetext entsprechend präzisiert. **Bewusst unverändert:** das
+Export-Label `relaySend to:"ELW"` und die Anzeige auf station.html („an ELW
+durchgeben") – im Funkverkehr ruft die Besatzung die ELW, nicht eine „Seite"
+(im Export-Code kommentiert).
+
 Stand 1.36.2 (Token-Pflege + kleine UI-Angleichungen): **1)** Neues `:root`-Token
 `--input-bg: #1d2026` („Eingabefelder"); die acht hartkodierten
 `background: #1d2026`-Vorkommen nutzen jetzt das Token. **2)** Fünf Verwendungen

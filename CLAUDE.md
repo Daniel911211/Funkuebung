@@ -207,7 +207,8 @@ nicht hart kodieren. `station.html` hält dieselbe Optik eigenständig.
   „Text"/„Rätsel" je Station; bei „Rätsel" ein Editor mit **Geltungsbereich** (alle /
   ausgewählte Fahrzeuge, Chips wie Lagebilder), **FHZ-Rätsel** (Antwort der Besatzung)
   und **ELW-Rätsel** (Rückwort des ELW), je **Freitext oder Multiple-Choice**. Zusätzlich
-  je Station „Lagebild ausblenden" und das Pflichtfeld „ELW zeigt Code direkt" (ja/nein).
+  je Station „Lagebild ausblenden". (Das frühere Pflichtfeld „ELW zeigt Code direkt"
+  entfiel mit index v1.37.0; intern ist `elwCodeDirect` fest `false`.)
   Speicherung im Station-Objekt (`renderStationRiddles`/`updateRiddle`).
 
 **`station.html` (Teilnehmeransicht):**
@@ -246,7 +247,8 @@ Token-Werte wie der `:root`-Block in `index.html`.
   name+datum getrennt), keine Online-Übertragung. **Kein Lösungssatz/`char`.**
 - **Code-Anzeige + ELW-Rätsel (ab v1.2.0):** `elw.html` prüft **kein** Freischalt-Wort
   mehr. Der Positionscode erscheint je Station entweder **direkt**
-  (`stations[].elwCodeDirect===true`) oder erst nach Klick „Code anzeigen". Ein
+  (`stations[].elwCodeDirect===true` – nur noch in Alt-Exporten; seit index v1.37.0
+  exportiert das Planungstool konstant `false`) oder erst nach Klick „Code anzeigen". Ein
   hinterlegtes `riddleElw` (mit `elwOptions` bei Multiple-Choice) wird per Button
   „ELW-Rätsel anzeigen" in einem **Overlay** gezeigt – die ELW löst es und funkt das
   **Rückwort des ELW** an die Besatzung (Prüfung auf `station.html`). Weiterhin
@@ -263,7 +265,9 @@ Token-Werte wie der `:root`-Block in `index.html`.
   assignments:{ fhzId:{ stationNr:{char,code,laufnr} } } }`. `meta.leader`
   (Übungsleitung) und `meta.channels` (befüllte Funkkanäle, ohne interne id) ab
   index v1.31.0 für `elw.html`; ältere Exporte ohne `channels` → Fallback-Hinweis.
-  `stations[].hideLagebild`/`elwCodeDirect` ab index v1.33.0 (siehe Rätsel).
+  `stations[].hideLagebild`/`elwCodeDirect` ab index v1.33.0 (siehe Rätsel);
+  `elwCodeDirect` seit index v1.37.0 ohne UI-Feld und konstant `false` (bleibt nur
+  aus Kompatibilität zu Alt-Lesern im Export, `elw.html` unverändert).
 - **Rätsel-Felder (ab index v1.33.0):** Pflege je Station im Stations-Detail
   (`riddle` im Station-Objekt: `scope` „all"/„selected", `vehicleIds`, je Seite `fhz`/
   `elw` = `{q,mode,options,answer,correct}`). Export je `assignments`-Zelle – nur für
