@@ -258,5 +258,3 @@ eintragen." und steuert die Vollständigkeit; „Aufgabenbeschreibung" (intern
 `task`) optional. station.html zieht mit (Block „Aufgabe" oben, sofern Titel
 hinterlegt; bisherige Karte heißt „Aufgabenbeschreibung"). Interne Feldnamen
 unverändert (`title`/`task`), bestehende Daten bleiben erhalten.
-</content>
-</invoke>
