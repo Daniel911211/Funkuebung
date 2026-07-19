@@ -9,7 +9,7 @@
   ============================================================================
   FUNKÜBUNG – STATIONSOBERFLÄCHE (station.html)  ·  Layout: Variante B
   ============================================================================
-  Version: 1.2.0 (eigene Versionierung, unabhängig von APP_INFO.version des
+  Version: 1.3.0 (eigene Versionierung, unabhängig von APP_INFO.version des
   Planungstools; zentral in STATION_APP_INFO.version, im Footer sichtbar).
   Versionsverlauf: siehe CHANGELOG.md.
   ============================================================================
@@ -54,7 +54,11 @@
   .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 44px;}
   .meta{font-size:.82rem;color:var(--text-faint);text-align:center;margin-bottom:12px;}
 
-  .topbar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);position:relative;overflow:hidden;margin-bottom:16px;}
+  /* Gestapelte Blöcke (Topbar, Aufgabe, Funkauftrag, Freischaltung, Code …)
+     bekommen ihren Abstand aus EINER Quelle: dem Flex-Gap von #content.
+     Einzel-margin-top an den Karten ist daher entfallen (einheitlich 16px). */
+  #content{display:flex;flex-direction:column;gap:16px;}
+  .topbar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);position:relative;overflow:hidden;}
   .topbar::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);}
   .st-no{flex:0 0 auto;width:58px;height:58px;border-radius:12px;background:var(--red-soft);border:2px solid var(--red);display:grid;place-items:center;font-family:var(--font-mono);font-weight:800;font-size:2rem;color:#fff;}
   .topbar h1{margin:0;font-size:1.35rem;font-weight:700;line-height:1.2;}
@@ -83,8 +87,7 @@
   .lb-close{position:absolute;top:12px;right:14px;width:46px;height:46px;display:grid;place-items:center;background:rgba(0,0,0,.5);border:1px solid var(--line);border-radius:50%;color:#fff;font-size:1.9rem;line-height:1;cursor:pointer;}
   .lb-close:hover{background:rgba(0,0,0,.7);}
 
-  /* Lösungszeichen – Freischaltung per Positionscode */
-  .code-card{margin-top:16px;}
+  /* Lösungszeichen – Freischaltung per Positionscode (Abstand via #content-Gap) */
   .code-row{display:flex;flex-wrap:wrap;gap:10px;}
   .code-row input{flex:1 1 220px;min-width:0;background:var(--input-bg);border:1px solid var(--line);border-radius:var(--radius-sm);color:var(--text);font:inherit;font-size:1.05rem;letter-spacing:.04em;padding:12px 14px;text-transform:uppercase;}
   .code-row input::placeholder{color:var(--text-faint);text-transform:none;letter-spacing:0;}
@@ -102,17 +105,16 @@
   .gate-opt:disabled{cursor:default;opacity:.85;}
   .gate-opt.correct{border-color:var(--ok);background:rgba(63,174,107,.15);color:var(--ok);font-weight:600;}
   .gate-opt.wrong{border-color:var(--warn);}
-  .mc-card{margin-top:16px;}
   .mc-q .task{margin-bottom:10px;}
   /* Akzentstreifen: --warn = Wert von --status-prog im Planungstool (hier
      bewusst kein eigenes Status-Token, --warn deckt diese Rolle bereits ab). */
-  .relay-send-card{margin-top:16px;border-left:3px solid var(--warn);}
+  .relay-send-card{border-left:3px solid var(--warn);}
   .relay-send + .relay-send{border-top:1px solid var(--line-soft);margin-top:10px;padding-top:10px;}
   .relay-word{font-family:var(--font-mono);font-size:1.8rem;font-weight:800;letter-spacing:.06em;color:var(--text);background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 14px;margin-top:6px;word-break:break-word;}
-  .relay-recv-card{margin-top:16px;}
+  .relay-note{margin:8px 0 0;font-size:.9rem;color:var(--text-muted);}
 
   /* Mastercode der Übungsleitung: bewusst zurückhaltend, kein auffälliges Feld. */
-  .master-card{margin-top:18px;text-align:center;}
+  .master-card{text-align:center;}
   .master-toggle{font:inherit;font-size:.82rem;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:6px 10px;text-decoration:underline;text-underline-offset:3px;}
   .master-toggle:hover{color:var(--text-muted);}
   .master-box{max-width:360px;margin:10px auto 0;text-align:left;}
@@ -144,7 +146,7 @@
   "use strict";
   /* Eigene Version der Stationsoberfläche (unabhängig vom Planungstool).
      Bei künftigen Änderungen an station.html erhöhen; mit Kopf-Kommentar synchron halten. */
-  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.2.0" };
+  var STATION_APP_INFO = { name: "Stationsoberfläche", version: "1.3.0" };
 
   function escapeHTML(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
   /* Datum YYYY-MM-DD → DD.MM.YYYY (sonst unverändert anzeigen). */
@@ -242,6 +244,9 @@
     var fhzOptions= assign && Array.isArray(assign.fhzOptions) ? assign.fhzOptions : [];
     var hashFhz   = assign && typeof assign.hashFhz==="string"  ? assign.hashFhz  : "";
     var hashElw   = assign && typeof assign.hashElw==="string"  ? assign.hashElw  : "";
+    /* Optionale Anweisungstexte je Gate (ab index v1.38.0); leer → Standardtext. */
+    var hintFhz   = assign && typeof assign.hintFhz==="string"  ? assign.hintFhz  : "";
+    var hintElw   = assign && typeof assign.hintElw==="string"  ? assign.hintElw  : "";
     var needFhz   = nonEmpty(hashFhz);
     var needElw   = nonEmpty(hashElw);
     /* Multiple-Choice-Fragen (Aufgabentyp „mc"): an der Station beantwortet die
@@ -284,7 +289,7 @@
         fhzPart =
           '<div class="gate-part">'+
             (nonEmpty(riddleFhz)?'<div class="task">'+escapeHTML(riddleFhz)+'</div>':'')+
-            '<p class="gate-hint">Löse die Aufgabe vor Ort und gib die Antwort der Besatzung ein.</p>'+
+            '<p class="gate-hint">'+escapeHTML(nonEmpty(hintFhz)?hintFhz:"Löse die Aufgabe vor Ort und gib die Antwort der Besatzung ein.")+'</p>'+
             fhzAnswer+
             '<p class="code-msg" id="fhzMsg" role="status" aria-live="polite"></p>'+
           '</div>';
@@ -293,7 +298,7 @@
       if(needElw){
         elwPart =
           '<div class="gate-part">'+
-            '<p class="gate-hint">Die Einsatzleitung funkt dir das Rückwort des ELW herunter – gib es hier ein.</p>'+
+            '<p class="gate-hint">'+escapeHTML(nonEmpty(hintElw)?hintElw:"Die Einsatzleitung funkt dir das Rückwort des ELW herunter – gib es hier ein.")+'</p>'+
             '<div class="code-row" id="elwRow">'+
               '<input type="text" id="elwInput" placeholder="Rückwort des ELW" autocomplete="off" spellcheck="false">'+
               '<button type="button" class="btn" id="elwBtn">Prüfen</button>'+
@@ -338,6 +343,7 @@
             return '<div class="relay-send">'+
               '<p class="gate-hint">Gib folgendes Wort per Funk an <b>'+escapeHTML(rs.to||"den Empfänger")+'</b> durch:</p>'+
               '<div class="relay-word">'+escapeHTML(rs.word)+'</div>'+
+              '<p class="relay-note">Weise den Empfänger an, sich das Wort zu notieren.</p>'+
             '</div>';
           }).join("")+
         '</div>';

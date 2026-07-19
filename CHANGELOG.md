@@ -11,6 +11,27 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.38.0 (Rätsel-Anweisungsfeld je Gate + 4 Backlog-Punkte): **A)** Jede
+Rätsel-Seite (FHZ/ELW) hat im Stations-Detail ein neues optionales Freitextfeld
+**„Anweisung an die Besatzung (Stationsseite, optional)"** (`riddle.*.hint`,
+Datenmodell `defaultRiddleSide`/`normalizeRiddleSide`). Beim Export je Zelle
+optional `hintFhz`/`hintElw` (Klartext, nur bei nicht-leerem Feld);
+`station.html` zeigt den Text als Gate-Hinweis statt des Standardtexts (leer =
+bisheriger Standardtext, rückwärtskompatibel). **B3)** Der `data/uebung.json`-Export
+**blockt jetzt hart**, wenn nicht alle Stationen vollständig sind (analog zur
+`invalid-start`-Prüfung, klare Meldung mit betroffenen Stationsnummern). Neu zählt
+der **Einsatzort/die Adresse** zur Vollständigkeit (`isStationComplete` verlangt
+`deStationAddress`) – eine Station ohne Adresse gilt als „in Bearbeitung" und
+verhindert den Export (wirkt auch auf die Status-Pillen). **B4)** In der
+Stationsplanungs-Übersicht zeigt die frühere Spalte „Aufgabenbeschreibung"
+(bei Rätsel/MC nur „—") jetzt den **Aufgabentyp** je Station (Text / Rätsel /
+Multiple-Choice; mehrere Blöcke zusammengefasst, z. B. „Text + Multiple-Choice");
+Spaltenkopf entsprechend „Aufgabentyp". Die ungenutzte Hilfsfunktion
+`stationTruncate` ist entfallen. **B5)** Im Funkauftrag-Editor heißen die
+Feld-Überschriften jetzt **„Sender"** (statt „Von …") und **„Empfänger"** (statt
+„An …"); Bereichs-Hilfetext und ELW-Hinweiszeile ziehen nach. Datenmodell
+(`from`/`to`, `role`), Export und Handler unverändert.
+
 Stand 1.37.1 (Funkauftrag-Editor: Empfänger-Auswahl im Bereich „Funkaufträge"
 von einem Dropdown auf ein einzelnes Ankreuz-Kästchen umgestellt): In
 `funkRowHtml` ersetzt ein sichtbares Kästchen „ELW-Koordinationsseite"
@@ -641,6 +662,20 @@ dreigeteilte Kopfzeile, Handbuch-Overlay, Button-System, Funkkanal-Matrix.
 
 > Eigene Versionierung, unabhängig von `APP_INFO.version` des Planungstools
 > (zentral in `STATION_APP_INFO.version`, im Footer sichtbar).
+
+Stand 1.3.0 (Gate-Anweisungstexte aus der Zelle + Karten-Abstände + Sender-Notier-
+Hinweis): **A)** Die Freischalt-Gates zeigen ihren Hinweistext jetzt aus der Zelle
+(`assign.hintFhz`/`hintElw`, ab index v1.38.0) – fehlt der Text, bleibt der
+bisherige Standardtext (FHZ: „Löse die Aufgabe vor Ort und gib die Antwort der
+Besatzung ein.", ELW: „Die Einsatzleitung funkt dir das Rückwort des ELW herunter
+– gib es hier ein."), `escapeHTML` beibehalten. **B1)** Die gestapelten Karten
+beziehen ihren Abstand jetzt aus **einer** Quelle: `#content` ist ein Flex-Container
+mit `gap:16px`; die einzelnen `margin-top`-Regeln (`.code-card`, `.mc-card`,
+`.relay-send-card`, `.relay-recv-card`, `.master-card`) und die `margin-bottom` der
+Topbar sind entfallen → einheitlicher Abstand (auch die zuvor regellose
+`.gate-card`). **B2)** Die Funkauftrag-**Sender-Karte** zeigt unter dem Funkwort
+eine gedämpfte Hinweiszeile (`.relay-note`, `--text-muted`): „Weise den Empfänger
+an, sich das Wort zu notieren." Gate-/Funk-/Code-Logik unverändert.
 
 Stand 1.2.0 (Optik an das Planungstool angeglichen – Nutzer-Entscheid; sichtbare
 Änderung gewollt): Der `:root`-Block übernimmt die **Token-Werte des
