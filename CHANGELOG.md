@@ -11,6 +11,20 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.38.5 (Routenplanung auf Valhalla): Die Kartenroute der Routenplanung
+wird jetzt über **Valhalla** (`valhalla1.openstreetmap.de`, Costing „auto" mit
+`costing_options.auto.use_tracks = 0`) statt OSRM berechnet, damit
+**Feldwege/Tracks gemieden** werden (Auslöser: Umweg über die „Westspange"
+Station 4 → 5). Neuer Helfer `decodePolyline6()` dekodiert die je Leg
+gelieferte Encoded-Polyline (Präzision 6); Strecke = `trip.summary.length`
+(km), Fahrzeit = `trip.summary.time / 60` (min). Schlägt das Straßen-Routing
+fehl, wird **keine gerade Linie** mehr auf der Karte gezeichnet – nur eine grobe
+Luftlinien-Distanz als Schätzung (`mode:"estimate"`, `geometry:null`) plus
+Hinweis „Straßenroute nicht berechenbar"; Status-/Hinweistexte entsprechend
+angepasst (`renderRouteLine`/`renderRouteOverview`). Reine Anzeige (Karten-Linie
++ km/Fahrzeit-Schätzung): **kein** Export-/Datenmodell-/Laufnummern-Change,
+`station.html`/`elw.html`/`data/uebung.json` unberührt.
+
 Stand 1.38.4 (Funkaufträge – Routen ansehen): Im Bereich Funkaufträge öffnet
 ein neuer Button „Routen ansehen" (secondary, neben „+ Funkauftrag") ein
 Overlay mit der Übersicht der **automatischen Fahrzeugrouten** (Laufnummern je

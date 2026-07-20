@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.38.4)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.38.5)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -975,7 +975,7 @@ body {
 .map-search-ctrl .ms-item:hover { background: var(--surface-2); }
 /* Temporärer Such-Marker (blau, deutlich anders als rote Stationsmarker).
    Blauton bewusst hart kodiert: derselbe Wert steht auch in den Leaflet-Optionen
-   der OSRM-Routenlinie (JS), die keine CSS-Variablen lesen können. */
+   der Routenlinie (JS), die keine CSS-Variablen lesen können. */
 .search-marker { background: transparent; border: 0; }
 .search-marker-dot {
   display: block; width: 16px; height: 16px; border-radius: 50%;
@@ -2374,7 +2374,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.38.4"
+    version: "1.38.5"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -4011,13 +4011,14 @@ body {
      Aufgaben: (1) interaktive Leaflet/OSM-Karte – Stationen per Klick positionieren
      (Marker setzt station.position.lat/lng), globaler GPS-Radius
      (funkuebung_routen_settings_v1) als Kreis je Marker; (2) Grundroute Station 1 →
-     … → letzte Station (ohne Rückweg) per OSRM-Straßenrouting, Fallback Luftlinie;
+     … → letzte Station (ohne Rückweg) per Valhalla-Straßenrouting (Feldwege/Tracks
+     werden gemieden), Fallback grobe Luftlinien-Schätzung (ohne Linie);
      (3) ELW-Übersicht (Adresse manuell, Koordinaten nur Anzeige); (4) automatische
      Fahrzeugrouten. Grundsatz Fahrzeugrouten: ALLE aktiven Fahrzeuge fahren ALLE
      Stationen an; nur der Startpunkt ist je Fahrzeug versetzt. Die Reihenfolge wird
      beim Rendern aus Stationen und aktiven Fahrzeugen berechnet (zyklische Drehung) –
      KEIN eigener Routen-Storage, keine manuelle Routenpflege. Externe Quellen nur
-     hier (OSM-Kacheln + OSRM); kein eigener Server, alles im Browser.
+     hier (OSM-Kacheln + Valhalla); kein eigener Server, alles im Browser.
 
      → später (GPS-Prüfung): station.html prüft anhand von station.position.lat /
        station.position.lng und dem globalen radiusMeters aus
@@ -4096,12 +4097,12 @@ body {
   }
 
   /* --- Routenplanung: Karte & Einstellungen ----------------------------
-     Globaler GPS-Radius in eigenem Storage; Leaflet/OSM-Karte + OSRM-Routing.
+     Globaler GPS-Radius in eigenem Storage; Leaflet/OSM-Karte + Valhalla-Routing.
      Alles defensiv: fehlt Leaflet (offline), bleibt der Rest funktionsfähig. */
   var ROUTE_SETTINGS_KEY  = "funkuebung_routen_settings_v1";
   var ROUTE_DEFAULT_RADIUS = 65;
   var ROUTE_MAP_DEFAULT   = { lat: 50.4533, lng: 9.6167, zoom: 14 }; // Neuhof b. Fulda
-  var OSRM_BASE = "https://router.project-osrm.org/route/v1/driving/";
+  var VALHALLA_BASE = "https://valhalla1.openstreetmap.de/route";
 
   /* Settings laden – fehlend/ungültig/≤0 → Standard 65. */
   function loadRouteSettings() {
@@ -4129,7 +4130,7 @@ body {
   var mapInstance = null, mapReady = false;
   var mapMarkers = {}, mapCircles = {}, mapRouteLine = null;
   var mapSearchMarker = null, mapSearchControlAdded = false;  // temporärer Such-Marker + Such-Control (separat von Stations-Markern)
-  var lastRouteResult = null;      // { distanceKm, durationMin, mode:"osrm"|"air", geometry }
+  var lastRouteResult = null;      // { distanceKm, durationMin, mode:"road"|"estimate", geometry }
   var routeCalcToken = 0, routeRecalcTimer = null, mapHintTimer = null;
 
   /* Koordinaten einer Station als {lat,lng} oder null (akzeptiert Komma/Punkt). */
@@ -4169,6 +4170,21 @@ body {
     var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(la1) * Math.cos(la2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  /* Encoded-Polyline (Google-Algorithmus) mit Präzision 6 (Faktor 1e6, wie von
+     Valhalla geliefert) zu [[lat,lng], …] dekodieren. */
+  function decodePolyline6(str) {
+    var idx = 0, lat = 0, lng = 0, out = [];
+    while (idx < str.length) {
+      var b, shift = 0, res = 0;
+      do { b = str.charCodeAt(idx++) - 63; res |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lat += (res & 1) ? ~(res >> 1) : (res >> 1);
+      shift = 0; res = 0;
+      do { b = str.charCodeAt(idx++) - 63; res |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lng += (res & 1) ? ~(res >> 1) : (res >> 1);
+      out.push([lat / 1e6, lng / 1e6]);
+    }
+    return out;
   }
   function formatKm(km)   { return km.toFixed(1).replace(".", ",") + " km"; }
   function formatMin(min) { return "ca. " + Math.round(min) + " min"; }
@@ -4391,21 +4407,15 @@ body {
   }
 
   /* Grundroute-Linie: nur gesetzte Stationen in Reihenfolge, kein Rückweg.
-     OSRM-Geometrie wenn vorhanden, sonst gerade Verbindung. */
+     Nur die tatsächliche Straßen-Geometrie (Valhalla) wird gezeichnet; fehlt sie
+     (Fehler/Schätzung), wird KEINE gerade Verbindung als Ersatz-Linie gezogen. */
   function renderRouteLine() {
     if (!mapReady || !mapInstance) return;
     if (mapRouteLine) { mapInstance.removeLayer(mapRouteLine); mapRouteLine = null; }
-    var setSt = orderedSetStations();
-    if (setSt.length < 2) return;
-    var latlngs;
-    if (lastRouteResult && lastRouteResult.geometry && lastRouteResult.geometry.length) {
-      latlngs = lastRouteResult.geometry;
-    } else {
-      latlngs = setSt.map(function (s) { var ll = stationLatLng(s); return [ll.lat, ll.lng]; });
-    }
+    if (!lastRouteResult || !lastRouteResult.geometry || !lastRouteResult.geometry.length) return;
     /* Blau bewusst hart kodiert – gleicher Wert wie .search-marker-dot im CSS
        (Leaflet-Optionen können keine CSS-Variablen lesen). */
-    mapRouteLine = window.L.polyline(latlngs, { color: "#3d6fb0", weight: 4, opacity: .75 }).addTo(mapInstance);
+    mapRouteLine = window.L.polyline(lastRouteResult.geometry, { color: "#3d6fb0", weight: 4, opacity: .75 }).addTo(mapInstance);
   }
 
   /* Auf alle gesetzten Marker zoomen (oder Standardansicht Neuhof). */
@@ -4418,7 +4428,7 @@ body {
     mapInstance.fitBounds(pts, { padding: [40, 40] });
   }
 
-  /* Strecke/Fahrzeit berechnen (debounced). OSRM-Straße, sonst Luftlinie. */
+  /* Strecke/Fahrzeit berechnen (debounced). Valhalla-Straße, sonst grobe Schätzung. */
   function scheduleRecalcRoute() {
     if (routeRecalcTimer) clearTimeout(routeRecalcTimer);
     routeRecalcTimer = setTimeout(recalcRoute, 400);
@@ -4431,28 +4441,40 @@ body {
       return;
     }
     var token = ++routeCalcToken;
+    /* Kein Straßen-Routing möglich: nur grobe Luftlinien-Distanz als Schätzung,
+       KEINE Geometrie (es wird bewusst keine gerade Linie gezeichnet). */
     function applyFallback() {
       if (token !== routeCalcToken) return;
       var km = 0;
       for (var i = 1; i < setSt.length; i++) {
         km += haversineKm(stationLatLng(setSt[i - 1]), stationLatLng(setSt[i]));
       }
-      lastRouteResult = { distanceKm: km, durationMin: km / 30 * 60, mode: "air", geometry: null };
+      lastRouteResult = { distanceKm: km, durationMin: km / 30 * 60, mode: "estimate", geometry: null };
       renderRouteLine(); renderRouteOverview();
     }
     if (typeof fetch === "undefined") { applyFallback(); return; }
-    var coords = setSt.map(function (s) { var ll = stationLatLng(s); return ll.lng + "," + ll.lat; }).join(";");
-    var url = OSRM_BASE + coords + "?overview=full&geometries=geojson";
+    /* Valhalla „auto" mit use_tracks:0 → Feldwege/Tracks werden gemieden. */
+    var req = {
+      locations: setSt.map(function (s) { var ll = stationLatLng(s); return { lat: ll.lat, lon: ll.lng }; }),
+      costing: "auto",
+      costing_options: { auto: { use_tracks: 0 } },
+      directions_options: { units: "kilometers" }
+    };
+    var url = VALHALLA_BASE + "?json=" + encodeURIComponent(JSON.stringify(req));
     fetch(url).then(function (r) {
       if (!r.ok) throw new Error("http " + r.status);
       return r.json();
     }).then(function (data) {
       if (token !== routeCalcToken) return;
-      if (!data || data.code !== "Ok" || !data.routes || !data.routes.length) throw new Error("no route");
-      var route = data.routes[0];
-      var geom = (route.geometry && route.geometry.coordinates)
-        ? route.geometry.coordinates.map(function (c) { return [c[1], c[0]]; }) : null;
-      lastRouteResult = { distanceKm: route.distance / 1000, durationMin: route.duration / 60, mode: "osrm", geometry: geom };
+      if (!data || !data.trip || data.trip.status !== 0 || !data.trip.legs || !data.trip.legs.length) throw new Error("no route");
+      /* Geometrie je Leg (encoded Polyline, Präzision 6) dekodieren und aneinanderhängen. */
+      var latlngs = [];
+      data.trip.legs.forEach(function (leg) {
+        if (leg && leg.shape) latlngs = latlngs.concat(decodePolyline6(leg.shape));
+      });
+      var distanceKm = data.trip.summary.length;       // Valhalla liefert km (units:kilometers)
+      var durationMin = data.trip.summary.time / 60;   // Sekunden → Minuten
+      lastRouteResult = { distanceKm: distanceKm, durationMin: durationMin, mode: "road", geometry: latlngs };
       renderRouteLine(); renderRouteOverview();
     }).catch(function () { applyFallback(); });
   }
@@ -4536,10 +4558,15 @@ body {
     }
     var strecke = "–", zeit = "–", rstatus = "–", statusCls = "";
     if (lastRouteResult) {
-      strecke = formatKm(lastRouteResult.distanceKm);
-      zeit    = formatMin(lastRouteResult.durationMin);
-      if (lastRouteResult.mode === "osrm") { rstatus = "Straßenroute berechnet"; statusCls = "ok"; }
-      else { rstatus = "Nur Luftlinie geschätzt"; statusCls = "air"; }
+      if (lastRouteResult.mode === "road") {
+        strecke = formatKm(lastRouteResult.distanceKm);
+        zeit    = formatMin(lastRouteResult.durationMin);
+        rstatus = "Straßenroute berechnet"; statusCls = "ok";
+      } else {
+        strecke = "~" + formatKm(lastRouteResult.distanceKm) + " (Luftlinie)";
+        zeit    = "–";
+        rstatus = "Straßenroute nicht berechenbar"; statusCls = "air";
+      }
     } else if (setSt.length < 2) {
       rstatus = "Mind. 2 Stationen mit Marker nötig";
     }
@@ -4551,8 +4578,8 @@ body {
         kv("Fahrzeit", zeit) +
         kv("Routing-Status", rstatus, statusCls) +
       '</div>';
-    if (lastRouteResult && lastRouteResult.mode === "air") {
-      html += '<p class="route-hint-air">Routing konnte nicht berechnet werden – Anzeige basiert auf Luftlinie.</p>';
+    if (lastRouteResult && lastRouteResult.mode === "estimate") {
+      html += '<p class="route-hint-air">Straßenroute nicht berechenbar – es wird nur eine grobe Luftlinien-Distanz als Schätzung angezeigt, keine Route auf der Karte.</p>';
     }
     el.innerHTML = html;
   }
