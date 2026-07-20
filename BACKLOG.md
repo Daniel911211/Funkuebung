@@ -9,9 +9,17 @@ ohnehin geplanten Patch. Versionsregel beim Umsetzen entsprechend anwenden
 
 ## Offen
 
-### [ ] Routenplanung: nur Straßen als Route + immer kürzester Weg
+### [x] Routenplanung: nur Straßen als Route + immer kürzester Weg
 
-**Status:** offen · vorgemerkt am 2026-07-19 · vor Umsetzung technisch klären
+**Status:** erledigt mit index.html v1.38.5 (2026-07-19) · Routing von OSRM auf
+**Valhalla** umgestellt (`valhalla1.openstreetmap.de`, Costing „auto" mit
+`use_tracks = 0`) → **Feldwege/Tracks werden gemieden**; der Luftlinien-Fallback
+zeichnet **keine gerade Linie** mehr, sondern zeigt nur noch eine grobe
+Luftlinien-Distanz als Schätzung + Hinweis „Straßenroute nicht berechenbar".
+Hinweis: „immer kürzester Weg" wurde bewusst als „Feldwege meiden + schnellste
+Straße" umgesetzt (nicht strikt `shortest`), da der öffentliche Router keinen
+verlässlichen reinen Distanzmodus bietet und der ursprüngliche Auslöser (Umweg
+über Feldwege) damit behoben ist. Reine Anzeige, kein Export-/Laufnummern-Change.
 
 - **Wunsch:** Die Routenplanung soll **ausschließlich Straßen** als Route nutzen
   und **immer den kürzesten Weg** wählen.
