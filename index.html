@@ -13,7 +13,7 @@
 
 <!--
   ============================================================================
-  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.38.5)
+  FUNKÜBUNG – PLANUNGSTOOL  ·  Schritt 2.3 (APP_INFO 1.39.0)
   ============================================================================
   Statische GitHub-Pages-App (kein Build-Schritt), eine einzige sofort lauffähige
   HTML-Datei (kein Server, keine APIs). index.html = Planungstool, station.html =
@@ -1259,6 +1259,12 @@ body {
 .satz-msg.ok   { color: var(--status-done); }
 .satz-msg.warn { color: var(--status-prog); }
 .satz-list { display: flex; flex-direction: column; gap: 8px; }
+.satz-cat-head {
+  margin: 14px 0 2px; font-size: .78rem; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.satz-cat-head:first-child { margin-top: 0; }
+.satz-cat-count { font-weight: 400; }
 .satz-empty { margin: 0; font-size: .88rem; color: var(--text-faint); font-style: italic; }
 .satz-item {
   display: flex; align-items: center; gap: 12px;
@@ -2274,6 +2280,15 @@ body {
           <label for="satzNewInput">Neuen Satz hinzufügen</label>
           <input type="text" id="satzNewInput" placeholder="z. B. ORDENTLICHER FUNK SCHAFFT KLARE LAGEN IN NEUHOF!">
         </div>
+        <div class="field full">
+          <label for="satzNewCat">Kategorie</label>
+          <select id="satzNewCat">
+            <option value="">Ohne Kategorie</option>
+            <option value="fhz4">4 Fahrzeuge · 32 Zeichen</option>
+            <option value="fhz5">5 Fahrzeuge · 40 Zeichen</option>
+            <option value="fhz6">6 Fahrzeuge · 48 Zeichen</option>
+          </select>
+        </div>
         <div class="satz-add-actions">
           <button type="button" class="btn btn-primary" id="satzAddBtn">Satz speichern</button>
           <button type="button" class="btn btn-secondary" id="satzAddCurrentBtn">Aktuellen Lösungssatz speichern</button>
@@ -2374,7 +2389,7 @@ body {
      APP_INFO übernehmen (z. B. für Fußzeile, Druck/Export).               */
   var APP_INFO = {
     name: "Funkübung – Planungstool",
-    version: "1.38.5"
+    version: "1.39.0"
   };
 
   /* --- Zentrale Bereichsliste ------------------------------------------
@@ -5560,15 +5575,36 @@ body {
   /* ======================================================================
      SATZSAMMLUNG (Overlay)
      ----------------------------------------------------------------------
-     Einfache lokale Sammlung guter Lösungssätze (Array aus Strings) im
-     eigenen Storage-Key funkuebung_satzsammlung_v1. Gehört funktional zu
-     „Lösungssatz erfassen": Sätze speichern, übernehmen, per TXT/JSON
-     importieren (ergänzend, Duplikate übersprungen) und als JSON exportieren.
-     Keine Kategorien/Tags/Tabs/eigener Bereich. Duplikat-Vergleich: getrimmt
-     und ohne Berücksichtigung der Groß-/Kleinschreibung; Originalschreibweise
-     (getrimmt) wird gespeichert. ====================================== */
+     Lokale Sammlung guter Lösungssätze im eigenen Storage-Key
+     funkuebung_satzsammlung_v1. Gehört funktional zu „Lösungssatz erfassen":
+     Sätze speichern, übernehmen, per TXT/JSON importieren (ergänzend, Duplikate
+     übersprungen) und als JSON exportieren.
+     Seit v1.39.0 nach Kategorien sortiert (4/5/6 Fahrzeuge = Lösungssatz-Länge
+     32/40/48 Zeichen bei 8 Stationen). Speicherformat neu = Array aus Objekten
+     [{text,cat}] (cat = "fhz4"|"fhz5"|"fhz6"|""); loadSatzsammlung migriert das
+     alte Array-aus-Strings-Format automatisch (cat ""). Duplikat-Vergleich:
+     getrimmt und ohne Berücksichtigung der Groß-/Kleinschreibung;
+     Originalschreibweise (getrimmt) wird gespeichert. ==================== */
   var SATZ_STORAGE_KEY = "funkuebung_satzsammlung_v1";
   var satzLastFocus = null;
+
+  /* Feste Kategorien: key, Anzeigelabel und zugehörige SOLL-Zeichenzahl. */
+  var SATZ_CATS = [
+    { key: "fhz4", label: "4 Fahrzeuge · 32 Zeichen", chars: 32 },
+    { key: "fhz5", label: "5 Fahrzeuge · 40 Zeichen", chars: 40 },
+    { key: "fhz6", label: "6 Fahrzeuge · 48 Zeichen", chars: 48 }
+  ];
+  /* Normiert einen Kategorie-Wert auf eine gültige Kategorie oder "". */
+  function satzNormCat(c) {
+    c = String(c == null ? "" : c);
+    for (var i = 0; i < SATZ_CATS.length; i++) { if (SATZ_CATS[i].key === c) return c; }
+    return "";
+  }
+  /* Anzeigelabel einer Kategorie ("" → „Ohne Kategorie"). */
+  function satzCatLabel(c) {
+    for (var i = 0; i < SATZ_CATS.length; i++) { if (SATZ_CATS[i].key === c) return SATZ_CATS[i].label; }
+    return "Ohne Kategorie";
+  }
 
   function loadSatzsammlung() {
     var raw = [];
@@ -5577,12 +5613,15 @@ body {
     if (!Array.isArray(raw)) return [];
     var out = [], seen = {};
     raw.forEach(function (s) {
-      if (typeof s !== "string") return;
-      var t = s.trim();
+      var text, cat;
+      if (typeof s === "string") { text = s; cat = ""; }              /* Altformat: Array aus Strings */
+      else if (s && typeof s === "object" && typeof s.text === "string") { text = s.text; cat = satzNormCat(s.cat); }
+      else return;
+      var t = text.trim();
       if (!t) return;
       var k = t.toLowerCase();
       if (seen[k]) return;
-      seen[k] = true; out.push(t);
+      seen[k] = true; out.push({ text: t, cat: cat });
     });
     return out;
   }
@@ -5590,16 +5629,31 @@ body {
     try { localStorage.setItem(SATZ_STORAGE_KEY, JSON.stringify(list)); return true; }
     catch (e) { return false; }
   }
-  /* Fügt einen Satz in-place hinzu; liefert "added" | "empty" | "dup". */
-  function satzTryAdd(list, sentence) {
+  /* Fügt einen Satz in-place hinzu; liefert "added" | "empty" | "dup".
+     Bei Duplikat mit leerer vorhandener Kategorie und gültiger neuer Kategorie
+     wird die Kategorie sanft übernommen (Upgrade). */
+  function satzTryAdd(list, sentence, cat) {
     var t = String(sentence == null ? "" : sentence).trim();
     if (!t) return "empty";
+    cat = satzNormCat(cat);
     var k = t.toLowerCase();
     for (var i = 0; i < list.length; i++) {
-      if (list[i].trim().toLowerCase() === k) return "dup";
+      if (list[i].text.trim().toLowerCase() === k) {
+        if (!list[i].cat && cat) list[i].cat = cat;
+        return "dup";
+      }
     }
-    list.push(t);
+    list.push({ text: t, cat: cat });
     return "added";
+  }
+  /* Automatische Kategorie für den aktuellen Lösungssatz: SOLL-Zeichenzahl =
+     aktive Fahrzeuge × Stationen; passt sie auf 32/40/48 → entsprechende
+     Kategorie, sonst "". */
+  function satzCurrentCat() {
+    var active = loadVehicles().filter(function (v) { return v.active; });
+    var soll = active.length * loadStations().length;
+    for (var i = 0; i < SATZ_CATS.length; i++) { if (SATZ_CATS[i].chars === soll) return SATZ_CATS[i].key; }
+    return "";
   }
 
   function satzMsg(text, kind) {
@@ -5617,15 +5671,31 @@ body {
       host.innerHTML = '<p class="satz-empty">Noch keine Sätze gespeichert.</p>';
       return;
     }
-    host.innerHTML = list.map(function (s, i) {
-      return '<div class="satz-item">' +
-               '<span class="satz-item-text">' + escapeHTML(s) + '</span>' +
-               '<span class="satz-item-actions">' +
-                 '<button type="button" class="btn btn-secondary" data-satz-take="' + i + '">Übernehmen</button>' +
-                 '<button type="button" class="btn btn-danger" data-satz-del="' + i + '">Löschen</button>' +
-               '</span>' +
-             '</div>';
-    }).join("");
+    /* Nach Kategorie gruppieren in fester Reihenfolge fhz4 → fhz5 → fhz6 →
+       „Ohne Kategorie". Buttons tragen den stabilen Lade-Index (nicht die
+       Anzeigeposition), damit satzTake/satzDelete trotz Gruppierung den
+       richtigen Eintrag treffen. */
+    var order = ["fhz4", "fhz5", "fhz6", ""];
+    var html = "";
+    order.forEach(function (catKey) {
+      var members = [];
+      list.forEach(function (item, i) {
+        if ((item.cat || "") === catKey) members.push({ item: item, idx: i });
+      });
+      if (members.length === 0) return;
+      html += '<div class="satz-cat-head">' + escapeHTML(satzCatLabel(catKey)) +
+                ' <span class="satz-cat-count">(' + members.length + ')</span></div>';
+      members.forEach(function (m) {
+        html += '<div class="satz-item">' +
+                  '<span class="satz-item-text">' + escapeHTML(m.item.text) + '</span>' +
+                  '<span class="satz-item-actions">' +
+                    '<button type="button" class="btn btn-secondary" data-satz-take="' + m.idx + '">Übernehmen</button>' +
+                    '<button type="button" class="btn btn-danger" data-satz-del="' + m.idx + '">Löschen</button>' +
+                  '</span>' +
+                '</div>';
+      });
+    });
+    host.innerHTML = html;
     host.querySelectorAll("[data-satz-take]").forEach(function (b) {
       b.addEventListener("click", function () { satzTake(parseInt(b.dataset.satzTake, 10)); });
     });
@@ -5638,17 +5708,18 @@ body {
   function satzTake(idx) {
     var list = loadSatzsammlung();
     var s = list[idx];
-    if (typeof s !== "string") return;
+    if (!s || typeof s.text !== "string") return;
     var ta = document.getElementById("loesPhrase");
-    if (ta) ta.value = s;
+    if (ta) ta.value = s.text;
     persistLoesung("Satz übernommen");
     closeSatzOverlay();
   }
 
   function satzAddManual() {
     var inp = document.getElementById("satzNewInput");
+    var catSel = document.getElementById("satzNewCat");
     var list = loadSatzsammlung();
-    var r = satzTryAdd(list, inp ? inp.value : "");
+    var r = satzTryAdd(list, inp ? inp.value : "", catSel ? catSel.value : "");
     if (r === "empty") { satzMsg("Bitte einen Satz eingeben.", "warn"); return; }
     if (r === "dup")   { satzMsg("Dieser Satz ist bereits gespeichert.", "warn"); return; }
     saveSatzsammlung(list);
@@ -5660,7 +5731,7 @@ body {
   function satzAddCurrent() {
     var ta = document.getElementById("loesPhrase");
     var list = loadSatzsammlung();
-    var r = satzTryAdd(list, ta ? ta.value : "");
+    var r = satzTryAdd(list, ta ? ta.value : "", satzCurrentCat());
     if (r === "empty") { satzMsg("Der Lösungssatz ist leer – nichts zu speichern.", "warn"); return; }
     if (r === "dup")   { satzMsg("Der aktuelle Lösungssatz ist bereits in der Sammlung.", "warn"); return; }
     saveSatzsammlung(list);
@@ -5671,8 +5742,8 @@ body {
   function satzDelete(idx) {
     var list = loadSatzsammlung();
     var s = list[idx];
-    if (typeof s !== "string") return;
-    if (!window.confirm("Diesen Satz aus der Sammlung löschen?\n\n" + s)) return;
+    if (!s || typeof s.text !== "string") return;
+    if (!window.confirm("Diesen Satz aus der Sammlung löschen?\n\n" + s.text)) return;
     list.splice(idx, 1);
     saveSatzsammlung(list);
     renderSatzList();
@@ -5695,17 +5766,32 @@ body {
     satzMsg(added + " Sätze hinzugefügt, " + dup + " Duplikate übersprungen, " + empty + " leere Zeilen ignoriert.", "ok");
   }
 
-  /* JSON-Import: nur Array aus Strings; ungültige Einträge ignoriert; ergänzend. */
+  /* JSON-Import: nimmt (a) das kanonische Objektformat
+     { app:"EA-Funkuebung-Satzsammlung", version:2, saetze:[{text,cat}, …] }
+     oder (b) das Altformat Array-aus-Strings (→ Kategorie ""). Ungültige
+     Einträge werden gezählt; ergänzend, Duplikate übersprungen (mit sanftem
+     Kategorie-Upgrade in satzTryAdd). */
   function satzImportJson(text) {
     var data;
     try { data = JSON.parse(text); }
     catch (e) { satzMsg("Ungültiges JSON: Die Datei konnte nicht gelesen werden.", "warn"); return; }
-    if (!Array.isArray(data)) { satzMsg("Ungültiges Format: Es wird ein Array aus Texten erwartet.", "warn"); return; }
+    var entries;
+    if (Array.isArray(data)) {
+      entries = data;                                   /* Altformat: Array aus Strings */
+    } else if (data && typeof data === "object" && Array.isArray(data.saetze)) {
+      entries = data.saetze;                            /* kanonisches Objektformat */
+    } else {
+      satzMsg("Ungültiges Format: erwartet wird ein Array aus Texten oder ein Objekt mit „saetze\".", "warn");
+      return;
+    }
     var list = loadSatzsammlung();
     var added = 0, dup = 0, invalid = 0;
-    data.forEach(function (item) {
-      if (typeof item !== "string") { invalid++; return; }
-      var r = satzTryAdd(list, item);
+    entries.forEach(function (item) {
+      var text2, cat2;
+      if (typeof item === "string") { text2 = item; cat2 = ""; }
+      else if (item && typeof item === "object" && typeof item.text === "string") { text2 = item.text; cat2 = item.cat; }
+      else { invalid++; return; }
+      var r = satzTryAdd(list, text2, cat2);
       if (r === "added") added++;
       else if (r === "dup") dup++;
       else invalid++;
@@ -5717,8 +5803,9 @@ body {
 
   function satzExportJson() {
     var list = loadSatzsammlung();
+    var obj = { app: "EA-Funkuebung-Satzsammlung", version: 2, saetze: list };
     try {
-      var blob = new Blob([JSON.stringify(list, null, 2)], { type: "application/json" });
+      var blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
       a.href = url; a.download = "funkuebung-satzsammlung.json";
