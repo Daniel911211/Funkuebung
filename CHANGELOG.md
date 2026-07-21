@@ -11,6 +11,23 @@ Datei-Kopf synchron halten; den neuen Eintrag hier oben ergänzen.
 
 ## index.html (Planungstool)
 
+Stand 1.39.0 (Satzsammlung mit Kategorien): Die Satzsammlung (Overlay
+„Lösungssatz erfassen") ist jetzt nach **Kategorien** gruppiert: `fhz4`
+(„4 Fahrzeuge · 32 Zeichen"), `fhz5` („5 Fahrzeuge · 40 Zeichen"), `fhz6`
+(„6 Fahrzeuge · 48 Zeichen") und „Ohne Kategorie" (unbekannt/leer). Die Anzeige
+gruppiert in fester Reihenfolge fhz4 → fhz5 → fhz6 → Ohne Kategorie mit
+Überschrift und Anzahl; leere Gruppen entfallen. Beim manuellen Hinzufügen wählt
+ein neuer Kategorie-Select die Kategorie; „Aktuellen Lösungssatz speichern"
+setzt die Kategorie automatisch, indem die SOLL-Zeichenzahl (aktive Fahrzeuge ×
+Stationen) auf 32/40/48 gemappt wird (sonst „Ohne Kategorie"). Speicher-,
+Import- und Exportformat sind neu **objektbasiert (v2)**:
+Storage/Export `{ app:"EA-Funkuebung-Satzsammlung", version:2,
+saetze:[{text,cat}, …] }`. `loadSatzsammlung`/`satzImportJson` bleiben
+**rückwärtskompatibel** zum alten Array-aus-Strings-Format (migrieren zu
+`cat:""`); beim Import wird eine leere vorhandene Kategorie durch eine gültige
+neue sanft aufgewertet. Nur `index.html` – `station.html`/`elw.html`/`data/uebung.json`
+und der Übungs-Export bleiben unberührt.
+
 Stand 1.38.5 (Routenplanung auf Valhalla): Die Kartenroute der Routenplanung
 wird jetzt über **Valhalla** (`valhalla1.openstreetmap.de`, Costing „auto" mit
 `costing_options.auto.use_tracks = 0`) statt OSRM berechnet, damit
